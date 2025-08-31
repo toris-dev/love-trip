@@ -23,8 +23,9 @@ import {
   TrendingUp,
   PieChart,
 } from "lucide-react"
-import NaverMapView from "@/components/naver-map-view"
-import { travelService } from "@/lib/services/travel-service"
+import dynamic from "next/dynamic"
+const NaverMapView = dynamic(() => import("@/components/naver-map-view"), { ssr: false })
+import { travelService } from "@/lib/services/travel-service.client"
 import { createClient } from "@/lib/supabase/client"
 import { PWAInstall } from "@/components/pwa-install"
 import { PushNotificationSettings } from "@/components/push-notification-settings"
@@ -74,7 +75,7 @@ type DetailedTravelPlan = TravelPlan & {
 export default function LoveTripHome() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedPlan, setSelectedPlan] = useState<DetailedTravelPlan | null>(null)
-  const [activeTab, setActiveTab] = useState("search")
+  const [activeTab, setActiveTab] = useState("map")
   const [selectedPlace, setSelectedPlace] = useState<any | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [selectedThemes, setSelectedThemes] = useState<string[]>([])

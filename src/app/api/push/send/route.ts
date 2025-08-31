@@ -3,18 +3,19 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import webpush from "web-push"
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT || "mailto:support@lovetrip.app",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "",
-  process.env.VAPID_PRIVATE_KEY || "",
-)
-
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
       console.error("[v0] VAPID keys not configured")
       return NextResponse.json({ error: "Push notifications not configured" }, { status: 500 })
     }
+
+    // Configure webpush only when keys are present to avoid build-time failures
+    webpush.setVapidDetails(
+      process.env.VAPID_SUBJECT || "mailto:support@lovetrip.app",
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY,
+    )
 
     const { title, body, url, userId, userIds } = await request.json()
 
