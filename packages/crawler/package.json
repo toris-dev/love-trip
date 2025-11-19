@@ -1,0 +1,24 @@
+{
+  "name": "@love-trip/crawler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "sync": "tsx src/sync.ts",
+    "sync:area": "tsx src/sync-area.ts",
+    "dev": "tsx watch src/index.ts",
+    "test-api": "tsx src/test-api.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.56.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  }
+}
+
