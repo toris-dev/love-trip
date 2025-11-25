@@ -13,6 +13,8 @@
     "type-check": "pnpm --filter web type-check",
     "crawler": "pnpm --filter crawler start",
     "crawler:sync": "pnpm --filter crawler sync",
+    "crawler:server": "pnpm --filter crawler run server",
+    "crawler:sync-date-travel": "pnpm --filter crawler sync:date-travel",
     "test": "pnpm --filter web test",
     "test:ui": "pnpm --filter web test:ui"
   },
