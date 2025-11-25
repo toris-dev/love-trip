@@ -110,7 +110,7 @@ Tour API 데이터를 저장하는 주요 테이블입니다.
 
 ```env
 TOUR_API_KEY=your_tour_api_key
-TOUR_API_BASE_URL=https://apis.data.go.kr/B551011/KorService1
+TOUR_API_BASE_URL=https://apis.data.go.kr/B551011/KorService2
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 BATCH_SIZE=100
