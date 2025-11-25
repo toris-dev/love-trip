@@ -58,12 +58,12 @@ export const travelService = {
 
       if (error) {
         console.log("[v0] Database error, using fallback data:", error.message)
-        return FALLBACK_PLACES as Place[]
+        return FALLBACK_PLACES as unknown as Place[]
       }
-      return data || (FALLBACK_PLACES as Place[])
+      return data || (FALLBACK_PLACES as unknown as Place[])
     } catch (error) {
       console.log("[v0] Service error, using fallback data:", error)
-      return FALLBACK_PLACES as Place[]
+      return FALLBACK_PLACES as unknown as Place[]
     }
   },
 
@@ -78,22 +78,22 @@ export const travelService = {
 
       if (error) {
         console.log("[v0] Database search error, using fallback search:", error.message)
-        return (FALLBACK_PLACES as readonly Place[]).filter(
+        return (FALLBACK_PLACES as unknown as Place[]).filter(
           (place) =>
             place.name.toLowerCase().includes(query.toLowerCase()) ||
             place.description.toLowerCase().includes(query.toLowerCase()) ||
-            place.address.toLowerCase().includes(query.toLowerCase()),
-        ) as Place[]
+            (place.address && place.address.toLowerCase().includes(query.toLowerCase())),
+        )
       }
       return data || []
     } catch (error) {
       console.log("[v0] Search service error, using fallback search:", error)
-      return (FALLBACK_PLACES as readonly Place[]).filter(
+      return (FALLBACK_PLACES as unknown as Place[]).filter(
         (place) =>
           place.name.toLowerCase().includes(query.toLowerCase()) ||
           place.description.toLowerCase().includes(query.toLowerCase()) ||
-          place.address.toLowerCase().includes(query.toLowerCase()),
-      ) as Place[]
+            (place.address && place.address.toLowerCase().includes(query.toLowerCase())),
+        )
     }
   },
 

@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { notificationService } from "@/lib/services/notification-service"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { type } = await request.json()
-    const planId = params.id
+    const { id: planId } = await params
 
     if (!planId || !type) {
       return NextResponse.json({ error: "Plan ID and notification type required" }, { status: 400 })
