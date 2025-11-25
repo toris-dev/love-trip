@@ -83,5 +83,6 @@ export interface PlaceInsertData {
   map_level: number | null
   created_time: string | null
   modified_time: string | null
+  course_type?: ("date" | "travel")[] // 코스 타입 (데이트/여행)
 }
 

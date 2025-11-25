@@ -34,7 +34,7 @@ try {
 
 const envSchema = z.object({
   TOUR_API_KEY: z.string().min(1, "TOUR_API_KEY is required"),
-  TOUR_API_BASE_URL: z.string().url().default("https://apis.data.go.kr/B551011/KorService1"),
+  TOUR_API_BASE_URL: z.string().url().default("https://apis.data.go.kr/B551011/KorService2"),
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   BATCH_SIZE: z.coerce.number().default(100),
@@ -43,7 +43,7 @@ const envSchema = z.object({
 
 export const config = envSchema.parse({
   TOUR_API_KEY: process.env.TOUR_API_KEY,
-  TOUR_API_BASE_URL: process.env.TOUR_API_BASE_URL || "https://apis.data.go.kr/B551011/KorService1",
+  TOUR_API_BASE_URL: process.env.TOUR_API_BASE_URL || "https://apis.data.go.kr/B551011/KorService2",
   SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   BATCH_SIZE: process.env.BATCH_SIZE || 100,
@@ -77,3 +77,17 @@ export const AREA_CODES = {
   JEJU: 39,
 } as const
 
+// 지역 코드를 지역명으로 매핑
+export const AREA_NAMES: Record<number, string> = {
+  1: "서울",
+  2: "인천",
+  31: "경기도",
+  32: "강원도",
+  33: "충청북도",
+  34: "충청남도",
+  35: "경상북도",
+  36: "경상남도",
+  37: "전라북도",
+  38: "전라남도",
+  39: "제주도",
+}

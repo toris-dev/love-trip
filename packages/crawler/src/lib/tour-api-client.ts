@@ -1,5 +1,6 @@
 import { config } from "../config.js"
 import { TourApiResponseSchema, TourApiItemSchema, type TourApiItem } from "../types/tour-api.js"
+import { logStream } from "../log-stream.js"
 
 export class TourApiClient {
   private baseUrl: string
@@ -16,7 +17,7 @@ export class TourApiClient {
    * API 호출 간 딜레이
    */
   private async delay(ms: number = this.delayMs): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
+    return new Promise(resolve => setTimeout(resolve, ms))
   }
 
   /**
@@ -56,8 +57,8 @@ export class TourApiClient {
       queryParts.push(`contentTypeId=${params.contentTypeId}`)
     }
     
-    // URL 구성
-    const url = `${this.baseUrl}/areaBasedList1?${queryParts.join('&')}`
+    // URL 구성 (KorService2는 areaBasedList2 사용)
+    const url = `${this.baseUrl}/areaBasedList2?${queryParts.join("&")}`
     
     // 디버깅: URL 확인 (serviceKey는 마스킹)
     const debugUrl = url.replace(/serviceKey=[^&]+/, "serviceKey=***")
@@ -109,12 +110,11 @@ export class TourApiClient {
 
       if (!response.ok) {
         // HTTP 에러인 경우 응답 본문 확인
-        const errorMsg = typeof data === 'object' && data !== null 
+        const errorMsg =
+          typeof data === "object" && data !== null
           ? JSON.stringify(data).substring(0, 500)
           : responseText.substring(0, 500)
-        throw new Error(
-          `HTTP ${response.status} error. Response: ${errorMsg}`
-        )
+        throw new Error(`HTTP ${response.status} error. Response: ${errorMsg}`)
       }
 
       const parsed = TourApiResponseSchema.parse(data)
@@ -128,7 +128,7 @@ export class TourApiClient {
       const itemArray = Array.isArray(items) ? items : [items]
 
       return itemArray
-        .map((item) => {
+        .map(item => {
           try {
             return TourApiItemSchema.parse(item)
           } catch (error) {
@@ -162,7 +162,8 @@ export class TourApiClient {
     queryParts.push(`MobileApp=LoveTrip`)
     queryParts.push(`_type=json`)
     
-    const url = `${this.baseUrl}/detailInfo1?${queryParts.join('&')}`
+    // URL 구성 (KorService2는 detailInfo2 사용)
+    const url = `${this.baseUrl}/detailInfo2?${queryParts.join("&")}`
 
     try {
       const response = await fetch(url)
@@ -243,11 +244,14 @@ export class TourApiClient {
           hasMore = false
         } else {
           allItems.push(...items)
+          const pageProgress = ((pageNo / maxPages) * 100).toFixed(1)
+          logStream.progress(
+            `    📄 페이지 ${pageNo}/${maxPages} [${pageProgress}%] - ${items.length}개 항목 (총 ${allItems.length}개)`
+          )
           pageNo++
-          console.log(`Fetched page ${pageNo - 1}: ${items.length} items (total: ${allItems.length})`)
         }
       } catch (error) {
-        console.error(`Error fetching page ${pageNo}:`, error)
+        logStream.error(`Error fetching page ${pageNo}:`, error)
         hasMore = false
       }
     }
@@ -255,4 +259,3 @@ export class TourApiClient {
     return allItems
   }
 }
-
