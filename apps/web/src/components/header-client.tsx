@@ -1,6 +1,6 @@
 "use client"
 
-import { Fragment, Suspense, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Calendar, MapPin, Heart } from "lucide-react"
 import { InteractiveLogo } from "@/components/interactive-logo"
@@ -53,79 +53,77 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
     router.refresh()
   }
 
-  const defaultGamificationData = gamificationData || {
+  const defaultGamificationData = gamificationData ?? {
     level: 5,
     points: 12500,
   }
 
   return (
-    <Suspense fallback={<Fragment key="header-fallback" />}>
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <InteractiveLogo />
-            <div className="flex items-center space-x-4">
-              {/* 게이미피케이션 미리보기 */}
-              {user && (
-                <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-primary/5 border border-primary/20">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white">
-                      {defaultGamificationData.level}
-                    </div>
-                    <div className="text-xs">
-                      <div className="font-semibold">Lv.{defaultGamificationData.level}</div>
-                      <div className="text-muted-foreground">
-                        {defaultGamificationData.points.toLocaleString()}P
-                      </div>
+    <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <InteractiveLogo />
+          <div className="flex items-center space-x-4">
+            {/* 게이미피케이션 미리보기 */}
+            {user && (
+              <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white">
+                    {defaultGamificationData.level}
+                  </div>
+                  <div className="text-xs">
+                    <div className="font-semibold">Lv.{defaultGamificationData.level}</div>
+                    <div className="text-muted-foreground">
+                      {defaultGamificationData.points.toLocaleString()}P
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+            {/* 네비게이션 메뉴 */}
+            <nav className="hidden md:flex items-center gap-2">
+              <Link href="/travel">
+                <Button variant="ghost" size="sm">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  여행 코스
+                </Button>
+              </Link>
+              <Link href="/date">
+                <Button variant="ghost" size="sm">
+                  <Heart className="h-4 w-4 mr-2" />
+                  데이트 코스
+                </Button>
+              </Link>
+              {user && (
+                <Link href="/calendar">
+                  <Button variant="ghost" size="sm">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    캘린더
+                  </Button>
+                </Link>
               )}
-              {/* 네비게이션 메뉴 */}
-              <nav className="hidden md:flex items-center gap-2">
-                <Link href="/travel">
-                  <Button variant="ghost" size="sm">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    여행 코스
-                  </Button>
-                </Link>
-                <Link href="/date">
-                  <Button variant="ghost" size="sm">
-                    <Heart className="h-4 w-4 mr-2" />
-                    데이트 코스
-                  </Button>
-                </Link>
-                {user && (
-                  <Link href="/calendar">
-                    <Button variant="ghost" size="sm">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      캘린더
-                    </Button>
-                  </Link>
-                )}
-              </nav>
-              {user ? (
-                <div className="flex items-center gap-2">
-                  <Link href="/profile">
-                    <Button variant="outline" size="sm">
-                      {user.email}
-                    </Button>
-                  </Link>
-                  <Button variant="ghost" size="sm" onClick={handleLogout}>
-                    로그아웃
-                  </Button>
-                </div>
-              ) : (
-                <Link href="/login">
+            </nav>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Link href="/profile">
                   <Button variant="outline" size="sm">
-                    로그인
+                    {user.email}
                   </Button>
                 </Link>
-              )}
-            </div>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  로그아웃
+                </Button>
+              </div>
+            ) : (
+              <Link href="/login">
+                <Button variant="outline" size="sm">
+                  로그인
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
-      </header>
-    </Suspense>
+      </div>
+    </header>
   )
 }

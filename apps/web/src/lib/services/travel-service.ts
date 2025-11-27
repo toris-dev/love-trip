@@ -177,18 +177,30 @@ export const travelService = {
     if (error) throw error
   },
 
-  // Travel Plan Places
+  // Travel Plan Places (travel_days와 travel_day_places 사용)
   async getTravelPlanPlaces(travelPlanId: string) {
     const supabase = createClient()
-    const { data, error } = await supabase
-      .from("travel_plan_places")
-      .select(`
-        *,
-        places (*)
-      `)
+    // travel_days를 통해 travel_day_places 조회
+    const { data: days, error: daysError } = await supabase
+      .from("travel_days")
+      .select("id, day_number")
       .eq("travel_plan_id", travelPlanId)
       .order("day_number")
-      .order("order_in_day")
+
+    if (daysError) throw daysError
+    if (!days || days.length === 0) return []
+
+    const dayIds = days.map(d => d.id)
+    const { data, error } = await supabase
+      .from("travel_day_places")
+      .select(`
+        *,
+        places (*),
+        travel_days!inner(day_number)
+      `)
+      .in("travel_day_id", dayIds)
+      .order("travel_days.day_number")
+      .order("order_index")
 
     if (error) throw error
     return data || []
@@ -196,12 +208,48 @@ export const travelService = {
 
   async addPlaceToTravelPlan(travelPlanId: string, placeId: string, dayNumber = 1, orderInDay = 1) {
     const supabase = createClient()
+    // travel_days에서 해당 day_number의 travel_day_id 찾기
+    const { data: day, error: dayError } = await supabase
+      .from("travel_days")
+      .select("id")
+      .eq("travel_plan_id", travelPlanId)
+      .eq("day_number", dayNumber)
+      .single()
+
+    if (dayError) {
+      // travel_day가 없으면 생성
+      const { data: newDay, error: createDayError } = await supabase
+        .from("travel_days")
+        .insert({
+          travel_plan_id: travelPlanId,
+          day_number: dayNumber,
+        })
+        .select()
+        .single()
+
+      if (createDayError) throw createDayError
+      
+      const { data, error } = await supabase
+        .from("travel_day_places")
+        .insert({
+          travel_day_id: newDay.id,
+          place_id: placeId,
+          order_index: orderInDay,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    }
+
+    // travel_day가 이미 존재하는 경우
     const { data, error } = await supabase
-      .from("travel_plan_places")
+      .from("travel_day_places")
       .insert({
-        travel_plan_id: travelPlanId,
+        travel_day_id: day.id,
         place_id: placeId,
-        day_number: dayNumber,
+        order_index: orderInDay,
         order_in_day: orderInDay,
       })
       .select()

@@ -19,6 +19,7 @@ import {
   Navigation,
   ChevronRight,
 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 import { getCoupleRecommendations } from "@/lib/services/recommendation-service"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
@@ -27,7 +28,9 @@ import type { Database } from "@/lib/types/database"
 
 const NaverMapView = dynamic(() => import("@/components/naver-map-view"), { ssr: false })
 
-type Place = Database["public"]["Tables"]["places"]["Row"]
+type Place = Database["public"]["Tables"]["places"]["Row"] & {
+  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
+}
 
 type DateCourse = {
   id: string
@@ -38,6 +41,8 @@ type DateCourse = {
   place_count: number
   places: Place[]
   duration: string // "당일 코스"
+  total_distance_km?: number | null
+  max_distance_km?: number | null
 }
 
 export default function DatePage() {
@@ -49,9 +54,37 @@ export default function DatePage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null)
 
-  // 주소에서 지역명 추출
-  const extractRegion = (address: string | undefined | null): string => {
-    if (!address) return "지역 정보 없음"
+  // area_code 또는 address에서 지역명 추출
+  const extractRegion = (place: Place): string => {
+    // area_code를 우선적으로 사용 (더 정확함)
+    if (place.area_code) {
+      const regionMap: Record<number, string> = {
+        1: "서울",
+        2: "인천",
+        3: "대전",
+        4: "대구",
+        5: "광주",
+        6: "부산",
+        7: "울산",
+        8: "세종",
+        31: "경기",
+        32: "강원",
+        33: "충북",
+        34: "충남",
+        35: "경북",
+        36: "경남",
+        37: "전북",
+        38: "전남",
+        39: "제주",
+      }
+      if (regionMap[place.area_code]) {
+        return regionMap[place.area_code]
+      }
+    }
+
+    // area_code가 없으면 address 파싱
+    const address = place.address
+    if (!address) return "기타"
 
     const match = address.match(
       /^(서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|세종특별자치시|경기도|강원특별자치도|충청북도|충청남도|전북특별자치도|전라북도|전라남도|경상북도|경상남도|제주특별자치도)/
@@ -59,7 +92,7 @@ export default function DatePage() {
     if (match) {
       const region = match[1]
       if (region.includes("서울")) return "서울"
-      if (region.includes("제주")) return "제주도"
+      if (region.includes("제주")) return "제주"
       if (region.includes("부산")) return "부산"
       if (region.includes("경주")) return "경주"
       if (region.includes("전주")) return "전주"
@@ -71,38 +104,52 @@ export default function DatePage() {
     }
 
     const firstWord = address.split(" ")[0]
-    return firstWord || "지역 정보 없음"
+    return firstWord || "기타"
   }
 
   // 데이트 코스를 지역별로 그룹화하고 당일 코스 생성 (최대 3-4개 장소)
+  // 각 지역에서 여러 개의 코스를 생성할 수 있도록 개선
   const groupDateCoursesByRegion = (places: Place[]): DateCourse[] => {
     const grouped: { [key: string]: Place[] } = {}
-    places.forEach((place) => {
-      const region = extractRegion(place.address)
+    places.forEach(place => {
+      const region = extractRegion(place)
       if (!grouped[region]) {
         grouped[region] = []
       }
       grouped[region].push(place)
     })
 
-    // 각 지역별로 당일 코스 생성 (2-4개 장소)
-    return Object.entries(grouped)
-      .filter(([, places]) => places.length >= 2) // 최소 2개 장소로 당일 코스 구성
-      .map(([region, places]) => {
-        // 당일 코스는 최대 4개 장소까지만 포함
-        const coursePlaces = places.slice(0, 4)
+    const courses: DateCourse[] = []
 
-        return {
-          id: `date-${region}`,
-          title: `${region} 데이트 코스`,
+    // 각 지역별로 여러 개의 당일 코스 생성
+    Object.entries(grouped).forEach(([region, regionPlaces]) => {
+      if (regionPlaces.length < 2) return // 최소 2개 장소 필요
+
+      // 코스당 3-4개 장소로 구성, 지역에 장소가 많으면 여러 코스 생성
+      const placesPerCourse = 4
+      const maxCoursesPerRegion = Math.min(10, Math.floor(regionPlaces.length / 2)) // 지역당 최대 10개 코스
+
+      for (let i = 0; i < maxCoursesPerRegion; i++) {
+        const startIdx = i * placesPerCourse
+        const endIdx = Math.min(startIdx + placesPerCourse, regionPlaces.length)
+        const coursePlaces = regionPlaces.slice(startIdx, endIdx)
+
+        if (coursePlaces.length < 2) break // 최소 2개 장소 필요
+
+        courses.push({
+          id: `date-${region}-${i + 1}`,
+          title: `${region} 데이트 코스 ${i + 1 > 1 ? `#${i + 1}` : ""}`.trim(),
           region,
           description: `${region}의 카페, 맛집, 전망대를 포함한 당일 데이트 코스입니다.`,
-          image_url: coursePlaces.find((p) => p.image_url)?.image_url || null,
+          image_url: coursePlaces.find(p => p.image_url)?.image_url || null,
           place_count: coursePlaces.length,
           places: coursePlaces,
           duration: "당일 코스",
-        }
-      })
+        })
+      }
+    })
+
+    return courses
   }
 
   useEffect(() => {
@@ -119,14 +166,86 @@ export default function DatePage() {
     setIsLoading(true)
     setError(null)
     try {
-      const datePlaces = await getCoupleRecommendations({
-        preferredTypes: ["CAFE", "FOOD", "VIEW"],
-        limit: 100,
-      })
+      // DB에서 데이트 코스 가져오기
+      const supabase = createClient()
 
-      const dateCourses = groupDateCoursesByRegion((datePlaces || []) as unknown as Place[])
-      setCourses(dateCourses)
-      setFilteredCourses(dateCourses)
+      const { data: dateCoursesData, error: coursesError } = await supabase
+        .from("date_courses")
+        .select("*")
+        .order("region", { ascending: true })
+        .order("created_at", { ascending: false })
+
+      if (coursesError) {
+        throw coursesError
+      }
+
+      if (!dateCoursesData || dateCoursesData.length === 0) {
+        // DB에 코스가 없으면 기존 방식 사용 (fallback)
+        console.warn("DB에 데이트 코스가 없습니다. Python 스크립트를 실행하여 코스를 생성하세요.")
+        const datePlaces = await getCoupleRecommendations({
+          preferredTypes: ["CAFE", "FOOD", "VIEW"],
+          limit: 1000,
+        })
+        const dateCourses = groupDateCoursesByRegion((datePlaces || []) as unknown as Place[])
+        setCourses(dateCourses)
+        setFilteredCourses(dateCourses)
+        return
+      }
+
+      // 각 코스의 장소 정보 가져오기
+      const coursesWithPlaces = await Promise.all(
+        dateCoursesData.map(async course => {
+          const { data: placesData, error: placesError } = await supabase
+            .from("date_course_places")
+            .select("place_id, order_index, distance_from_previous_km, visit_duration_minutes")
+            .eq("date_course_id", course.id)
+            .order("order_index", { ascending: true })
+
+          if (placesError) {
+            console.error("장소 정보 가져오기 실패:", placesError)
+            return null
+          }
+
+          // 장소 상세 정보 가져오기
+          const placeIds = placesData?.map(p => p.place_id) || []
+          const { data: places, error: placesDetailError } = await supabase
+            .from("places")
+            .select("*")
+            .in("id", placeIds)
+
+          if (placesDetailError || !places) {
+            console.error("장소 상세 정보 가져오기 실패:", placesDetailError)
+            return null
+          }
+
+          // order_index 순서로 정렬
+          const sortedPlaces =
+            placesData
+              ?.map(cp => {
+                const place = places.find(p => p.id === cp.place_id)
+                return place ? { ...place, order_index: cp.order_index } : null
+              })
+              .filter((p): p is Place & { order_index: number } => p !== null)
+              .sort((a, b) => a.order_index - b.order_index) || []
+
+          return {
+            id: course.id,
+            title: course.title,
+            region: course.region,
+            description: course.description || "",
+            image_url: course.image_url,
+            place_count: course.place_count,
+            places: sortedPlaces,
+            duration: course.duration,
+            total_distance_km: course.total_distance_km,
+            max_distance_km: course.max_distance_km,
+          } as DateCourse
+        })
+      )
+
+      const validCourses = coursesWithPlaces.filter((c): c is DateCourse => c !== null)
+      setCourses(validCourses)
+      setFilteredCourses(validCourses)
     } catch (error) {
       console.error("Failed to load courses:", error)
       setError(error instanceof Error ? error.message : "코스를 불러오는 중 오류가 발생했습니다.")
@@ -140,7 +259,7 @@ export default function DatePage() {
 
     if (searchQuery.trim()) {
       filtered = filtered.filter(
-        (course) =>
+        course =>
           course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           course.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
           course.description?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -161,14 +280,14 @@ export default function DatePage() {
 
   const getMapPlaces = () => {
     if (selectedCourse) {
-      return selectedCourse.places.map((p) => ({
+      return selectedCourse.places.map(p => ({
         id: p.id,
         name: p.name,
         lat: p.lat,
         lng: p.lng,
-        type: p.type,
-        rating: p.rating,
-        priceLevel: p.price_level,
+        type: p.type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC",
+        rating: p.rating ?? 0,
+        priceLevel: p.price_level ?? 0,
         description: p.description || "",
         image: p.image_url || "",
       }))
@@ -178,7 +297,7 @@ export default function DatePage() {
 
   const getMapPath = () => {
     if (selectedCourse) {
-      return selectedCourse.places.map((p) => ({ lat: p.lat, lng: p.lng }))
+      return selectedCourse.places.map(p => ({ lat: p.lat, lng: p.lng }))
     }
     return []
   }
@@ -203,7 +322,9 @@ export default function DatePage() {
           <Heart className="h-8 w-8 text-primary" />
           데이트 코스
         </h1>
-        <p className="text-muted-foreground">당일로 즐길 수 있는 데이트 코스를 탐색하고 계획해보세요</p>
+        <p className="text-muted-foreground">
+          당일로 즐길 수 있는 데이트 코스를 탐색하고 계획해보세요
+        </p>
       </div>
 
       {/* 검색 바 */}
@@ -213,7 +334,7 @@ export default function DatePage() {
           <Input
             placeholder="지역명으로 검색..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>
@@ -237,8 +358,8 @@ export default function DatePage() {
                   <NaverMapView
                     places={getMapPlaces()}
                     path={getMapPath()}
-                    onPlaceClick={(place) => {
-                      const foundPlace = selectedCourse.places.find((p) => p.id === place.id)
+                    onPlaceClick={place => {
+                      const foundPlace = selectedCourse.places.find(p => p.id === place.id)
                       if (foundPlace) {
                         handlePlaceClick(foundPlace)
                       }
@@ -276,7 +397,9 @@ export default function DatePage() {
                   <div className="text-center text-muted-foreground">
                     <Heart className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p className="text-lg font-medium">데이트 코스를 선택해주세요</p>
-                    <p className="text-sm mt-2">오른쪽 목록에서 코스를 선택하면 지도에 표시됩니다</p>
+                    <p className="text-sm mt-2">
+                      오른쪽 목록에서 코스를 선택하면 지도에 표시됩니다
+                    </p>
                   </div>
                 </div>
               )}
@@ -289,9 +412,7 @@ export default function DatePage() {
           <Card className="h-[calc(100vh-200px)] lg:h-[calc(100vh-150px)] overflow-hidden flex flex-col">
             <CardHeader className="border-b">
               <CardTitle className="text-lg">데이트 코스 목록</CardTitle>
-              <CardDescription>
-                {filteredCourses.length}개의 코스
-              </CardDescription>
+              <CardDescription>{filteredCourses.length}개의 코스</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-4">
               {isLoading ? (
@@ -309,7 +430,7 @@ export default function DatePage() {
               ) : (
                 <div className="space-y-3">
                   <AnimatePresence>
-                    {filteredCourses.map((course) => (
+                    {filteredCourses.map(course => (
                       <motion.div
                         key={course.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -319,9 +440,7 @@ export default function DatePage() {
                       >
                         <Card
                           className={`cursor-pointer transition-all hover:shadow-md ${
-                            selectedCourse?.id === course.id
-                              ? "ring-2 ring-primary shadow-md"
-                              : ""
+                            selectedCourse?.id === course.id ? "ring-2 ring-primary shadow-md" : ""
                           }`}
                           onClick={() => handleCourseSelect(course)}
                         >
@@ -358,7 +477,7 @@ export default function DatePage() {
                             </div>
                             {/* 장소 타입 아이콘 미리보기 */}
                             <div className="mt-2 flex items-center gap-1 flex-wrap">
-                              {course.places.slice(0, 3).map((place) => {
+                              {course.places.slice(0, 3).map(place => {
                                 const Icon = getTypeIcon(place.type)
                                 return (
                                   <Badge key={place.id} variant="outline" className="text-xs">
@@ -434,11 +553,11 @@ export default function DatePage() {
                   <Badge variant="outline">{selectedPlace.type}</Badge>
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm">{selectedPlace.rating.toFixed(1)}</span>
+                    <span className="text-sm">{(selectedPlace.rating ?? 0).toFixed(1)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-sm">💰</span>
-                    <span className="text-sm">{"💰".repeat(selectedPlace.price_level)}</span>
+                    <span className="text-sm">{"💰".repeat(selectedPlace.price_level ?? 0)}</span>
                   </div>
                 </div>
                 {selectedPlace.description && (
@@ -459,4 +578,3 @@ export default function DatePage() {
     </div>
   )
 }
-

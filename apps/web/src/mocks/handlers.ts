@@ -721,6 +721,10 @@ const budgetItems = Array.from({ length: 20 }, (_, i) => {
 })
 
 export const handlers = [
+  // 주의: places API는 실제 DB를 사용하도록 MSW에서 가로채지 않음
+  // 실제 DB의 places 데이터(42,000+ 개)를 사용하기 위해 주석 처리
+  // MSW 모킹이 필요할 경우 아래 주석을 해제하세요
+  /*
   // Supabase REST API - places 테이블 조회
   // 모든 Supabase 도메인에 대해 매칭
   http.get(
@@ -797,6 +801,7 @@ export const handlers = [
       })
     }
   ),
+  */
 
   // Supabase REST API - budget_items 테이블 조회
   http.get(

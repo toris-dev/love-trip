@@ -127,15 +127,26 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <ServiceWorkerScript />
         <MSWProvider>
-          <ThemeProvider>
+        <ThemeProvider>
             <LayoutWrapper>
-              <Suspense fallback={<div className="h-16" />}>
+              <Suspense
+                fallback={
+                  <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+                    <div className="container mx-auto px-4 py-4">
+                      <div className="flex items-center justify-between">
+                        <div className="h-8 w-32 bg-muted animate-pulse rounded" />
+                        <div className="h-8 w-24 bg-muted animate-pulse rounded" />
+                      </div>
+                    </div>
+                  </header>
+                }
+              >
                 <Header />
               </Suspense>
               {children}
             </LayoutWrapper>
-            <Toaster />
-          </ThemeProvider>
+          <Toaster />
+        </ThemeProvider>
         </MSWProvider>
       </body>
     </html>

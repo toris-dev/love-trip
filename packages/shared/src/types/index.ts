@@ -11,6 +11,8 @@ export type Place = {
   image: string
   image_url?: string
   address?: string
+  area_code?: number | null
+  sigungu_code?: number | null
 }
 
 export type TravelPlan = {

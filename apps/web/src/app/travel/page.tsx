@@ -20,6 +20,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { getCoupleRecommendations } from "@/lib/services/recommendation-service"
+import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import dynamic from "next/dynamic"
@@ -27,7 +28,9 @@ import type { Database } from "@/lib/types/database"
 
 const NaverMapView = dynamic(() => import("@/components/naver-map-view"), { ssr: false })
 
-type Place = Database["public"]["Tables"]["places"]["Row"]
+type Place = Database["public"]["Tables"]["places"]["Row"] & {
+  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
+}
 
 type TravelCourse = {
   id: string
@@ -49,9 +52,37 @@ export default function TravelPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null)
 
-  // 주소에서 지역명 추출
-  const extractRegion = (address: string | undefined | null): string => {
-    if (!address) return "지역 정보 없음"
+  // area_code 또는 address에서 지역명 추출
+  const extractRegion = (place: Place): string => {
+    // area_code를 우선적으로 사용 (더 정확함)
+    if (place.area_code) {
+      const regionMap: Record<number, string> = {
+        1: "서울",
+        2: "인천",
+        3: "대전",
+        4: "대구",
+        5: "광주",
+        6: "부산",
+        7: "울산",
+        8: "세종",
+        31: "경기",
+        32: "강원",
+        33: "충북",
+        34: "충남",
+        35: "경북",
+        36: "경남",
+        37: "전북",
+        38: "전남",
+        39: "제주",
+      }
+      if (regionMap[place.area_code]) {
+        return regionMap[place.area_code]
+      }
+    }
+
+    // area_code가 없으면 address 파싱
+    const address = place.address
+    if (!address) return "기타"
 
     const match = address.match(
       /^(서울특별시|부산광역시|대구광역시|인천광역시|광주광역시|대전광역시|울산광역시|세종특별자치시|경기도|강원특별자치도|충청북도|충청남도|전북특별자치도|전라북도|전라남도|경상북도|경상남도|제주특별자치도)/
@@ -59,7 +90,7 @@ export default function TravelPage() {
     if (match) {
       const region = match[1]
       if (region.includes("서울")) return "서울"
-      if (region.includes("제주")) return "제주도"
+      if (region.includes("제주")) return "제주"
       if (region.includes("부산")) return "부산"
       if (region.includes("경주")) return "경주"
       if (region.includes("전주")) return "전주"
@@ -71,14 +102,14 @@ export default function TravelPage() {
     }
 
     const firstWord = address.split(" ")[0]
-    return firstWord || "지역 정보 없음"
+    return firstWord || "기타"
   }
 
   // 여행 코스를 지역별로 그룹화하고 1박2일 이상 코스 생성
   const groupTravelCoursesByRegion = (places: Place[]): TravelCourse[] => {
     const grouped: { [key: string]: Place[] } = {}
     places.forEach(place => {
-      const region = extractRegion(place.address)
+      const region = extractRegion(place)
       if (!grouped[region]) {
         grouped[region] = []
       }
@@ -125,12 +156,72 @@ export default function TravelPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const travelPlaces = await getCoupleRecommendations({
-        preferredTypes: ["VIEW", "MUSEUM"],
-        limit: 100,
-      })
+      // DB의 travel_courses 테이블에서 직접 가져오기
+      const supabase = createClient()
+      const { data: coursesData, error: coursesError } = await supabase
+        .from("travel_courses")
+        .select(
+          `
+          *,
+          travel_course_places (
+            order_index,
+            day_number,
+            distance_from_previous_km,
+            visit_duration_minutes,
+            places (*)
+          )
+        `
+        )
+        .order("region")
 
-      const travelCourses = groupTravelCoursesByRegion((travelPlaces || []) as unknown as Place[])
+      if (coursesError) {
+        console.error("Failed to load travel courses:", coursesError)
+        // Fallback: 기존 방식 사용
+        const travelPlaces = await getCoupleRecommendations({
+          preferredTypes: ["VIEW", "MUSEUM"],
+          limit: 500,
+        })
+        const travelCourses = groupTravelCoursesByRegion((travelPlaces || []) as unknown as Place[])
+        setCourses(travelCourses)
+        setFilteredCourses(travelCourses)
+        return
+      }
+
+      // DB 데이터를 TravelCourse 형식으로 변환
+      type CourseWithPlaces = Database["public"]["Tables"]["travel_courses"]["Row"] & {
+        travel_course_places: Array<{
+          day_number: number
+          order_index: number
+          places: Place | null
+        }>
+      }
+
+      const travelCourses: TravelCourse[] = ((coursesData as CourseWithPlaces[]) || [])
+        .filter(course => course.place_count > 0) // 장소가 있는 코스만
+        .map(course => {
+          // travel_course_places를 day_number와 order_index 순으로 정렬
+          const sortedPlaces = (course.travel_course_places || [])
+            .sort((a, b) => {
+              if (a.day_number !== b.day_number) {
+                return a.day_number - b.day_number
+              }
+              return a.order_index - b.order_index
+            })
+            .map(tcp => tcp.places)
+            .filter((p): p is Place => p !== null)
+
+          return {
+            id: course.id,
+            title: course.title,
+            region: course.region,
+            description: course.description || undefined,
+            image_url: course.image_url,
+            place_count: course.place_count,
+            places: sortedPlaces,
+            duration: course.duration,
+          }
+        })
+
       setCourses(travelCourses)
       setFilteredCourses(travelCourses)
     } catch (error) {
@@ -172,9 +263,9 @@ export default function TravelPage() {
         name: p.name,
         lat: p.lat,
         lng: p.lng,
-        type: p.type,
-        rating: p.rating,
-        priceLevel: p.price_level,
+        type: p.type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC",
+        rating: p.rating ?? 0,
+        priceLevel: p.price_level ?? 0,
         description: p.description || "",
         image: p.image_url || "",
       }))
@@ -396,11 +487,11 @@ export default function TravelPage() {
                   <Badge variant="outline">{selectedPlace.type}</Badge>
                   <div className="flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm">{selectedPlace.rating.toFixed(1)}</span>
+                    <span className="text-sm">{(selectedPlace.rating ?? 0).toFixed(1)}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-sm">💰</span>
-                    <span className="text-sm">{"💰".repeat(selectedPlace.price_level)}</span>
+                    <span className="text-sm">{"💰".repeat(selectedPlace.price_level ?? 0)}</span>
                   </div>
                 </div>
                 {selectedPlace.description && (

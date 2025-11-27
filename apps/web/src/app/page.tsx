@@ -37,7 +37,9 @@ import { Footer } from "@/components/footer"
 import { PointsStats } from "@/components/gamification"
 import type { Database } from "@/lib/types/database"
 
-type Place = Database["public"]["Tables"]["places"]["Row"]
+type Place = Database["public"]["Tables"]["places"]["Row"] & {
+  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
+}
 
 type TravelPlan = {
   id: string
@@ -361,8 +363,8 @@ export default function LoveTripHome() {
       lat: place.lat,
       lng: place.lng,
       type: place.type,
-      rating: place.rating,
-      price_level: place.priceLevel,
+      rating: place.rating ?? 0,
+      price_level: place.priceLevel ?? 0,
       description: place.description,
       image_url: place.image,
       address: null,
@@ -642,8 +644,8 @@ export default function LoveTripHome() {
                         lat: p.lat,
                         lng: p.lng,
                         type: p.type,
-                        rating: p.rating,
-                        priceLevel: p.price_level,
+                        rating: p.rating ?? 0,
+                        priceLevel: p.price_level ?? 0,
                         description: p.description || '',
                         image: p.image_url || '',
                       }))}
@@ -722,7 +724,7 @@ export default function LoveTripHome() {
                           <p className="text-sm text-muted-foreground">{selectedPlace.description}</p>
                           <div className="flex items-center mt-1">
                             <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                            <span className="text-sm ml-1">{selectedPlace.rating}</span>
+                            <span className="text-sm ml-1">{selectedPlace.rating ?? 0}</span>
                           </div>
                           {selectedPlace.address && (
                             <p className="text-xs text-muted-foreground mt-1">{selectedPlace.address}</p>
@@ -764,7 +766,7 @@ export default function LoveTripHome() {
                           )}
                           <div className="flex items-center mt-1">
                             <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                            <span className="text-sm ml-1">{place.rating}</span>
+                            <span className="text-sm ml-1">{place.rating ?? 0}</span>
                           </div>
                           {place.address && <p className="text-xs text-muted-foreground mt-1">{place.address}</p>}
                         </div>

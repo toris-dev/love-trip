@@ -168,9 +168,28 @@ NEXT_PUBLIC_NAVER_MAP_CLIENT_ID=your_naver_map_client_id
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
 VAPID_PRIVATE_KEY=your_vapid_private_key
 VAPID_SUBJECT=mailto:your-email@example.com
+
+# MSW (Mock Service Worker) 설정 (개발 환경용, 선택사항)
+# 개발 환경에서 MSW 모킹 활성화 여부
+# true: MSW 활성화 (모킹 데이터 사용)
+# false: MSW 비활성화 (실제 API 사용)
+# 설정하지 않으면 MSW 비활성화 (기본값)
+NEXT_PUBLIC_ENABLE_MSW=true
 ```
 
 > ⚠️ **중요**: `.env.local` 파일은 Git에 커밋하지 마세요. 실제 값으로 채워야 앱이 정상 작동합니다.
+
+#### MSW (Mock Service Worker) 설정
+
+개발 환경에서 API 모킹을 사용하려면 `NEXT_PUBLIC_ENABLE_MSW` 환경 변수를 설정하세요:
+
+- **`NEXT_PUBLIC_ENABLE_MSW=true`**: MSW 활성화 (모킹 데이터 사용)
+- **`NEXT_PUBLIC_ENABLE_MSW=false`**: MSW 비활성화 (실제 Supabase API 사용)
+- **설정하지 않음**: MSW 비활성화 (기본값)
+
+MSW가 활성화되면 `src/mocks/handlers.ts`에 정의된 모킹 데이터가 사용됩니다. 브라우저 콘솔에서 `[MSW] Mock Service Worker가 활성화되었습니다.` 메시지를 확인할 수 있습니다.
+
+> ⚠️ **참고**: 환경 변수 변경 후에는 개발 서버를 재시작해야 합니다.
 
 #### Supabase 커스텀 SMTP 설정 (선택사항)
 

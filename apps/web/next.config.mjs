@@ -26,6 +26,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // 환경 변수를 명시적으로 전달
+  env: {
+    NEXT_PUBLIC_ENABLE_MSW: process.env.NEXT_PUBLIC_ENABLE_MSW,
+  },
   async headers() {
     return [
       {

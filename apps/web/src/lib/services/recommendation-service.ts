@@ -37,25 +37,67 @@ export async function getCoupleRecommendations(
   } = options
 
   try {
-    let query = supabase.from("places").select("*")
+    // 지역 필터가 없으면 각 지역에서 별도로 쿼리 실행하여 균등하게 분배
+    if (!preferredArea) {
+      // 주요 지역 코드 목록
+      const areaCodes = [1, 2, 3, 4, 5, 6, 7, 8, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+      // 각 지역에서 충분한 데이터를 가져오기 위해 최소 50개씩 확보
+      const placesPerRegion = Math.max(50, Math.ceil(limit / areaCodes.length))
+      const allPlaces: Place[] = []
 
-    // 지역 필터
-    if (preferredArea) {
-      query = query.eq("area_code", preferredArea)
+      // 각 지역에서 병렬로 데이터 가져오기
+      const promises = areaCodes.map(async areaCode => {
+        let query = supabase.from("places").select("*").eq("area_code", areaCode)
+
+        // 타입 필터
+        if (preferredTypes.length > 0) {
+          query = query.in("type", preferredTypes)
+        } else {
+          query = query.in("type", ["VIEW", "MUSEUM", "CAFE", "FOOD"])
+        }
+
+        query = query.order("rating", { ascending: false }).limit(placesPerRegion)
+
+        const { data, error } = await query
+
+        if (error) {
+          console.error(`Error fetching places for area_code ${areaCode}:`, error)
+          return []
+        }
+
+        return (data || []) as Place[]
+      })
+
+      const results = await Promise.all(promises)
+      const data = results.flat()
+
+      // 즐겨찾기 장소가 있으면 우선순위 조정
+      const allFavorites = [...user1Favorites, ...user2Favorites]
+      let result = data
+
+      if (allFavorites.length > 0) {
+        const favoritePlaces = result.filter(p => allFavorites.includes(p.id))
+        const otherPlaces = result.filter(p => !allFavorites.includes(p.id))
+        result = [...favoritePlaces, ...otherPlaces]
+      }
+
+      return result.slice(0, limit)
     }
+
+    // 지역 필터가 있으면 기존 방식 사용
+    let query = supabase.from("places").select("*").eq("area_code", preferredArea)
 
     // 타입 필터
     if (preferredTypes.length > 0) {
       query = query.in("type", preferredTypes)
     }
 
-    // 평점이 있는 장소 우선 (Tour API 데이터는 rating이 0일 수 있음)
-    query = query.order("rating", { ascending: false })
-
     // 기본적으로 관광지와 문화시설 우선 (커플 데이트에 적합)
     if (preferredTypes.length === 0) {
       query = query.in("type", ["VIEW", "MUSEUM", "CAFE", "FOOD"])
     }
+
+    query = query.order("rating", { ascending: false })
 
     const { data, error } = await query.limit(limit)
 
@@ -70,13 +112,15 @@ export async function getCoupleRecommendations(
 
     // 즐겨찾기 장소가 있으면 우선순위 조정
     const allFavorites = [...user1Favorites, ...user2Favorites]
+    let result = data as Place[]
+
     if (allFavorites.length > 0) {
-      const favoritePlaces = data.filter((p) => allFavorites.includes(p.id))
-      const otherPlaces = data.filter((p) => !allFavorites.includes(p.id))
-      return [...favoritePlaces, ...otherPlaces].slice(0, limit)
+      const favoritePlaces = result.filter(p => allFavorites.includes(p.id))
+      const otherPlaces = result.filter(p => !allFavorites.includes(p.id))
+      result = [...favoritePlaces, ...otherPlaces]
     }
 
-    return data as Place[]
+    return result.slice(0, limit)
   } catch (error) {
     console.error("Failed to get couple recommendations:", error)
     return []
@@ -141,14 +185,10 @@ export async function getThemeRecommendations(
     // 테마별 필터링
     switch (theme) {
       case "로맨틱":
-        query = query
-          .in("type", ["VIEW", "MUSEUM"])
-          .in("tour_content_type_id", [12, 14]) // 관광지, 문화시설
+        query = query.in("type", ["VIEW", "MUSEUM"]).in("tour_content_type_id", [12, 14]) // 관광지, 문화시설
         break
       case "힐링":
-        query = query
-          .in("type", ["VIEW"])
-          .eq("tour_content_type_id", 12) // 관광지
+        query = query.in("type", ["VIEW"]).eq("tour_content_type_id", 12) // 관광지
         break
       case "액티브":
         query = query.eq("tour_content_type_id", 28) // 레포츠
@@ -186,7 +226,10 @@ export async function getThemeRecommendations(
 /**
  * 사용자 즐겨찾기 기반 추천
  */
-export async function getFavoriteBasedRecommendations(userId: string, limit: number = 20): Promise<Place[]> {
+export async function getFavoriteBasedRecommendations(
+  userId: string,
+  limit: number = 20
+): Promise<Place[]> {
   const supabase = createClient()
 
   try {
@@ -206,7 +249,7 @@ export async function getFavoriteBasedRecommendations(userId: string, limit: num
       return []
     }
 
-    const favoritePlaceIds = favorites.map((f) => f.place_id)
+    const favoritePlaceIds = favorites.map(f => f.place_id)
 
     // 즐겨찾기 장소들의 타입과 지역 분석
     const { data: favoritePlaces } = await supabase
@@ -219,17 +262,23 @@ export async function getFavoriteBasedRecommendations(userId: string, limit: num
     }
 
     // 가장 많이 선택된 타입과 지역 찾기
-    const typeCounts = favoritePlaces.reduce((acc, p) => {
-      acc[p.type] = (acc[p.type] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    const typeCounts = favoritePlaces.reduce(
+      (acc, p) => {
+        acc[p.type] = (acc[p.type] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>
+    )
 
-    const areaCounts = favoritePlaces.reduce((acc, p) => {
-      if (p.area_code) {
-        acc[p.area_code] = (acc[p.area_code] || 0) + 1
-      }
-      return acc
-    }, {} as Record<number, number>)
+    const areaCounts = favoritePlaces.reduce(
+      (acc, p) => {
+        if (p.area_code) {
+          acc[p.area_code] = (acc[p.area_code] || 0) + 1
+        }
+        return acc
+      },
+      {} as Record<number, number>
+    )
 
     const preferredType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
     const preferredArea = Object.entries(areaCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
@@ -261,4 +310,3 @@ export async function getFavoriteBasedRecommendations(userId: string, limit: num
     return []
   }
 }
-
