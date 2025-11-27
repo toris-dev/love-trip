@@ -18,7 +18,7 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@love-trip/shared"],
+  transpilePackages: ["@love-trip/shared", "@lovetrip/ui"],
   typescript: {
     // node_modules의 타입 에러는 무시 (skipLibCheck가 작동하지 않는 경우)
     ignoreBuildErrors: true,
