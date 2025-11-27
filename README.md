@@ -133,9 +133,11 @@ pnpm install
 이 프로젝트는 **루트 프로젝트의 `.env.local` 파일을 공유**하도록 설정되어 있습니다.
 
 **방법 1: 루트에 `.env.local` 생성 (권장)**
+
 - 루트 디렉토리(`/love-trip/.env.local`)에 환경 변수를 설정하면 `apps/web`에서 자동으로 로드됩니다.
 
 **방법 2: 각 패키지에 개별 설정**
+
 - `apps/web/.env.local`에 설정하면 해당 앱에서만 사용됩니다.
 - 루트의 `.env.local`이 있으면 우선적으로 로드됩니다.
 
@@ -160,9 +162,26 @@ NEXTAUTH_SECRET=your_nextauth_secret_key
 # 네이버 클라우드 플랫폼에서 발급
 # https://www.ncloud.com/product/applicationService/maps
 NEXT_PUBLIC_NAVER_MAP_CLIENT_ID=your_naver_map_client_id
+
+# VAPID 키 (푸시 알림용, 선택사항)
+# scripts/generate-vapid-keys.js 실행하여 생성
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public_key
+VAPID_PRIVATE_KEY=your_vapid_private_key
+VAPID_SUBJECT=mailto:your-email@example.com
 ```
 
 > ⚠️ **중요**: `.env.local` 파일은 Git에 커밋하지 마세요. 실제 값으로 채워야 앱이 정상 작동합니다.
+
+#### Supabase 커스텀 SMTP 설정 (선택사항)
+
+이메일 인증을 위해 커스텀 SMTP를 설정할 수 있습니다. 자세한 설정 방법은 [SMTP 설정 가이드](./docs/SMTP_SETUP.md)를 참조하세요.
+
+**빠른 설정:**
+
+1. Supabase Dashboard → Settings → Auth → SMTP Settings
+2. Enable Custom SMTP 활성화
+3. SMTP 정보 입력 (SendGrid, Mailgun, Amazon SES 등)
+4. 이메일 템플릿 커스터마이징 (선택사항)
 
 #### 크롤러 환경 변수
 

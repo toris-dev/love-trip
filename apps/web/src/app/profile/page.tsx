@@ -2,7 +2,24 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { User, Mail, Calendar, Heart, Settings, LogOut, Camera, Edit2, Save, X, MapPin, Trophy, Star, Wallet } from "lucide-react"
+import {
+  User,
+  Mail,
+  Calendar,
+  Heart,
+  Settings,
+  LogOut,
+  Camera,
+  Edit2,
+  Save,
+  X,
+  MapPin,
+  Trophy,
+  Star,
+  Wallet,
+  Key,
+  Shield,
+} from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +36,8 @@ import { toast } from "sonner"
 export default function ProfilePage() {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
+  const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const [showEmailChange, setShowEmailChange] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [profile, setProfile] = useState({
@@ -28,6 +47,15 @@ export default function ProfilePage() {
     bio: "커플 여행을 좋아하는 여행러입니다. 새로운 곳을 탐험하는 것을 즐깁니다.",
     joinDate: "2024-01-01",
     avatar: "",
+  })
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  })
+  const [emailData, setEmailData] = useState({
+    newEmail: "",
+    password: "",
   })
 
   const stats = [
@@ -147,19 +175,17 @@ export default function ProfilePage() {
 
     try {
       // 프로필 업데이트
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({
-          id: user.id,
-          display_name: profile.name,
-          nickname: profile.nickname,
-          avatar_url: profile.avatar || null,
-        })
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        display_name: profile.name,
+        nickname: profile.nickname,
+        avatar_url: profile.avatar || null,
+      })
 
       if (error) throw error
 
       toast.success("프로필이 저장되었습니다")
-    setIsEditing(false)
+      setIsEditing(false)
     } catch (error) {
       console.error("Error saving profile:", error)
       toast.error(error instanceof Error ? error.message : "프로필 저장에 실패했습니다")
@@ -168,7 +194,164 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     setIsEditing(false)
+    setShowPasswordChange(false)
+    setShowEmailChange(false)
     // 변경사항 취소
+  }
+
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false)
+  const [isEmailLoading, setIsEmailLoading] = useState(false)
+
+  const handlePasswordChange = async () => {
+    if (!passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error("모든 필드를 입력해주세요")
+      return
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("새 비밀번호가 일치하지 않습니다")
+      return
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error("비밀번호는 최소 6자 이상이어야 합니다")
+      return
+    }
+
+    setIsPasswordLoading(true)
+    try {
+      const supabase = createClient()
+
+      // 현재 비밀번호 확인
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: passwordData.currentPassword,
+      })
+
+      if (signInError) {
+        toast.error("현재 비밀번호가 올바르지 않습니다")
+        setIsPasswordLoading(false)
+        return
+      }
+
+      // 비밀번호 변경
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordData.newPassword,
+      })
+
+      if (updateError) {
+        toast.error(updateError.message)
+        setIsPasswordLoading(false)
+        return
+      }
+
+      // 비밀번호 변경 알림 전송
+      try {
+        await fetch("/api/auth/notify-password-change", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+      } catch (error) {
+        console.error("Failed to send password change notification:", error)
+      }
+
+      toast.success("비밀번호가 변경되었습니다. 이메일로 알림이 전송되었습니다.")
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      })
+      setShowPasswordChange(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "비밀번호 변경에 실패했습니다")
+    } finally {
+      setIsPasswordLoading(false)
+    }
+  }
+
+  const handleEmailChange = async () => {
+    if (!emailData.newEmail || !emailData.password) {
+      toast.error("모든 필드를 입력해주세요")
+      return
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(emailData.newEmail)) {
+      toast.error("올바른 이메일 형식을 입력해주세요")
+      return
+    }
+
+    if (emailData.newEmail === profile.email) {
+      toast.error("새 이메일 주소가 현재 이메일과 동일합니다")
+      return
+    }
+
+    setIsEmailLoading(true)
+    try {
+      const supabase = createClient()
+
+      // 현재 비밀번호 확인
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: emailData.password,
+      })
+
+      if (signInError) {
+        toast.error("비밀번호가 올바르지 않습니다")
+        setIsEmailLoading(false)
+        return
+      }
+
+      // 이메일 변경 (이메일 확인 필요)
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: emailData.newEmail,
+      })
+
+      if (updateError) {
+        toast.error(updateError.message)
+        setIsEmailLoading(false)
+        return
+      }
+
+      // 이메일 변경 알림 전송
+      try {
+        await fetch("/api/auth/notify-email-change", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            newEmail: emailData.newEmail,
+            oldEmail: profile.email,
+          }),
+        })
+      } catch (error) {
+        console.error("Failed to send email change notification:", error)
+      }
+
+      toast.success(
+        "이메일 변경 요청이 완료되었습니다. 새 이메일 주소로 확인 메일이 전송되었습니다."
+      )
+      setEmailData({
+        newEmail: "",
+        password: "",
+      })
+      setShowEmailChange(false)
+
+      // 사용자 정보 새로고침
+      const {
+        data: { user: updatedUser },
+      } = await supabase.auth.getUser()
+      if (updatedUser) {
+        setProfile(prev => ({
+          ...prev,
+          email: updatedUser.email || prev.email,
+        }))
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "이메일 변경에 실패했습니다")
+    } finally {
+      setIsEmailLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -187,7 +370,7 @@ export default function ProfilePage() {
           .eq("id", user.id)
           .single()
 
-        setProfile((prev) => ({
+        setProfile(prev => ({
           ...prev,
           name: profileData?.display_name || user.user_metadata?.full_name || prev.name,
           email: user.email || prev.email,
@@ -287,22 +470,28 @@ export default function ProfilePage() {
                           <Input
                             id="name"
                             value={profile.name}
-                            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                            onChange={e => setProfile({ ...profile, name: e.target.value })}
                           />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="nickname">
-                            닉네임 <span className="text-xs text-muted-foreground">(커플 연결용 고유 닉네임)</span>
+                            닉네임{" "}
+                            <span className="text-xs text-muted-foreground">
+                              (커플 연결용 고유 닉네임)
+                            </span>
                           </Label>
                           <div className="flex gap-2 items-center">
-                          <Input
-                            id="nickname"
-                            value={profile.nickname}
-                            onChange={(e) => setProfile({ ...profile, nickname: e.target.value })}
+                            <Input
+                              id="nickname"
+                              value={profile.nickname}
+                              onChange={e => setProfile({ ...profile, nickname: e.target.value })}
                               placeholder="고유한 닉네임을 입력하세요"
-                          />
+                            />
                             {profile.nickname && (
-                              <Badge variant="outline" className="flex items-center whitespace-nowrap">
+                              <Badge
+                                variant="outline"
+                                className="flex items-center whitespace-nowrap"
+                              >
                                 @{profile.nickname}
                               </Badge>
                             )}
@@ -318,7 +507,7 @@ export default function ProfilePage() {
                           <Input
                             id="bio"
                             value={profile.bio}
-                            onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                            onChange={e => setProfile({ ...profile, bio: e.target.value })}
                           />
                         </div>
                       </>
@@ -381,7 +570,10 @@ export default function ProfilePage() {
             {/* Stats */}
             <div className="grid md:grid-cols-3 gap-4 mb-8">
               {stats.map((stat, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow border-2 hover:border-primary/50">
+                <Card
+                  key={index}
+                  className="hover:shadow-lg transition-shadow border-2 hover:border-primary/50"
+                >
                   <CardContent className="pt-6 text-center">
                     <div className="inline-flex items-center justify-center mb-4">
                       <div className="p-3 rounded-full bg-primary/10">
@@ -408,9 +600,13 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer">
                   <div>
                     <h4 className="font-semibold">알림 설정</h4>
-                    <p className="text-sm text-muted-foreground">여행 일정 알림을 받을 수 있습니다</p>
+                    <p className="text-sm text-muted-foreground">
+                      여행 일정 알림을 받을 수 있습니다
+                    </p>
                   </div>
-                  <Button variant="outline" size="sm">설정</Button>
+                  <Button variant="outline" size="sm">
+                    설정
+                  </Button>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer">
@@ -418,8 +614,168 @@ export default function ProfilePage() {
                     <h4 className="font-semibold">프라이버시</h4>
                     <p className="text-sm text-muted-foreground">프로필 공개 범위를 설정하세요</p>
                   </div>
-                  <Button variant="outline" size="sm">설정</Button>
+                  <Button variant="outline" size="sm">
+                    설정
+                  </Button>
                 </div>
+                <Separator />
+                <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors">
+                  <div>
+                    <h4 className="font-semibold">비밀번호 변경</h4>
+                    <p className="text-sm text-muted-foreground">
+                      계정 보안을 위해 비밀번호를 변경하세요
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowPasswordChange(!showPasswordChange)
+                      setShowEmailChange(false)
+                    }}
+                  >
+                    <Key className="h-4 w-4 mr-2" />
+                    변경
+                  </Button>
+                </div>
+                {showPasswordChange && (
+                  <Card className="mt-4 border-2">
+                    <CardHeader>
+                      <CardTitle className="text-lg">비밀번호 변경</CardTitle>
+                      <CardDescription>새 비밀번호를 입력해주세요</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="currentPassword">현재 비밀번호</Label>
+                        <Input
+                          id="currentPassword"
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={e =>
+                            setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                          }
+                          placeholder="현재 비밀번호를 입력하세요"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="newPassword">새 비밀번호</Label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={e =>
+                            setPasswordData({ ...passwordData, newPassword: e.target.value })
+                          }
+                          placeholder="새 비밀번호를 입력하세요 (최소 6자)"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={e =>
+                            setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                          }
+                          placeholder="새 비밀번호를 다시 입력하세요"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowPasswordChange(false)
+                            setPasswordData({
+                              currentPassword: "",
+                              newPassword: "",
+                              confirmPassword: "",
+                            })
+                          }}
+                        >
+                          취소
+                        </Button>
+                        <Button onClick={handlePasswordChange} disabled={isPasswordLoading}>
+                          {isPasswordLoading ? "변경 중..." : "비밀번호 변경"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                <Separator />
+                <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors">
+                  <div>
+                    <h4 className="font-semibold">이메일 주소 변경</h4>
+                    <p className="text-sm text-muted-foreground">계정 이메일 주소를 변경하세요</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowEmailChange(!showEmailChange)
+                      setShowPasswordChange(false)
+                    }}
+                  >
+                    <Mail className="h-4 w-4 mr-2" />
+                    변경
+                  </Button>
+                </div>
+                {showEmailChange && (
+                  <Card className="mt-4 border-2">
+                    <CardHeader>
+                      <CardTitle className="text-lg">이메일 주소 변경</CardTitle>
+                      <CardDescription>
+                        새 이메일 주소로 변경하면 확인 메일이 전송됩니다
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="currentEmail">현재 이메일</Label>
+                        <Input id="currentEmail" value={profile.email} disabled />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="newEmail">새 이메일 주소</Label>
+                        <Input
+                          id="newEmail"
+                          type="email"
+                          value={emailData.newEmail}
+                          onChange={e => setEmailData({ ...emailData, newEmail: e.target.value })}
+                          placeholder="새 이메일 주소를 입력하세요"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="emailPassword">비밀번호 확인</Label>
+                        <Input
+                          id="emailPassword"
+                          type="password"
+                          value={emailData.password}
+                          onChange={e => setEmailData({ ...emailData, password: e.target.value })}
+                          placeholder="비밀번호를 입력하세요"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          보안을 위해 비밀번호를 입력해주세요
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowEmailChange(false)
+                            setEmailData({
+                              newEmail: "",
+                              password: "",
+                            })
+                          }}
+                        >
+                          취소
+                        </Button>
+                        <Button onClick={handleEmailChange} disabled={isEmailLoading}>
+                          {isEmailLoading ? "변경 중..." : "이메일 변경"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
                 <Separator />
                 <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors">
                   <div>
@@ -435,7 +791,9 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors">
                   <div>
                     <h4 className="font-semibold">계정 삭제</h4>
-                    <p className="text-sm text-muted-foreground">계정과 모든 데이터를 영구적으로 삭제합니다</p>
+                    <p className="text-sm text-muted-foreground">
+                      계정과 모든 데이터를 영구적으로 삭제합니다
+                    </p>
                   </div>
                   <Button variant="destructive" size="sm">
                     삭제
@@ -451,4 +809,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-
