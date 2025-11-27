@@ -81,7 +81,7 @@ export const travelService = {
         return (FALLBACK_PLACES as unknown as Place[]).filter(
           (place) =>
             place.name.toLowerCase().includes(query.toLowerCase()) ||
-            place.description.toLowerCase().includes(query.toLowerCase()) ||
+            (place.description && place.description.toLowerCase().includes(query.toLowerCase())) ||
             (place.address && place.address.toLowerCase().includes(query.toLowerCase())),
         )
       }
@@ -91,9 +91,9 @@ export const travelService = {
       return (FALLBACK_PLACES as unknown as Place[]).filter(
         (place) =>
           place.name.toLowerCase().includes(query.toLowerCase()) ||
-          place.description.toLowerCase().includes(query.toLowerCase()) ||
+          (place.description && place.description.toLowerCase().includes(query.toLowerCase())) ||
             (place.address && place.address.toLowerCase().includes(query.toLowerCase())),
-        )
+      )
     }
   },
 

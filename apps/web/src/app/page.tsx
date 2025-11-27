@@ -11,7 +11,6 @@ import {
   Calendar,
   MapPin,
   Heart,
-  Users,
   Wallet,
   Star,
   Clock,
@@ -34,19 +33,9 @@ import {
 import { PushNotificationSettings } from "@/components/push-notification-settings"
 import { Footer } from "@/components/footer"
 import { PointsStats } from "@/components/gamification"
-import { useRouter } from "next/navigation"
+import type { Database } from "@/lib/types/database"
 
-type Place = {
-  id: string
-  name: string
-  lat: number
-  lng: number
-  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
-  rating: number
-  priceLevel: number
-  description: string
-  image: string
-}
+type Place = Database["public"]["Tables"]["places"]["Row"]
 
 type TravelPlan = {
   id: string
@@ -79,20 +68,19 @@ type DetailedTravelPlan = TravelPlan & {
 }
 
 export default function LoveTripHome() {
-  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedPlan, setSelectedPlan] = useState<DetailedTravelPlan | null>(null)
   const [activeTab, setActiveTab] = useState<string | undefined>(undefined)
   const [isMounted, setIsMounted] = useState(false)
-  const [selectedPlace, setSelectedPlace] = useState<any | null>(null)
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [selectedThemes, setSelectedThemes] = useState<string[]>([])
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false)
-  const [realPlaces, setRealPlaces] = useState<any[]>([])
-  const [user, setUser] = useState<any>(null)
+  const [realPlaces, setRealPlaces] = useState<Place[]>([])
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
 
   // 게이미피케이션 데이터
-  const [gamificationData, setGamificationData] = useState({
+  const [gamificationData] = useState({
     level: 5,
     currentXP: 2450,
     xpToNextLevel: 3000,
@@ -111,9 +99,14 @@ export default function LoveTripHome() {
       lng: 126.9882,
       type: "VIEW",
       rating: 4.5,
-      priceLevel: 2,
+      price_level: 2,
       description: "서울의 랜드마크, 로맨틱한 야경 명소",
-      image: "/seoul-tower-romantic-night-view.png",
+      image_url: "/seoul-tower-romantic-night-view.png",
+      address: "서울특별시 용산구 남산공원길 105",
+      phone: null,
+      website: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
     {
       id: "2",
@@ -122,9 +115,14 @@ export default function LoveTripHome() {
       lng: 126.9236,
       type: "CAFE",
       rating: 4.3,
-      priceLevel: 1,
+      price_level: 1,
       description: "트렌디한 카페들이 모인 데이트 코스",
-      image: "/hongdae-cafe-street-couples.png",
+      image_url: "/hongdae-cafe-street-couples.png",
+      address: "서울특별시 마포구 홍익로",
+      phone: null,
+      website: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
     {
       id: "3",
@@ -133,9 +131,14 @@ export default function LoveTripHome() {
       lng: 126.9619,
       type: "VIEW",
       rating: 4.4,
-      priceLevel: 0,
+      price_level: 0,
       description: "피크닉과 산책을 즐길 수 있는 힐링 공간",
-      image: "/han-river-park-picnic-couples.png",
+      image_url: "/han-river-park-picnic-couples.png",
+      address: "서울특별시 영등포구 여의도동",
+      phone: null,
+      website: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     },
   ]
 
@@ -158,7 +161,6 @@ export default function LoveTripHome() {
     planned: 0,
   })
 
-  const [selectedBudgetCategory, setSelectedBudgetCategory] = useState<string>("전체")
 
   const detailedPlans: DetailedTravelPlan[] = [
     {
@@ -301,6 +303,7 @@ export default function LoveTripHome() {
     }
 
     loadUserAndData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleSearch = async () => {
@@ -320,7 +323,7 @@ export default function LoveTripHome() {
       const filtered = samplePlaces.filter(
         (place) =>
           place.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          place.description.toLowerCase().includes(searchQuery.toLowerCase()),
+          (place.description && place.description.toLowerCase().includes(searchQuery.toLowerCase())),
       )
       setRealPlaces(filtered)
     } finally {
@@ -335,9 +338,26 @@ export default function LoveTripHome() {
     setActiveTab("map")
   }
 
-  const handlePlaceClick = (place: any) => {
+  const handlePlaceClick = (place: { id: string; name: string; lat: number; lng: number; type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"; rating: number; priceLevel: number; description: string; image: string }) => {
     console.log("[v0] LoveTripHome: Place clicked from map:", place.name)
-    setSelectedPlace(place)
+    // NaverMapView의 Place 타입을 Database Place 타입으로 변환
+    const dbPlace: Place = {
+      id: place.id,
+      name: place.name,
+      lat: place.lat,
+      lng: place.lng,
+      type: place.type,
+      rating: place.rating,
+      price_level: place.priceLevel,
+      description: place.description,
+      image_url: place.image,
+      address: null,
+      phone: null,
+      website: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    setSelectedPlace(dbPlace)
   }
 
   const handleThemeToggle = async (theme: string) => {
@@ -350,13 +370,13 @@ export default function LoveTripHome() {
     if (newThemes.length > 0 && user) {
       try {
         const recommendations = await Promise.all(
-          newThemes.map((t) => getThemeRecommendations(t as any, 5))
+          newThemes.map((t) => getThemeRecommendations(t as "로맨틱" | "힐링" | "액티브" | "기념일" | "야경" | "카페투어", 5))
         )
         const allRecommendations = recommendations.flat()
         // 중복 제거
         const uniqueRecommendations = Array.from(
           new Map(allRecommendations.map((p) => [p.id, p])).values()
-        )
+        ) as unknown as Place[]
         setRealPlaces(uniqueRecommendations)
       } catch (error) {
         console.error("Failed to load theme recommendations:", error)
@@ -532,7 +552,7 @@ export default function LoveTripHome() {
                         preferredTypes: ["VIEW", "MUSEUM", "CAFE", "FOOD"],
                         limit: 20,
                       })
-                      setRealPlaces(recommendations)
+                      setRealPlaces(recommendations as unknown as Place[])
                       setActiveTab("recommendations")
                     } catch (error) {
                       console.error("Failed to load recommendations:", error)
@@ -602,7 +622,17 @@ export default function LoveTripHome() {
                 <Card>
                   <CardContent className="p-0">
                     <NaverMapView
-                      places={selectedPlan?.places || displayPlaces}
+                      places={(selectedPlan?.places || displayPlaces).map(p => ({
+                        id: p.id,
+                        name: p.name,
+                        lat: p.lat,
+                        lng: p.lng,
+                        type: p.type,
+                        rating: p.rating,
+                        priceLevel: p.price_level,
+                        description: p.description || '',
+                        image: p.image_url || '',
+                      }))}
                       path={selectedPlan?.path || samplePath}
                       onPlaceClick={handlePlaceClick}
                     />
@@ -669,7 +699,7 @@ export default function LoveTripHome() {
                     <CardContent>
                       <div className="flex items-start space-x-3">
                         <img
-                          src={selectedPlace.image_url || selectedPlace.image || "/placeholder.svg"}
+                          src={selectedPlace.image_url || "/placeholder.svg"}
                           alt={selectedPlace.name}
                           className="w-16 h-16 rounded-lg object-cover"
                         />
@@ -709,13 +739,15 @@ export default function LoveTripHome() {
                           {index + 1}
                         </div>
                         <img
-                          src={place.image_url || place.image || "/placeholder.svg"}
+                          src={place.image_url || "/placeholder.svg"}
                           alt={place.name}
                           className="w-16 h-16 rounded-lg object-cover"
                         />
                         <div className="flex-1">
                           <h4 className="font-semibold">{place.name}</h4>
-                          <p className="text-sm text-muted-foreground">{place.description}</p>
+                          {place.description && (
+                            <p className="text-sm text-muted-foreground">{place.description}</p>
+                          )}
                           <div className="flex items-center mt-1">
                             <Star className="h-4 w-4 text-yellow-400 fill-current" />
                             <span className="text-sm ml-1">{place.rating}</span>

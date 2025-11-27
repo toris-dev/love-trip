@@ -26,6 +26,13 @@
       "@love-trip/shared/*": ["../../packages/shared/src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../../packages/**/*.ts", "../../packages/**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "../../packages/**/*.ts",
+    "../../packages/**/*.tsx"
+  ],
+  "exclude": ["node_modules", "src/mocks/**/*", "**/node_modules/@vitejs/**/*"]
 }

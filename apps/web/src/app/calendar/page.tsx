@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar as CalendarIcon, Plus, MapPin, Clock, User, Heart, Search, X, Star, ExternalLink } from "lucide-react"
+import { Calendar as CalendarIcon, Plus, MapPin, Clock, User, Heart, Search, X, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -13,6 +13,10 @@ import { calendarService, type CalendarEvent, type SharedCalendar, type Couple }
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
+import type { Database } from "@/lib/types/database"
+
+type Place = Database["public"]["Tables"]["places"]["Row"]
+type CalendarEventWithPlace = CalendarEvent & { place?: Place }
 
 export default function CalendarPage() {
   const [couple, setCouple] = useState<Couple | null>(null)
@@ -33,17 +37,11 @@ export default function CalendarPage() {
     location: "",
     place_id: "",
   })
-  const [selectedPlace, setSelectedPlace] = useState<{
-    id: string
-    name: string
-    address?: string
-    image_url?: string
-    type?: string
-  } | null>(null)
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null)
   const [showPlaceSearch, setShowPlaceSearch] = useState(false)
   const [placeSearchQuery, setPlaceSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [selectedEventForDetail, setSelectedEventForDetail] = useState<CalendarEvent | null>(null)
+  const [searchResults, setSearchResults] = useState<Place[]>([])
+  const [selectedEventForDetail, setSelectedEventForDetail] = useState<CalendarEventWithPlace | null>(null)
 
   useEffect(() => {
     loadData()
@@ -53,6 +51,7 @@ export default function CalendarPage() {
     if (selectedCalendar) {
       loadEvents()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCalendar, currentMonth])
 
   const loadData = async () => {
@@ -194,9 +193,9 @@ export default function CalendarPage() {
         console.error("Event creation error:", result.error)
         toast.error(result.error || "일정 추가에 실패했습니다")
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating event:", error)
-      toast.error(error.message || "일정 추가에 실패했습니다")
+      toast.error(error instanceof Error ? error.message : "일정 추가에 실패했습니다")
     }
   }
 
@@ -243,19 +242,19 @@ export default function CalendarPage() {
       const supabase = createClient()
       const { data, error } = await supabase
         .from("places")
-        .select("id, name, address, image_url, type, rating, description")
+        .select("*")
         .ilike("name", `%${query}%`)
         .limit(10)
 
       if (error) throw error
-      setSearchResults(data || [])
+      setSearchResults((data || []) as Place[])
     } catch (error) {
       console.error("Error searching places:", error)
       toast.error("장소 검색에 실패했습니다")
     }
   }
 
-  const handleSelectPlace = (place: any) => {
+  const handleSelectPlace = (place: Place) => {
     setSelectedPlace(place)
     setNewEvent({
       ...newEvent,
@@ -297,7 +296,7 @@ export default function CalendarPage() {
     if (event.place_id) {
       const placeDetails = await loadPlaceDetails(event.place_id)
       if (placeDetails) {
-        setSelectedEventForDetail({ ...event, place: placeDetails } as any)
+        setSelectedEventForDetail({ ...event, place: placeDetails as Place })
       }
     }
   }
@@ -754,39 +753,39 @@ export default function CalendarPage() {
                   {selectedEventForDetail.end_time && ` - ${new Date(selectedEventForDetail.end_time).toLocaleString("ko-KR")}`}
                 </DialogDescription>
               </DialogHeader>
-              {(selectedEventForDetail as any).place && (
+              {selectedEventForDetail.place && (
                 <div className="space-y-4">
-                  {(selectedEventForDetail as any).place.image_url && (
+                  {selectedEventForDetail.place.image_url && (
                     <img
-                      src={(selectedEventForDetail as any).place.image_url}
-                      alt={(selectedEventForDetail as any).place.name}
+                      src={selectedEventForDetail.place.image_url}
+                      alt={selectedEventForDetail.place.name}
                       className="w-full h-48 object-cover rounded-lg"
                     />
                   )}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">{(selectedEventForDetail as any).place.name}</h3>
-                      {(selectedEventForDetail as any).place.rating && (
+                      <h3 className="text-lg font-semibold">{selectedEventForDetail.place.name}</h3>
+                      {selectedEventForDetail.place.rating && (
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm">{(selectedEventForDetail as any).place.rating.toFixed(1)}</span>
+                          <span className="text-sm">{selectedEventForDetail.place.rating.toFixed(1)}</span>
                         </div>
                       )}
                     </div>
-                    {(selectedEventForDetail as any).place.address && (
+                    {selectedEventForDetail.place.address && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <MapPin className="h-4 w-4" />
-                        <span>{(selectedEventForDetail as any).place.address}</span>
+                        <span>{selectedEventForDetail.place.address}</span>
                       </div>
                     )}
-                    {(selectedEventForDetail as any).place.description && (
+                    {selectedEventForDetail.place.description && (
                       <p className="text-sm text-muted-foreground mt-2">
-                        {(selectedEventForDetail as any).place.description}
+                        {selectedEventForDetail.place.description}
                       </p>
                     )}
-                    {(selectedEventForDetail as any).place.type && (
+                    {selectedEventForDetail.place.type && (
                       <Badge variant="secondary" className="mt-2">
-                        {(selectedEventForDetail as any).place.type}
+                        {selectedEventForDetail.place.type}
                       </Badge>
                     )}
                   </div>

@@ -8,17 +8,15 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { CourseCardSkeleton } from "@/components/ui/course-card-skeleton"
+// import { CourseCardSkeleton } from "@/components/ui/course-card-skeleton"
 import {
   Search,
   MapPin,
   Star,
   Clock,
-  Users,
   Heart,
   Filter,
   ChevronRight,
-  Calendar,
   Wallet,
   Sparkles,
   Plane,
@@ -29,12 +27,8 @@ import {
   RefreshCw,
   X,
 } from "lucide-react"
-import {
-  getCoupleRecommendations,
-  getThemeRecommendations,
-} from "@/lib/services/recommendation-service"
-import { travelService } from "@/lib/services/travel-service.client"
-import { motion, AnimatePresence } from "framer-motion"
+import { getCoupleRecommendations } from "@/lib/services/recommendation-service"
+import { motion } from "framer-motion"
 import Image from "next/image"
 import {
   Dialog,
@@ -47,43 +41,48 @@ import dynamic from "next/dynamic"
 
 const NaverMapView = dynamic(() => import("@/components/naver-map-view"), { ssr: false })
 
-type Place = {
+type CourseType = "travel" | "date"
+
+type CoursePlace = {
   id: string
   name: string
-  description: string
+  description?: string | null
   lat: number
   lng: number
   type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
   rating: number
   price_level: number
-  image_url?: string
-  address?: string
-  phone?: string
-  website?: string
+  image_url?: string | null
+  address?: string | null
+  phone?: string | null
+  website?: string | null
+  course_title?: string
 }
 
-type CourseType = "travel" | "date"
+type Course = {
+  id: string
+  title: string
+  region: string
+  description?: string
+  image_url?: string | null
+  place_count?: number
+  places: CoursePlace[]
+}
 
 export function CoursesPageClient() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const [activeTab, setActiveTab] = useState<CourseType>("travel")
-  const [travelCourses, setTravelCourses] = useState<any[]>([])
-  const [dateCourses, setDateCourses] = useState<any[]>([])
-  const [filteredTravelCourses, setFilteredTravelCourses] = useState<any[]>([])
-  const [filteredDateCourses, setFilteredDateCourses] = useState<any[]>([])
+  const [travelCourses, setTravelCourses] = useState<Course[]>([])
+  const [dateCourses, setDateCourses] = useState<Course[]>([])
+  const [filteredTravelCourses, setFilteredTravelCourses] = useState<Course[]>([])
+  const [filteredDateCourses, setFilteredDateCourses] = useState<Course[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFilter, setSelectedFilter] = useState<string>("all")
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [selectedPlace, setSelectedPlace] = useState<any | null>(null)
+  const [selectedPlace, setSelectedPlace] = useState<CoursePlace | null>(null)
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set())
-  const [selectedCourse, setSelectedCourse] = useState<{
-    id: string
-    title: string
-    region: string
-    places: any[]
-  } | null>(null)
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
 
   // URL query parameter에서 tab 확인
   useEffect(() => {
@@ -111,7 +110,7 @@ export function CoursesPageClient() {
   }
 
   // 주소에서 지역명 추출
-  const extractRegion = (address: string | undefined): string => {
+  const extractRegion = (address: string | undefined | null): string => {
     if (!address) return "지역 정보 없음"
 
     // 주소에서 지역명 추출 (예: "서울특별시 강남구" -> "서울", "제주특별자치도 서귀포시" -> "제주도")
@@ -139,8 +138,8 @@ export function CoursesPageClient() {
   }
 
   // 데이트 코스를 코스 제목별로 그룹화
-  const groupDateCoursesByTitle = (courses: any[]) => {
-    const grouped: { [key: string]: any[] } = {}
+  const groupDateCoursesByTitle = (courses: CoursePlace[]) => {
+    const grouped: { [key: string]: CoursePlace[] } = {}
     courses.forEach(place => {
       // course_title이 있으면 사용, 없으면 지역명 사용
       const courseTitle = place.course_title || extractRegion(place.address) || "기타"
@@ -153,8 +152,8 @@ export function CoursesPageClient() {
   }
 
   // 여행 코스를 지역별로 그룹화
-  const groupTravelCoursesByRegion = (courses: any[]) => {
-    const grouped: { [key: string]: any[] } = {}
+  const groupTravelCoursesByRegion = (courses: CoursePlace[]) => {
+    const grouped: { [key: string]: CoursePlace[] } = {}
     courses.forEach(course => {
       const region = extractRegion(course.address)
       if (!grouped[region]) {
@@ -167,10 +166,12 @@ export function CoursesPageClient() {
 
   useEffect(() => {
     loadCourses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     filterCourses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedFilter, travelCourses, dateCourses])
 
   const loadCourses = async () => {
@@ -179,13 +180,14 @@ export function CoursesPageClient() {
     try {
       // 여행 코스 로드 - 지역별 코스 요약 정보
       const travelPlaces = await getCoupleRecommendations({
-        courseType: "travel",
         preferredTypes: ["VIEW", "MUSEUM"],
         limit: 100, // 충분히 많이 가져와서 지역별로 그룹화
       })
 
       // 지역별로 그룹화하여 코스 요약 생성
-      const travelCoursesByRegion = groupTravelCoursesByRegion(travelPlaces || [])
+      const travelCoursesByRegion = groupTravelCoursesByRegion(
+        (travelPlaces || []) as unknown as CoursePlace[]
+      )
       const travelCourseSummaries = Object.entries(travelCoursesByRegion).map(
         ([region, places]) => ({
           id: `travel-${region}`,
@@ -203,13 +205,14 @@ export function CoursesPageClient() {
 
       // 데이트 코스 로드 - 지역별 코스 요약 정보
       const datePlaces = await getCoupleRecommendations({
-        courseType: "date",
         preferredTypes: ["CAFE", "FOOD", "VIEW", "MUSEUM"],
         limit: 100, // 충분히 많이 가져와서 지역별로 그룹화
       })
 
       // 지역별로 그룹화하여 코스 요약 생성
-      const dateCoursesByRegion = groupDateCoursesByTitle(datePlaces || [])
+      const dateCoursesByRegion = groupDateCoursesByTitle(
+        (datePlaces || []) as unknown as CoursePlace[]
+      )
       const dateCourseSummaries = Object.entries(dateCoursesByRegion).map(([region, places]) => ({
         id: `date-${region}`,
         title: `${region} 데이트 코스`,
@@ -292,7 +295,6 @@ export function CoursesPageClient() {
     }
   }
 
-  const currentCourses = activeTab === "travel" ? filteredTravelCourses : filteredDateCourses
   const currentFilters = filters[activeTab]
 
   // 코스가 선택되었으면 장소 목록 표시, 아니면 코스 카드 목록 표시
@@ -395,27 +397,27 @@ export function CoursesPageClient() {
             >
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none z-10" />
-              <Input
-                type="text"
-                placeholder="장소나 키워드를 검색해보세요..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                <Input
+                  type="text"
+                  placeholder="장소나 키워드를 검색해보세요..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
                   className="pl-12 pr-12 h-14 text-lg bg-background/90 backdrop-blur-xl border-2 border-primary/20 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all shadow-large hover:shadow-xl rounded-xl input-enhanced"
-                aria-label="코스 검색"
-              />
-              {searchQuery && (
+                  aria-label="코스 검색"
+                />
+                {searchQuery && (
                   <motion.button
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                  onClick={() => setSearchQuery("")}
+                    onClick={() => setSearchQuery("")}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 rounded-lg hover:bg-primary/10 transition-all group"
-                  aria-label="검색어 지우기"
-                >
+                    aria-label="검색어 지우기"
+                  >
                     <X className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </motion.button>
-              )}
-            </div>
+                )}
+              </div>
             </motion.div>
 
             {/* Filter Chips */}
@@ -478,7 +480,7 @@ export function CoursesPageClient() {
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <CourseCardSkeleton key={i} />
+                  <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
                 ))}
               </div>
             ) : filteredTravelCourses.length === 0 ? (
@@ -499,9 +501,9 @@ export function CoursesPageClient() {
               // 선택된 코스의 장소 목록과 지도 (3:1 비율)
               <div className="space-y-6">
                 {/* 헤더 */}
-                  <motion.div
+                <motion.div
                   initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                  animate={{ opacity: 1, y: 0 }}
                   className="flex flex-wrap items-center gap-4 mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/10 via-background to-accent/10 border border-primary/20 backdrop-blur-md shadow-lg shadow-primary/5"
                 >
                   <Button
@@ -515,22 +517,22 @@ export function CoursesPageClient() {
                   <div className="flex-1 min-w-[200px]">
                     <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                       {selectedCourse.title}
-                      </h2>
+                    </h2>
                     <p className="text-sm text-muted-foreground mt-1">{selectedCourse.region}</p>
                   </div>
-                      <Badge
-                        variant="secondary"
+                  <Badge
+                    variant="secondary"
                     className="text-sm px-4 py-2 bg-primary/20 border-primary/30"
-                      >
+                  >
                     <MapPin className="h-3 w-3 mr-1" />
                     {selectedCourse.places?.length || 0}개 장소
-                      </Badge>
+                  </Badge>
                 </motion.div>
 
                 {/* 메인 컨텐츠: 지도 3, 장소 목록 1 비율 레이아웃 */}
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                   {/* 왼쪽: 네이버 지도 (3/4) */}
-                    <motion.div
+                  <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 }}
@@ -584,7 +586,7 @@ export function CoursesPageClient() {
               // 코스 요약 카드 목록 표시
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredTravelCourses.map((course, index) => (
-                            <motion.div
+                  <motion.div
                     key={course.id}
                     initial={{ opacity: 0, y: 30, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -594,18 +596,18 @@ export function CoursesPageClient() {
                       ease: [0.22, 1, 0.36, 1],
                     }}
                     whileHover={{ y: -8, scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <Card
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Card
                       className="group cursor-pointer h-full card-hover border-2 border-primary/10 hover:border-primary/30 overflow-hidden glass-card relative"
-                                onClick={() => {
+                      onClick={() => {
                         setSelectedCourse({
                           id: course.id,
                           title: course.title,
                           region: course.region,
                           places: course.places || [],
                         })
-                                }}
+                      }}
                     >
                       {/* 호버 시 그라데이션 배경 */}
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -614,24 +616,24 @@ export function CoursesPageClient() {
                       <div className="relative h-72 overflow-hidden rounded-t-lg">
                         {course.image_url ? (
                           <div className="relative w-full h-full">
-                                    <Image
+                            <Image
                               src={course.image_url}
                               alt={course.title}
-                                      fill
+                              fill
                               className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
-                                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                    />
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            />
                             {/* 그라데이션 오버레이 */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
                             {/* 패턴 오버레이 */}
                             <div className="absolute inset-0 bg-grid-pattern opacity-10" />
                           </div>
-                                  ) : (
+                        ) : (
                           <div className="w-full h-full bg-gradient-to-br from-primary/20 via-accent/10 to-primary/20 flex items-center justify-center relative">
                             <div className="absolute inset-0 bg-grid-pattern opacity-20" />
                             <MapPin className="h-20 w-20 text-primary/40 relative z-10" />
-                                    </div>
-                                  )}
+                          </div>
+                        )}
 
                         {/* 지역 배지 */}
                         <motion.div
@@ -642,7 +644,7 @@ export function CoursesPageClient() {
                         >
                           <Badge className="px-4 py-2 bg-gradient-to-r from-primary to-accent text-primary-foreground border-2 border-white/30 shadow-lg backdrop-blur-xl font-semibold">
                             {course.region}
-                                    </Badge>
+                          </Badge>
                         </motion.div>
 
                         {/* 코스 정보 */}
@@ -660,14 +662,14 @@ export function CoursesPageClient() {
                             animate={{ opacity: 1 }}
                             transition={{ delay: index * 0.08 + 0.4 }}
                             className="text-sm text-white/90 line-clamp-2 leading-relaxed drop-shadow-md"
-                                    >
+                          >
                             {course.description}
                           </motion.p>
-                                  </div>
+                        </div>
 
                         {/* 호버 시 추가 효과 */}
                         <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                                </div>
+                      </div>
 
                       <CardContent className="p-5 relative z-10">
                         <div className="flex items-center justify-between">
@@ -675,8 +677,8 @@ export function CoursesPageClient() {
                             <MapPin className="h-4 w-4 text-primary" />
                             <span className="text-sm font-semibold text-foreground">
                               {course.region}
-                                      </span>
-                                    </div>
+                            </span>
+                          </div>
                           <Badge
                             variant="secondary"
                             className="text-sm px-4 py-2 bg-primary/10 border-primary/20 font-semibold"
@@ -684,9 +686,9 @@ export function CoursesPageClient() {
                             <MapPin className="h-3 w-3 mr-1.5" />
                             {course.place_count || course.places?.length || 0}개 장소
                           </Badge>
-                                    </div>
-                                </CardContent>
-                              </Card>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </motion.div>
                 ))}
               </div>
@@ -714,7 +716,7 @@ export function CoursesPageClient() {
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <CourseCardSkeleton key={i} />
+                  <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
                 ))}
               </div>
             ) : filteredDateCourses.length === 0 ? (
@@ -735,9 +737,9 @@ export function CoursesPageClient() {
               // 선택된 코스의 장소 목록과 지도 (3:1 비율)
               <div className="space-y-6">
                 {/* 헤더 */}
-                  <motion.div
+                <motion.div
                   initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                  animate={{ opacity: 1, y: 0 }}
                   className="flex flex-wrap items-center gap-4 mb-6 p-4 rounded-xl bg-gradient-to-r from-primary/10 via-background to-accent/10 border border-primary/20 backdrop-blur-md shadow-lg shadow-primary/5"
                 >
                   <Button
@@ -751,22 +753,22 @@ export function CoursesPageClient() {
                   <div className="flex-1 min-w-[200px]">
                     <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
                       {selectedCourse.title}
-                      </h2>
+                    </h2>
                     <p className="text-sm text-muted-foreground mt-1">{selectedCourse.region}</p>
                   </div>
-                      <Badge
-                        variant="secondary"
+                  <Badge
+                    variant="secondary"
                     className="text-sm px-4 py-2 bg-primary/20 border-primary/30"
-                      >
+                  >
                     <MapPin className="h-3 w-3 mr-1" />
                     {selectedCourse.places?.length || 0}개 장소
-                      </Badge>
+                  </Badge>
                 </motion.div>
 
                 {/* 메인 컨텐츠: 지도 3, 장소 목록 1 비율 레이아웃 */}
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                   {/* 왼쪽: 네이버 지도 (3/4) */}
-                    <motion.div
+                  <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 }}
@@ -819,119 +821,119 @@ export function CoursesPageClient() {
                   <div className="lg:col-span-1 space-y-4 order-1 lg:order-2">
                     <div className="grid grid-cols-1 gap-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
                       {(selectedCourse.places || []).map((place, index) => {
-                          const TypeIcon = getTypeIcon(place.type)
-                          const hasImageError = imageErrors.has(place.id)
-                          return (
-                            <motion.div
-                              key={place.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -20 }}
-                              transition={{ duration: 0.3, delay: index * 0.05 }}
+                        const TypeIcon = getTypeIcon(place.type)
+                        const hasImageError = imageErrors.has(place.id)
+                        return (
+                          <motion.div
+                            key={place.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
                             whileHover={{ scale: 1.02, y: -4 }}
-                              whileTap={{ scale: 0.98 }}
-                            >
-                              <Card
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Card
                               className="group cursor-pointer h-full hover:shadow-2xl hover:shadow-primary/20 transition-all duration-300 hover:-translate-y-2 border-primary/10 hover:border-primary/40 overflow-hidden bg-background/90 backdrop-blur-md relative before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary/5 before:to-accent/5 before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-300 after:absolute after:inset-0 after:ring-2 after:ring-primary/20 after:rounded-lg after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-300"
-                                onClick={() => {
+                              onClick={() => {
                                 setSelectedPlace(place)
-                                }}
-                                role="button"
-                                tabIndex={0}
-                                onKeyDown={e => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault()
+                              }}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={e => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault()
                                   setSelectedPlace(place)
-                                  }
-                                }}
-                                aria-label={`${place.name} 자세히 보기`}
-                              >
+                                }
+                              }}
+                              aria-label={`${place.name} 자세히 보기`}
+                            >
                               <div className="relative h-32 overflow-hidden">
-                                  {place.image_url && !hasImageError ? (
-                                    <Image
-                                      src={place.image_url}
-                                      alt={`${place.name} 이미지`}
-                                      fill
-                                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                                      onError={() => handleImageError(place.id)}
+                                {place.image_url && !hasImageError ? (
+                                  <Image
+                                    src={place.image_url}
+                                    alt={`${place.name} 이미지`}
+                                    fill
+                                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                                    onError={() => handleImageError(place.id)}
                                     sizes="(max-width: 768px) 100vw, 25vw"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                                      <TypeIcon
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                                    <TypeIcon
                                       className="h-12 w-12 text-primary/50"
-                                        aria-hidden="true"
-                                      />
-                                    </div>
-                                  )}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                <div className="absolute top-2 right-2 z-10">
-                                    <Badge
-                                    className={`${getTypeColor(place.type)} backdrop-blur-sm border border-white/20 text-xs px-1.5 py-0.5`}
-                                    >
-                                    <TypeIcon className="h-2.5 w-2.5 mr-0.5" aria-hidden="true" />
-                                      {place.type}
-                                    </Badge>
-                                  </div>
-                                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-md px-2 py-1 rounded-full border border-white/10">
-                                    <Star
-                                    className="h-3 w-3 fill-yellow-400 text-yellow-400"
                                       aria-hidden="true"
                                     />
-                                    <span
-                                    className="text-white text-xs font-semibold"
-                                      aria-label={`평점 ${place.rating.toFixed(1)}점`}
-                                    >
-                                      {place.rating.toFixed(1)}
-                                    </span>
                                   </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                <div className="absolute top-2 right-2 z-10">
+                                  <Badge
+                                    className={`${getTypeColor(place.type)} backdrop-blur-sm border border-white/20 text-xs px-1.5 py-0.5`}
+                                  >
+                                    <TypeIcon className="h-2.5 w-2.5 mr-0.5" aria-hidden="true" />
+                                    {place.type}
+                                  </Badge>
                                 </div>
+                                <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-md px-2 py-1 rounded-full border border-white/10">
+                                  <Star
+                                    className="h-3 w-3 fill-yellow-400 text-yellow-400"
+                                    aria-hidden="true"
+                                  />
+                                  <span
+                                    className="text-white text-xs font-semibold"
+                                    aria-label={`평점 ${place.rating.toFixed(1)}점`}
+                                  >
+                                    {place.rating.toFixed(1)}
+                                  </span>
+                                </div>
+                              </div>
                               <CardHeader className="relative z-10 p-3">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs bg-primary/10 border-primary/20 text-primary"
-                                    >
-                                      {extractRegion(place.address)}
-                                    </Badge>
-                                  </div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs bg-primary/10 border-primary/20 text-primary"
+                                  >
+                                    {extractRegion(place.address)}
+                                  </Badge>
+                                </div>
                                 <CardTitle className="group-hover:text-primary transition-colors line-clamp-1 text-sm">
-                                    {place.name}
-                                  </CardTitle>
+                                  {place.name}
+                                </CardTitle>
                                 <CardDescription className="line-clamp-2 min-h-[2rem] text-xs">
-                                    {place.description}
-                                  </CardDescription>
-                                </CardHeader>
+                                  {place.description}
+                                </CardDescription>
+                              </CardHeader>
                               <CardContent className="relative z-10 p-3 pt-0">
                                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                                    <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1">
                                     <MapPin className="h-3 w-3" aria-hidden="true" />
-                                      <span
-                                        className="line-clamp-1"
-                                        title={place.address || undefined}
-                                      >
-                                      {extractRegion(place.address)}
-                                      </span>
-                                    </div>
-                                    <div
-                                      className="flex items-center gap-1"
-                                      aria-label={`가격대 ${place.price_level}단계`}
+                                    <span
+                                      className="line-clamp-1"
+                                      title={place.address || undefined}
                                     >
-                                      {"💰".repeat(Math.max(1, place.price_level || 1))}
-                                    </div>
+                                      {extractRegion(place.address)}
+                                    </span>
                                   </div>
-                                  <Button
-                                  className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 hover:shadow-lg text-xs h-8"
-                                    variant="outline"
+                                  <div
+                                    className="flex items-center gap-1"
+                                    aria-label={`가격대 ${place.price_level}단계`}
                                   >
-                                    자세히 보기
+                                    {"💰".repeat(Math.max(1, place.price_level || 1))}
+                                  </div>
+                                </div>
+                                <Button
+                                  className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 hover:shadow-lg text-xs h-8"
+                                  variant="outline"
+                                >
+                                  자세히 보기
                                   <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
-                                  </Button>
-                                </CardContent>
-                              </Card>
-                            </motion.div>
-                          )
-                        })}
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
@@ -1000,7 +1002,7 @@ export function CoursesPageClient() {
                           <Badge className="px-4 py-2 bg-gradient-to-r from-primary to-accent text-primary-foreground border-2 border-white/30 shadow-lg backdrop-blur-xl font-semibold">
                             {course.region}
                           </Badge>
-                    </motion.div>
+                        </motion.div>
 
                         {/* 코스 정보 */}
                         <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
@@ -1146,9 +1148,7 @@ export function CoursesPageClient() {
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">가격대</div>
                     <span className="text-sm">
-                      {"💰".repeat(
-                        Math.max(1, selectedPlace.price_level || selectedPlace.priceLevel || 1)
-                      )}
+                      {"💰".repeat(Math.max(1, selectedPlace.price_level || 1))}
                     </span>
                   </div>
                 </div>

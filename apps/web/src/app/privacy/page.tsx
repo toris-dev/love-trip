@@ -1,7 +1,7 @@
 "use client"
 
 import { Shield, Lock, Eye, FileCheck, AlertCircle } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Footer } from "@/components/footer"
 
 export default function PrivacyPage() {

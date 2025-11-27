@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -85,8 +84,8 @@ export default function LoginPage() {
           router.refresh()
         }
       }
-    } catch (error: any) {
-      toast.error(error.message || "오류가 발생했습니다")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "오류가 발생했습니다")
     } finally {
       setIsLoading(false)
     }
@@ -107,8 +106,8 @@ export default function LoginPage() {
         toast.error(error.message)
         setIsLoading(false)
       }
-    } catch (error: any) {
-      toast.error(error.message || "오류가 발생했습니다")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "오류가 발생했습니다")
       setIsLoading(false)
     }
   }

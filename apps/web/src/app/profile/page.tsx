@@ -15,12 +15,12 @@ import { XPLevel, Achievements, PointsStats } from "@/components/gamification"
 import { CoupleConnection } from "@/components/couple-connection"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import Link from "next/link"
 
 export default function ProfilePage() {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [profile, setProfile] = useState({
     name: "홍길동",
     email: "hong@example.com",
@@ -160,9 +160,9 @@ export default function ProfilePage() {
 
       toast.success("프로필이 저장되었습니다")
     setIsEditing(false)
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error saving profile:", error)
-      toast.error(error.message || "프로필 저장에 실패했습니다")
+      toast.error(error instanceof Error ? error.message : "프로필 저장에 실패했습니다")
     }
   }
 
