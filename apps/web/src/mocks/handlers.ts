@@ -28,7 +28,8 @@ const dateCourseSummaries: CourseSummary[] = [
     title: "서울 데이트 코스",
     region: "서울",
     course_type: "date",
-    description: "서울의 다양한 데이트 장소를 포함한 코스입니다. 카페, 맛집, 전망대 등이 포함되어 있습니다.",
+    description:
+      "서울의 다양한 데이트 장소를 포함한 코스입니다. 카페, 맛집, 전망대 등이 포함되어 있습니다.",
     image_url: "https://picsum.photos/seed/seoul-date/800/600",
     place_count: 12,
   },
@@ -50,7 +51,8 @@ const travelCourseSummaries: CourseSummary[] = [
     title: "제주도 여행 코스",
     region: "제주도",
     course_type: "travel",
-    description: "제주도의 대표 관광지를 포함한 여행 코스입니다. 성산일출봉, 한라산 등이 포함되어 있습니다.",
+    description:
+      "제주도의 대표 관광지를 포함한 여행 코스입니다. 성산일출봉, 한라산 등이 포함되어 있습니다.",
     image_url: "https://picsum.photos/seed/jeju-travel/800/600",
     place_count: 4,
   },
@@ -261,7 +263,7 @@ const dateCourses = [
         name: "압구정로데오거리",
         description: "고급스러운 쇼핑과 카페 문화를 즐길 수 있는 거리",
         lat: 37.527,
-        lng: 127.040,
+        lng: 127.04,
         type: "CAFE" as const,
         rating: 4.5,
         price_level: 3,
@@ -338,7 +340,7 @@ const dateCourses = [
 ]
 
 // 데이트 코스의 모든 장소를 평탄화 (API 호환성을 위해)
-const dateCoursePlaces = dateCourses.flatMap(course => 
+const dateCoursePlaces = dateCourses.flatMap(course =>
   course.places.map(place => ({
     ...place,
     course_id: course.id,

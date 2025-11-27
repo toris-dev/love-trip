@@ -1,9 +1,23 @@
-import { expect, afterEach } from "vitest"
+import { expect, afterEach, beforeAll, afterAll } from "vitest"
 import { cleanup } from "@testing-library/react"
 import * as matchers from "@testing-library/jest-dom/matchers"
+import { server } from "@/mocks/server"
 
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers)
+
+// MSW 서버 시작/종료
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: "bypass" })
+})
+
+afterEach(() => {
+  server.resetHandlers()
+})
+
+afterAll(() => {
+  server.close()
+})
 
 // Cleanup after each test case
 afterEach(() => {

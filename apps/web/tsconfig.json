@@ -36,5 +36,5 @@
     "../../packages/**/*.ts",
     "../../packages/**/*.tsx"
   ],
-  "exclude": ["node_modules", "src/mocks/**/*", "**/node_modules/@vitejs/**/*"]
+  "exclude": ["node_modules", "**/node_modules/@vitejs/**/*"]
 }

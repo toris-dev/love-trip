@@ -7,6 +7,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider-wrapper";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { ServiceWorkerScript } from "@/components/service-worker-script";
+import { Header } from "@/components/header";
+import { MSWProvider } from "@/components/msw-provider";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: {
@@ -123,10 +126,17 @@ export default function RootLayout({
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <ServiceWorkerScript />
-        <ThemeProvider>
-          <LayoutWrapper>{children}</LayoutWrapper>
-          <Toaster />
-        </ThemeProvider>
+        <MSWProvider>
+          <ThemeProvider>
+            <LayoutWrapper>
+              <Suspense fallback={<div className="h-16" />}>
+                <Header />
+              </Suspense>
+              {children}
+            </LayoutWrapper>
+            <Toaster />
+          </ThemeProvider>
+        </MSWProvider>
       </body>
     </html>
   );

@@ -2,7 +2,9 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -68,6 +70,8 @@ type DetailedTravelPlan = TravelPlan & {
 }
 
 export default function LoveTripHome() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedPlan, setSelectedPlan] = useState<DetailedTravelPlan | null>(null)
   const [activeTab, setActiveTab] = useState<string | undefined>(undefined)
@@ -274,6 +278,16 @@ export default function LoveTripHome() {
       setActiveTab("map")
     }
   }, [activeTab])
+
+  // URL 파라미터에서 성공 메시지 확인 및 표시
+  useEffect(() => {
+    const message = searchParams.get("message")
+    if (message) {
+      toast.success(decodeURIComponent(message))
+      // URL에서 메시지 파라미터 제거
+      router.replace("/", { scroll: false })
+    }
+  }, [searchParams, router])
 
   useEffect(() => {
     if (!isMounted) return
@@ -746,7 +760,7 @@ export default function LoveTripHome() {
                         <div className="flex-1">
                           <h4 className="font-semibold">{place.name}</h4>
                           {place.description && (
-                            <p className="text-sm text-muted-foreground">{place.description}</p>
+                          <p className="text-sm text-muted-foreground">{place.description}</p>
                           )}
                           <div className="flex items-center mt-1">
                             <Star className="h-4 w-4 text-yellow-400 fill-current" />

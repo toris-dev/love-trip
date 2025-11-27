@@ -52,7 +52,7 @@ export default function NaverMapView({ places = [], path = [], onPlaceClick }: N
   }
 
   return (
-    <div className="relative w-full h-[70vh] rounded-2xl overflow-hidden" data-testid="naver-map">
+    <div className="relative w-full h-full rounded-2xl overflow-hidden" data-testid="naver-map">
       <NavermapsProvider ncpKeyId={clientId} submodules={["geocoder"]}>
         <Container style={{ width: "100%", height: "100%" }}>
           <MapContent center={center} places={places} path={path} onPlaceClick={onPlaceClick} />

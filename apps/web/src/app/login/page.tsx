@@ -91,8 +91,8 @@ export default function LoginPage() {
 
         if (data.user) {
           toast.success("로그인 성공!")
-          router.push("/")
-          router.refresh()
+          // 즉시 리다이렉트하고 새로고침
+          window.location.href = "/"
         }
       }
     } catch (error) {
@@ -117,6 +117,7 @@ export default function LoginPage() {
         toast.error(error.message)
         setIsLoading(false)
       }
+      // OAuth는 리다이렉트되므로 여기서는 로딩 상태를 유지
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "오류가 발생했습니다")
       setIsLoading(false)

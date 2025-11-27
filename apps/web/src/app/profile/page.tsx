@@ -176,16 +176,16 @@ export default function ProfilePage() {
     try {
       // 프로필 업데이트
       const { error } = await supabase.from("profiles").upsert({
-        id: user.id,
-        display_name: profile.name,
-        nickname: profile.nickname,
-        avatar_url: profile.avatar || null,
-      })
+          id: user.id,
+          display_name: profile.name,
+          nickname: profile.nickname,
+          avatar_url: profile.avatar || null,
+        })
 
       if (error) throw error
 
       toast.success("프로필이 저장되었습니다")
-      setIsEditing(false)
+    setIsEditing(false)
     } catch (error) {
       console.error("Error saving profile:", error)
       toast.error(error instanceof Error ? error.message : "프로필 저장에 실패했습니다")
@@ -481,12 +481,12 @@ export default function ProfilePage() {
                             </span>
                           </Label>
                           <div className="flex gap-2 items-center">
-                            <Input
-                              id="nickname"
-                              value={profile.nickname}
+                          <Input
+                            id="nickname"
+                            value={profile.nickname}
                               onChange={e => setProfile({ ...profile, nickname: e.target.value })}
                               placeholder="고유한 닉네임을 입력하세요"
-                            />
+                          />
                             {profile.nickname && (
                               <Badge
                                 variant="outline"

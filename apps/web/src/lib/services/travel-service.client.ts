@@ -93,7 +93,7 @@ export const travelService = {
           place.name.toLowerCase().includes(query.toLowerCase()) ||
           (place.description && place.description.toLowerCase().includes(query.toLowerCase())) ||
             (place.address && place.address.toLowerCase().includes(query.toLowerCase())),
-      )
+        )
     }
   },
 
