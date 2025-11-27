@@ -23,7 +23,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@love-trip/shared": ["../../packages/shared/src"],
-      "@love-trip/shared/*": ["../../packages/shared/src/*"]
+      "@love-trip/shared/*": ["../../packages/shared/src/*"],
+      "@lovetrip/ui": ["../../packages/ui"],
+      "@lovetrip/ui/*": ["../../packages/ui/*"]
     }
   },
   "include": [
