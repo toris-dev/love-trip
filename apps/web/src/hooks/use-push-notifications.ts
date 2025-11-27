@@ -123,7 +123,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as any,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as Uint8Array,
       })
 
       const subscriptionData = subscription.toJSON() as PushSubscription

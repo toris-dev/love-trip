@@ -8,7 +8,6 @@ import {
   NaverMap,
   Marker,
   Polyline,
-  InfoWindow,
   useNavermaps,
 } from "react-naver-maps"
 
@@ -32,7 +31,6 @@ interface NaverMapViewProps {
 
 export default function NaverMapView({ places = [], path = [], onPlaceClick }: NaverMapViewProps) {
   const clientId = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID
-  const key = process.env.NEXT_PUBLIC_NAVER_MAP_SECRET_KEY
   const center = useMemo(() => {
     if (places.length > 0) {
       return { lat: places[0].lat, lng: places[0].lng }
@@ -74,13 +72,13 @@ function MapContent({
   onPlaceClick?: (place: Place) => void
 }) {
   const navermaps = useNavermaps()
-  const mapRef = React.useRef<any>(null)
+  const mapRef = React.useRef<{ fitBounds?: (bounds: unknown, options?: { padding?: number }) => void } | null>(null)
 
   // 전역 클릭 핸들러 설정 (Hook은 항상 같은 순서로 호출되어야 함)
   React.useEffect(() => {
     if (!navermaps) return
 
-    ;(window as any).naverMarkerClick = (id: string) => {
+    ;(window as Window & { naverMarkerClick?: (id: string) => void }).naverMarkerClick = (id: string) => {
       const clickedPlace = places.find(p => p.id === id)
       if (clickedPlace) {
         onPlaceClick?.(clickedPlace)
@@ -88,7 +86,7 @@ function MapContent({
     }
 
     return () => {
-      delete (window as any).naverMarkerClick
+      delete (window as Window & { naverMarkerClick?: (id: string) => void }).naverMarkerClick
     }
   }, [navermaps, places, onPlaceClick])
 
@@ -109,7 +107,7 @@ function MapContent({
           if (typeof mapRef.current.fitBounds === "function") {
             mapRef.current.fitBounds(bounds, { padding: 50 })
           }
-        } else if (typeof window !== "undefined" && (window as any).naver?.maps) {
+        } else if (typeof window !== "undefined" && (window as Window & { naver?: { maps?: { getMapInstance?: () => { fitBounds?: (bounds: unknown, options?: { padding?: number }) => void } } } }).naver?.maps) {
           // 전역 naver 객체를 통한 접근 시도
           const mapElements = document.querySelectorAll("[data-naver-map]")
           if (mapElements.length > 0) {
@@ -118,7 +116,7 @@ function MapContent({
               bounds.extend(new navermaps.LatLng(place.lat, place.lng))
             })
             // 지도 인스턴스를 찾아서 fitBounds 호출
-            const mapInstance = (window as any).naver.maps.getMapInstance?.()
+            const mapInstance = (window as Window & { naver?: { maps?: { getMapInstance?: () => { fitBounds?: (bounds: unknown, options?: { padding?: number }) => void } } } }).naver?.maps?.getMapInstance?.()
             if (mapInstance && typeof mapInstance.fitBounds === "function") {
               mapInstance.fitBounds(bounds, { padding: 50 })
             }

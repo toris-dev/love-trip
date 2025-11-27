@@ -5,15 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   Trophy,
-  MapPin,
-  Heart,
-  Calendar,
-  Camera,
-  Wallet,
   Star,
-  Zap,
-  Award,
-  Target,
 } from "lucide-react"
 
 interface Achievement {

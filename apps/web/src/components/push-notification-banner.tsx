@@ -15,8 +15,9 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000 // 하루
 
 export function PushNotificationBanner() {
   const [showBanner, setShowBanner] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const { isSupported, isSubscribed, isLoading, permission, subscribe, requestPermission } = usePushNotifications()
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
+  const { isSupported, isSubscribed, isLoading, permission, subscribe, requestPermission } =
+    usePushNotifications()
   const bottomOffset = useBannerPosition(showBanner, '[data-banner="pwa"]')
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -31,11 +32,12 @@ export function PushNotificationBanner() {
 
       // 로딩 중이면 잠시 대기 (최대 10초)
       if (isLoading) {
-        const retryCount = (timeoutRef.current as any)?._retryCount || 0
+        const retryCount =
+          (timeoutRef.current as unknown as { _retryCount: number })?._retryCount || 0
         if (retryCount < 5) {
           // 2초 후 다시 확인
           const timeout = setTimeout(() => {
-            (timeout as any)._retryCount = retryCount + 1
+            ;(timeout as unknown as { _retryCount: number })._retryCount = retryCount + 1
             checkShouldShowBanner()
           }, 2000)
           timeoutRef.current = timeout
@@ -47,7 +49,12 @@ export function PushNotificationBanner() {
 
       // 지원하지 않으면 표시하지 않음
       if (!isSupported) {
-        console.log("[Push Banner] Not supported - serviceWorker:", "serviceWorker" in navigator, "PushManager:", "PushManager" in window)
+        console.log(
+          "[Push Banner] Not supported - serviceWorker:",
+          "serviceWorker" in navigator,
+          "PushManager:",
+          "PushManager" in window
+        )
         return
       }
 
@@ -81,23 +88,25 @@ export function PushNotificationBanner() {
           const { timestamp, type } = JSON.parse(dismissedData)
           const now = Date.now()
           const elapsed = now - timestamp
-          
+
           console.log("[Push Banner] Dismissed data:", { type, elapsed, timestamp, now })
-          
+
           // "오늘 보지 않기"인 경우 하루 동안 숨김
           if (type === "today" && elapsed < ONE_DAY_MS) {
             const hoursLeft = Math.floor((ONE_DAY_MS - elapsed) / (60 * 60 * 1000))
             console.log("[Push Banner] Dismissed for today, hours left:", hoursLeft)
             return
           }
-          
+
           // "나중에"인 경우 7일 동안 숨김
           if (type === "later" && elapsed < PUSH_NOTIFICATION_DISMISSED_EXPIRY) {
-            const daysLeft = Math.floor((PUSH_NOTIFICATION_DISMISSED_EXPIRY - elapsed) / (24 * 60 * 60 * 1000))
+            const daysLeft = Math.floor(
+              (PUSH_NOTIFICATION_DISMISSED_EXPIRY - elapsed) / (24 * 60 * 60 * 1000)
+            )
             console.log("[Push Banner] Dismissed for later, days left:", daysLeft)
             return
           }
-          
+
           console.log("[Push Banner] Dismiss period expired, showing banner")
         } catch (e) {
           console.error("[Push Banner] Error parsing dismissed data:", e)
@@ -126,20 +135,18 @@ export function PushNotificationBanner() {
   const handleAllow = async () => {
     // 권한이 거부된 경우 안내
     if (permission === "denied") {
-      toast.error(
-        "알림 권한이 거부되었습니다. 브라우저 설정에서 알림 권한을 허용해주세요.",
-        { duration: 5000 }
-      )
+      toast.error("알림 권한이 거부되었습니다. 브라우저 설정에서 알림 권한을 허용해주세요.", {
+        duration: 5000,
+      })
       return
     }
 
     if (permission === "default") {
       const result = await requestPermission()
       if (result === "denied") {
-        toast.error(
-          "알림 권한이 거부되었습니다. 브라우저 설정에서 알림 권한을 허용해주세요.",
-          { duration: 5000 }
-        )
+        toast.error("알림 권한이 거부되었습니다. 브라우저 설정에서 알림 권한을 허용해주세요.", {
+          duration: 5000,
+        })
         return
       }
       if (result !== "granted") {
@@ -201,13 +208,9 @@ export function PushNotificationBanner() {
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
               {permission === "denied" ? (
-                <>
-                  알림 권한이 거부되었습니다. 브라우저 설정에서 알림 권한을 허용해주세요. 🔔
-                </>
+                <>알림 권한이 거부되었습니다. 브라우저 설정에서 알림 권한을 허용해주세요. 🔔</>
               ) : (
-                <>
-                  커플이 일정을 추가하면 즉시 알림을 받아보세요! 💕
-                </>
+                <>커플이 일정을 추가하면 즉시 알림을 받아보세요! 💕</>
               )}
             </p>
             <div className="flex flex-col gap-2">
@@ -235,4 +238,3 @@ export function PushNotificationBanner() {
     </AnimatePresence>
   )
 }
-

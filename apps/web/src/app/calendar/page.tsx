@@ -1,15 +1,38 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Calendar as CalendarIcon, Plus, MapPin, Clock, User, Heart, Search, X, Star } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
+import {
+  Calendar as CalendarIcon,
+  Plus,
+  MapPin,
+  Clock,
+  User,
+  Heart,
+  Search,
+  X,
+  Star,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { calendarService, type CalendarEvent, type SharedCalendar, type Couple } from "@/lib/services/calendar-service"
+import {
+  calendarService,
+  type CalendarEvent,
+  type SharedCalendar,
+  type Couple,
+} from "@/lib/services/calendar-service"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
@@ -26,8 +49,15 @@ export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [partnerInfo, setPartnerInfo] = useState<{ id: string; email: string; name?: string; nickname?: string } | null>(null)
-  const [currentUserInfo, setCurrentUserInfo] = useState<{ id: string; nickname?: string } | null>(null)
+  const [partnerInfo, setPartnerInfo] = useState<{
+    id: string
+    email: string
+    name?: string
+    nickname?: string
+  } | null>(null)
+  const [currentUserInfo, setCurrentUserInfo] = useState<{ id: string; nickname?: string } | null>(
+    null
+  )
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -41,7 +71,8 @@ export default function CalendarPage() {
   const [showPlaceSearch, setShowPlaceSearch] = useState(false)
   const [placeSearchQuery, setPlaceSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<Place[]>([])
-  const [selectedEventForDetail, setSelectedEventForDetail] = useState<CalendarEventWithPlace | null>(null)
+  const [selectedEventForDetail, setSelectedEventForDetail] =
+    useState<CalendarEventWithPlace | null>(null)
 
   useEffect(() => {
     loadData()
@@ -51,7 +82,6 @@ export default function CalendarPage() {
     if (selectedCalendar) {
       loadEvents()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCalendar, currentMonth])
 
   const loadData = async () => {
@@ -62,7 +92,7 @@ export default function CalendarPage() {
 
       if (coupleData) {
         let calendarsData = await calendarService.getCalendars()
-        
+
         // 캘린더가 없으면 기본 캘린더 생성
         if (calendarsData.length === 0) {
           console.log("[Calendar] No calendars found, creating default calendar")
@@ -71,7 +101,7 @@ export default function CalendarPage() {
             calendarsData = await calendarService.getCalendars()
           }
         }
-        
+
         setCalendars(calendarsData)
         if (calendarsData.length > 0) {
           setSelectedCalendar(calendarsData[0].id)
@@ -93,26 +123,27 @@ export default function CalendarPage() {
             .select("nickname")
             .eq("id", user.id)
             .single()
-          
+
           setCurrentUserInfo({
             id: user.id,
             nickname: currentUserProfile?.nickname || undefined,
           })
 
-          const partnerId = coupleData.user1_id === user.id ? coupleData.user2_id : coupleData.user1_id
-          
+          const partnerId =
+            coupleData.user1_id === user.id ? coupleData.user2_id : coupleData.user1_id
+
           // API를 통해 파트너 정보 가져오기
           const response = await fetch(`/api/users/find?id=${partnerId}`).catch(() => null)
           if (response && response.ok) {
             const partner = await response.json()
-            
+
             // 파트너 프로필 가져오기
             const { data: partnerProfile } = await supabase
               .from("profiles")
               .select("nickname, display_name")
               .eq("id", partnerId)
               .single()
-            
+
             setPartnerInfo({
               id: partnerId,
               email: partner.email || "",
@@ -130,7 +161,7 @@ export default function CalendarPage() {
     }
   }
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     if (!selectedCalendar) return
 
     const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
@@ -138,7 +169,7 @@ export default function CalendarPage() {
 
     const eventsData = await calendarService.getEvents(selectedCalendar, startOfMonth, endOfMonth)
     setEvents(eventsData)
-  }
+  }, [selectedCalendar, currentMonth])
 
   const handleCreateEvent = async () => {
     // 디버깅을 위한 로그
@@ -167,7 +198,9 @@ export default function CalendarPage() {
 
     try {
       // datetime-local 형식을 ISO 형식으로 변환
-      const startTime = newEvent.start_time ? new Date(newEvent.start_time).toISOString() : undefined
+      const startTime = newEvent.start_time
+        ? new Date(newEvent.start_time).toISOString()
+        : undefined
       const endTime = newEvent.end_time ? new Date(newEvent.end_time).toISOString() : undefined
 
       const result = await calendarService.createEvent({
@@ -183,7 +216,14 @@ export default function CalendarPage() {
       if (result.success) {
         toast.success("일정이 추가되었습니다")
         setIsDialogOpen(false)
-        setNewEvent({ title: "", description: "", start_time: "", end_time: "", location: "", place_id: "" })
+        setNewEvent({
+          title: "",
+          description: "",
+          start_time: "",
+          end_time: "",
+          location: "",
+          place_id: "",
+        })
         setSelectedPlace(null)
         setShowPlaceSearch(false)
         setPlaceSearchQuery("")
@@ -217,9 +257,9 @@ export default function CalendarPage() {
     const month = String(date.getMonth() + 1).padStart(2, "0")
     const day = String(date.getDate()).padStart(2, "0")
     const defaultTime = "14:00" // 오후 2시 기본값
-    
+
     const dateTimeLocal = `${year}-${month}-${day}T${defaultTime}`
-    
+
     setNewEvent({
       title: "",
       description: "",
@@ -278,11 +318,7 @@ export default function CalendarPage() {
   const loadPlaceDetails = async (placeId: string) => {
     try {
       const supabase = createClient()
-      const { data, error } = await supabase
-        .from("places")
-        .select("*")
-        .eq("id", placeId)
-        .single()
+      const { data, error } = await supabase.from("places").select("*").eq("id", placeId).single()
 
       if (error) throw error
       return data
@@ -324,11 +360,11 @@ export default function CalendarPage() {
   const getEventsForDate = (date: Date | null) => {
     if (!date) return []
     const dateStr = date.toISOString().split("T")[0]
-    return events.filter((event) => event.start_time.startsWith(dateStr))
+    return events.filter(event => event.start_time.startsWith(dateStr))
   }
 
   const navigateMonth = (direction: "prev" | "next") => {
-    setCurrentMonth((prev) => {
+    setCurrentMonth(prev => {
       const newDate = new Date(prev)
       if (direction === "prev") {
         newDate.setMonth(prev.getMonth() - 1)
@@ -361,9 +397,7 @@ export default function CalendarPage() {
             <CardDescription>캘린더를 사용하려면 먼저 커플과 연결해주세요</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => window.location.href = "/profile"}>
-              프로필로 이동
-            </Button>
+            <Button onClick={() => (window.location.href = "/profile")}>프로필로 이동</Button>
           </CardContent>
         </Card>
       </div>
@@ -395,19 +429,18 @@ export default function CalendarPage() {
               <CardTitle className="text-lg">캘린더</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              {calendars.map((cal) => (
+              {calendars.map(cal => (
                 <button
                   key={cal.id}
                   onClick={() => setSelectedCalendar(cal.id)}
                   className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    selectedCalendar === cal.id ? "bg-primary/10 border-2 border-primary" : "hover:bg-muted"
+                    selectedCalendar === cal.id
+                      ? "bg-primary/10 border-2 border-primary"
+                      : "hover:bg-muted"
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: cal.color }}
-                    />
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: cal.color }} />
                     <span className="font-medium">{cal.name}</span>
                   </div>
                 </button>
@@ -433,7 +466,7 @@ export default function CalendarPage() {
                   <Input
                     id="title"
                     value={newEvent.title}
-                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                    onChange={e => setNewEvent({ ...newEvent, title: e.target.value })}
                     placeholder="일정 제목"
                   />
                 </div>
@@ -443,7 +476,7 @@ export default function CalendarPage() {
                     id="start_time"
                     type="datetime-local"
                     value={newEvent.start_time}
-                    onChange={(e) => setNewEvent({ ...newEvent, start_time: e.target.value })}
+                    onChange={e => setNewEvent({ ...newEvent, start_time: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -452,7 +485,7 @@ export default function CalendarPage() {
                     id="end_time"
                     type="datetime-local"
                     value={newEvent.end_time}
-                    onChange={(e) => setNewEvent({ ...newEvent, end_time: e.target.value })}
+                    onChange={e => setNewEvent({ ...newEvent, end_time: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -461,16 +494,21 @@ export default function CalendarPage() {
                     <div className="border rounded-lg p-3 bg-muted/50 flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         {selectedPlace.image_url && (
-                          <img
-                            src={selectedPlace.image_url}
-                            alt={selectedPlace.name}
-                            className="w-12 h-12 rounded object-cover"
-                          />
+                          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                            <Image
+                              src={selectedPlace.image_url}
+                              alt={selectedPlace.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{selectedPlace.name}</p>
                           {selectedPlace.address && (
-                            <p className="text-xs text-muted-foreground truncate">{selectedPlace.address}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {selectedPlace.address}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -489,7 +527,7 @@ export default function CalendarPage() {
                         <Input
                           placeholder="장소 이름으로 검색..."
                           value={placeSearchQuery}
-                          onChange={(e) => {
+                          onChange={e => {
                             setPlaceSearchQuery(e.target.value)
                             searchPlaces(e.target.value)
                           }}
@@ -505,7 +543,7 @@ export default function CalendarPage() {
                       </div>
                       {showPlaceSearch && searchResults.length > 0 && (
                         <div className="border rounded-lg max-h-48 overflow-y-auto">
-                          {searchResults.map((place) => (
+                          {searchResults.map(place => (
                             <button
                               key={place.id}
                               type="button"
@@ -513,21 +551,28 @@ export default function CalendarPage() {
                               className="w-full p-3 hover:bg-muted/50 flex items-center gap-3 text-left border-b last:border-b-0"
                             >
                               {place.image_url && (
-                                <img
-                                  src={place.image_url}
-                                  alt={place.name}
-                                  className="w-12 h-12 rounded object-cover"
-                                />
+                                <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                                  <Image
+                                    src={place.image_url}
+                                    alt={place.name}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                </div>
                               )}
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-sm truncate">{place.name}</p>
                                 {place.address && (
-                                  <p className="text-xs text-muted-foreground truncate">{place.address}</p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {place.address}
+                                  </p>
                                 )}
                                 {place.rating && (
                                   <div className="flex items-center gap-1 mt-1">
                                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                    <span className="text-xs text-muted-foreground">{place.rating.toFixed(1)}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {place.rating.toFixed(1)}
+                                    </span>
                                   </div>
                                 )}
                               </div>
@@ -543,7 +588,7 @@ export default function CalendarPage() {
                   <Input
                     id="location"
                     value={newEvent.location}
-                    onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                    onChange={e => setNewEvent({ ...newEvent, location: e.target.value })}
                     placeholder="장소를 입력하세요"
                     disabled={!!selectedPlace}
                   />
@@ -553,7 +598,7 @@ export default function CalendarPage() {
                   <Textarea
                     id="description"
                     value={newEvent.description}
-                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                    onChange={e => setNewEvent({ ...newEvent, description: e.target.value })}
                     placeholder="일정에 대한 설명을 입력하세요"
                     rows={3}
                   />
@@ -591,7 +636,7 @@ export default function CalendarPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-7 gap-1 mb-4">
-                {weekDays.map((day) => (
+                {weekDays.map(day => (
                   <div key={day} className="text-center font-semibold text-sm py-2">
                     {day}
                   </div>
@@ -618,23 +663,27 @@ export default function CalendarPage() {
                     >
                       {date && (
                         <>
-                          <div className={`text-sm font-medium mb-1 ${isToday ? "text-primary" : ""}`}>
+                          <div
+                            className={`text-sm font-medium mb-1 ${isToday ? "text-primary" : ""}`}
+                          >
                             {date.getDate()}
                           </div>
                           <div className="space-y-1">
-                            {dayEvents.slice(0, 2).map((event) => {
+                            {dayEvents.slice(0, 2).map(event => {
                               const isMyEvent = currentUserInfo?.id === event.created_by
-                              const eventColor = isMyEvent ? "bg-primary/20 border-primary/50" : "bg-accent/20 border-accent/50"
-                              const eventNickname = isMyEvent 
-                                ? (currentUserInfo?.nickname || "나")
-                                : (partnerInfo?.nickname || "파트너")
-                              
+                              const eventColor = isMyEvent
+                                ? "bg-primary/20 border-primary/50"
+                                : "bg-accent/20 border-accent/50"
+                              const eventNickname = isMyEvent
+                                ? currentUserInfo?.nickname || "나"
+                                : partnerInfo?.nickname || "파트너"
+
                               return (
                                 <Badge
                                   key={event.id}
                                   variant="secondary"
                                   className={`w-full text-xs p-1 cursor-pointer hover:opacity-80 border ${eventColor}`}
-                                  onClick={(e) => {
+                                  onClick={e => {
                                     e.stopPropagation() // 부모 클릭 이벤트 방지
                                     if (event.place_id) {
                                       handleEventClick(event)
@@ -646,14 +695,18 @@ export default function CalendarPage() {
                                   }}
                                 >
                                   <div className="truncate flex items-center gap-1">
-                                    <span className="font-semibold text-[10px]">{eventNickname}</span>
+                                    <span className="font-semibold text-[10px]">
+                                      {eventNickname}
+                                    </span>
                                     <span className="truncate">{event.title}</span>
                                   </div>
                                 </Badge>
                               )
                             })}
                             {dayEvents.length > 2 && (
-                              <div className="text-xs text-muted-foreground">+{dayEvents.length - 2}개 더</div>
+                              <div className="text-xs text-muted-foreground">
+                                +{dayEvents.length - 2}개 더
+                              </div>
                             )}
                             {dayEvents.length === 0 && (
                               <div className="flex items-center justify-center py-2">
@@ -678,13 +731,15 @@ export default function CalendarPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {events.map((event) => {
+                  {events.map(event => {
                     const isMyEvent = currentUserInfo?.id === event.created_by
-                    const eventNickname = isMyEvent 
-                      ? (currentUserInfo?.nickname || "나")
-                      : (partnerInfo?.nickname || "파트너")
-                    const eventColor = isMyEvent ? "border-primary/50 bg-primary/5" : "border-accent/50 bg-accent/5"
-                    
+                    const eventNickname = isMyEvent
+                      ? currentUserInfo?.nickname || "나"
+                      : partnerInfo?.nickname || "파트너"
+                    const eventColor = isMyEvent
+                      ? "border-primary/50 bg-primary/5"
+                      : "border-accent/50 bg-accent/5"
+
                     return (
                       <motion.div
                         key={event.id}
@@ -697,19 +752,25 @@ export default function CalendarPage() {
                         }}
                       >
                         <div className="flex-shrink-0">
-                          <CalendarIcon className={`h-5 w-5 ${isMyEvent ? "text-primary" : "text-accent"}`} />
+                          <CalendarIcon
+                            className={`h-5 w-5 ${isMyEvent ? "text-primary" : "text-accent"}`}
+                          />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold">{event.title}</h3>
-                            <Badge 
+                            <Badge
                               variant={isMyEvent ? "default" : "secondary"}
                               className="text-xs"
                             >
                               {eventNickname}
                             </Badge>
                           </div>
-                          {event.description && <p className="text-sm text-muted-foreground mt-1">{event.description}</p>}
+                          {event.description && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {event.description}
+                            </p>
+                          )}
                           <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
@@ -742,7 +803,10 @@ export default function CalendarPage() {
       </div>
 
       {/* 일정 상세 정보 모달 */}
-      <Dialog open={!!selectedEventForDetail} onOpenChange={(open) => !open && setSelectedEventForDetail(null)}>
+      <Dialog
+        open={!!selectedEventForDetail}
+        onOpenChange={open => !open && setSelectedEventForDetail(null)}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedEventForDetail && (
             <>
@@ -750,17 +814,21 @@ export default function CalendarPage() {
                 <DialogTitle>{selectedEventForDetail.title}</DialogTitle>
                 <DialogDescription>
                   {new Date(selectedEventForDetail.start_time).toLocaleString("ko-KR")}
-                  {selectedEventForDetail.end_time && ` - ${new Date(selectedEventForDetail.end_time).toLocaleString("ko-KR")}`}
+                  {selectedEventForDetail.end_time &&
+                    ` - ${new Date(selectedEventForDetail.end_time).toLocaleString("ko-KR")}`}
                 </DialogDescription>
               </DialogHeader>
               {selectedEventForDetail.place && (
                 <div className="space-y-4">
                   {selectedEventForDetail.place.image_url && (
-                    <img
-                      src={selectedEventForDetail.place.image_url}
-                      alt={selectedEventForDetail.place.name}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
+                    <div className="relative w-full h-48 rounded-lg overflow-hidden">
+                      <Image
+                        src={selectedEventForDetail.place.image_url}
+                        alt={selectedEventForDetail.place.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
                   )}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -768,7 +836,9 @@ export default function CalendarPage() {
                       {selectedEventForDetail.place.rating && (
                         <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm">{selectedEventForDetail.place.rating.toFixed(1)}</span>
+                          <span className="text-sm">
+                            {selectedEventForDetail.place.rating.toFixed(1)}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -794,7 +864,9 @@ export default function CalendarPage() {
               {selectedEventForDetail.description && (
                 <div className="space-y-2">
                   <Label>일정 설명</Label>
-                  <p className="text-sm text-muted-foreground">{selectedEventForDetail.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedEventForDetail.description}
+                  </p>
                 </div>
               )}
               <div className="flex gap-2 justify-end">
@@ -818,4 +890,3 @@ export default function CalendarPage() {
     </div>
   )
 }
-

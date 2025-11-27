@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const supabase = await createClient()
     const {
@@ -11,8 +11,6 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "인증이 필요합니다" }, { status: 401 })
     }
-
-    const { newEmail, oldEmail } = await request.json()
 
     // Supabase의 이메일 기능을 사용하여 알림 전송
     // 실제로는 Supabase의 Database Trigger나 Edge Function을 사용하는 것이 좋지만,

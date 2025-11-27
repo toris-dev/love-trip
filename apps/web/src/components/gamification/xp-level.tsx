@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, Star, Zap } from "lucide-react"
+import { Trophy, Star } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 
 interface XPLevelProps {

@@ -16,7 +16,6 @@ import {
   Coffee,
   Utensils,
   AlertCircle,
-  Navigation,
   ChevronRight,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
@@ -109,7 +108,7 @@ export default function DatePage() {
 
   // 데이트 코스를 지역별로 그룹화하고 당일 코스 생성 (최대 3-4개 장소)
   // 각 지역에서 여러 개의 코스를 생성할 수 있도록 개선
-  const groupDateCoursesByRegion = (places: Place[]): DateCourse[] => {
+  const groupDateCoursesByRegion = useCallback((places: Place[]): DateCourse[] => {
     const grouped: { [key: string]: Place[] } = {}
     places.forEach(place => {
       const region = extractRegion(place)
@@ -150,19 +149,9 @@ export default function DatePage() {
     })
 
     return courses
-  }
-
-  useEffect(() => {
-    loadCourses()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
-    filterCourses()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, courses])
-
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
@@ -252,9 +241,9 @@ export default function DatePage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [groupDateCoursesByRegion])
 
-  const filterCourses = () => {
+  const filterCourses = useCallback(() => {
     let filtered = [...courses]
 
     if (searchQuery.trim()) {
@@ -267,7 +256,15 @@ export default function DatePage() {
     }
 
     setFilteredCourses(filtered)
-  }
+  }, [courses, searchQuery])
+
+  useEffect(() => {
+    loadCourses()
+  }, [loadCourses])
+
+  useEffect(() => {
+    filterCourses()
+  }, [filterCourses])
 
   const handleCourseSelect = (course: DateCourse) => {
     setSelectedCourse(course)

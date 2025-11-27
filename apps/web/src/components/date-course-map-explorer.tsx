@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import { MapPin, Heart, Coffee, Utensils, Eye, Building2, Play, Pause } from "lucide-react"
+import { MapPin, Coffee, Utensils, Eye, Building2, Play, Pause } from "lucide-react"
 
 // 데이트 코스 포인트 타입
 type DateCoursePoint = {
@@ -193,7 +193,7 @@ export function DateCourseMapExplorer() {
     if (points.length > 0 && activeIndex >= points.length) {
       setActiveIndex(0)
     }
-  }, [])
+  }, [activeIndex])
   
   // dateCoursePoints가 변경되면 activeIndex 조정
   useEffect(() => {
@@ -219,9 +219,10 @@ export function DateCourseMapExplorer() {
 
     observer.observe(containerRef.current)
 
+    const currentContainer = containerRef.current
     return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current)
+      if (currentContainer) {
+        observer.unobserve(currentContainer)
       }
     }
   }, [])
@@ -274,7 +275,7 @@ export function DateCourseMapExplorer() {
     }, 1200)
 
     return () => clearTimeout(timer)
-  }, [activeIndex, zoom, isDragging, isAutoMode, isVisible])
+  }, [activeIndex, zoom, isDragging, isAutoMode, isVisible, dateCoursePoints])
 
   useEffect(() => {
     // 자동으로 다음 포인트로 이동 (auto 모드이고 화면에 보일 때만)

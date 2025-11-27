@@ -6,7 +6,7 @@ import { Float } from "@react-three/drei"
 import * as THREE from "three"
 import { motion } from "framer-motion"
 
-function LevelBadge3D({ level, isAnimating }: { level: number; isAnimating: boolean }) {
+function LevelBadge3D({ level: _level, isAnimating }: { level: number; isAnimating: boolean }) {
   const groupRef = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
 

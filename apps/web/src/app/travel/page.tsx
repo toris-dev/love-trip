@@ -6,19 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Search,
-  MapPin,
-  Star,
-  Clock,
-  Plane,
-  Camera,
-  Sparkles,
-  AlertCircle,
-  Calendar,
-  Navigation,
-  ChevronRight,
-} from "lucide-react"
+import { Search, MapPin, Star, Plane, AlertCircle, Calendar, ChevronRight } from "lucide-react"
 import { getCoupleRecommendations } from "@/lib/services/recommendation-service"
 import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
@@ -106,7 +94,7 @@ export default function TravelPage() {
   }
 
   // 여행 코스를 지역별로 그룹화하고 1박2일 이상 코스 생성
-  const groupTravelCoursesByRegion = (places: Place[]): TravelCourse[] => {
+  const groupTravelCoursesByRegion = useCallback((places: Place[]): TravelCourse[] => {
     const grouped: { [key: string]: Place[] } = {}
     places.forEach(place => {
       const region = extractRegion(place)
@@ -140,19 +128,9 @@ export default function TravelPage() {
           duration,
         }
       })
-  }
-
-  useEffect(() => {
-    loadCourses()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
-    filterCourses()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, courses])
-
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     try {
@@ -230,9 +208,9 @@ export default function TravelPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [groupTravelCoursesByRegion])
 
-  const filterCourses = () => {
+  const filterCourses = useCallback(() => {
     let filtered = [...courses]
 
     if (searchQuery.trim()) {
@@ -245,7 +223,15 @@ export default function TravelPage() {
     }
 
     setFilteredCourses(filtered)
-  }
+  }, [courses, searchQuery])
+
+  useEffect(() => {
+    loadCourses()
+  }, [loadCourses])
+
+  useEffect(() => {
+    filterCourses()
+  }, [filterCourses])
 
   const handleCourseSelect = (course: TravelCourse) => {
     setSelectedCourse(course)

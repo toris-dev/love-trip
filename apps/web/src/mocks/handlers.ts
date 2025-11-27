@@ -1,16 +1,7 @@
 import { http, HttpResponse } from "msw"
 
-// Supabase REST API 모킹
-// 환경 변수에서 가져오거나 기본값 사용
-const SUPABASE_URL =
-  typeof window !== "undefined"
-    ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_SUPABASE_URL ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      "https://dyomownljgsbwaxnljau.supabase.co"
-    : process.env.NEXT_PUBLIC_SUPABASE_URL || "https://dyomownljgsbwaxnljau.supabase.co"
-const SUPABASE_REST_URL = `${SUPABASE_URL}/rest/v1`
-
-// 지역별 코스 요약 정보 타입
+// 지역별 코스 요약 정보 타입 - 사용되지 않음, 향후 확장을 위해 주석 처리
+/*
 type CourseSummary = {
   id: string
   title: string
@@ -20,8 +11,10 @@ type CourseSummary = {
   image_url: string
   place_count: number
 }
+*/
 
-// 데이트 코스 정의 (지역별 코스 요약)
+// 데이트 코스 정의 (지역별 코스 요약) - 사용되지 않음, 향후 확장을 위해 주석 처리
+/*
 const dateCourseSummaries: CourseSummary[] = [
   {
     id: "date-seoul",
@@ -43,8 +36,10 @@ const dateCourseSummaries: CourseSummary[] = [
     place_count: 3,
   },
 ]
+*/
 
-// 여행 코스 정의 (지역별 코스 요약)
+// 여행 코스 정의 (지역별 코스 요약) - 사용되지 않음, 향후 확장을 위해 주석 처리
+/*
 const travelCourseSummaries: CourseSummary[] = [
   {
     id: "travel-jeju",
@@ -75,8 +70,10 @@ const travelCourseSummaries: CourseSummary[] = [
     place_count: 3,
   },
 ]
+*/
 
-// 데이트 코스 정의 (코스 제목과 해당 장소들) - 기존 데이터 유지
+// 데이트 코스 정의 (코스 제목과 해당 장소들) - 주석 처리된 코드에서만 사용
+/*
 const dateCourses = [
   {
     id: "date-course-seongsu",
@@ -340,6 +337,8 @@ const dateCourses = [
 ]
 
 // 데이트 코스의 모든 장소를 평탄화 (API 호환성을 위해)
+// 주석 처리된 코드에서만 사용되므로 주석 처리
+/*
 const dateCoursePlaces = dateCourses.flatMap(course =>
   course.places.map(place => ({
     ...place,
@@ -349,8 +348,10 @@ const dateCoursePlaces = dateCourses.flatMap(course =>
     updated_at: new Date().toISOString(),
   }))
 )
+*/
 
-// 여행 코스 정의 (코스 제목과 해당 장소들)
+// 여행 코스 정의 (코스 제목과 해당 장소들) - 주석 처리된 코드에서만 사용
+/*
 const travelCourses = [
   {
     id: "travel-course-jeju",
@@ -656,6 +657,8 @@ const travelCourses = [
 ]
 
 // 여행 코스의 모든 장소를 평탄화 (API 호환성을 위해)
+// 주석 처리된 코드에서만 사용되므로 주석 처리
+/*
 const coupleTripPlaces = travelCourses.flatMap(course =>
   course.places.map(place => ({
     ...place,
@@ -665,6 +668,7 @@ const coupleTripPlaces = travelCourses.flatMap(course =>
     updated_at: new Date().toISOString(),
   }))
 )
+*/
 
 // 경비 모킹 데이터 (20개)
 const budgetItems = Array.from({ length: 20 }, (_, i) => {
@@ -740,7 +744,25 @@ export const handlers = [
       const order = url.searchParams.get("order") || "rating.desc"
 
       // Supabase의 type 필터 형식: type=in.(VIEW,MUSEUM,CAFE,FOOD)
-      let places: typeof dateCoursePlaces = []
+      type PlaceWithCourse = {
+        id: string
+        name: string
+        lat: number
+        lng: number
+        type: string
+        rating: number
+        price_level: number
+        description: string
+        image_url: string
+        address: string
+        phone: string
+        website: string
+        course_id: string
+        course_title: string
+        created_at: string
+        updated_at: string
+      }
+      let places: PlaceWithCourse[] = []
 
       // type 파라미터 파싱
       let requestedTypes: string[] = []

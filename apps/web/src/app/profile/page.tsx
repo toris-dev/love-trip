@@ -18,7 +18,6 @@ import {
   Star,
   Wallet,
   Key,
-  Shield,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,8 +37,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [showPasswordChange, setShowPasswordChange] = useState(false)
   const [showEmailChange, setShowEmailChange] = useState(false)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
+  const [, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [profile, setProfile] = useState({
     name: "홍길동",
     email: "hong@example.com",

@@ -96,9 +96,9 @@ export class CalendarService {
       if (error) throw error
 
       return { success: true }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error requesting couple:", error)
-      return { success: false, error: error.message || "커플 요청에 실패했습니다" }
+      return { success: false, error: error instanceof Error ? error.message : "커플 요청에 실패했습니다" }
     }
   }
 
@@ -127,9 +127,9 @@ export class CalendarService {
       }
 
       return { success: true }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error responding to couple request:", error)
-      return { success: false, error: error.message || "요청 처리에 실패했습니다" }
+      return { success: false, error: error instanceof Error ? error.message : "요청 처리에 실패했습니다" }
     }
   }
 
@@ -186,14 +186,15 @@ export class CalendarService {
 
       console.log("[Calendar] Default calendar created successfully:", data)
       return { success: true }
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { message?: string; details?: string; hint?: string; code?: string; stack?: string }
       console.error("[Calendar] Error creating default calendar:", {
         error,
-        message: error?.message,
-        details: error?.details,
-        hint: error?.hint,
-        code: error?.code,
-        stack: error?.stack,
+        message: err?.message,
+        details: err?.details,
+        hint: err?.hint,
+        code: err?.code,
+        stack: err?.stack,
       })
       return {
         success: false,
@@ -290,9 +291,9 @@ export class CalendarService {
       await this.sendEventNotification(data as CalendarEvent)
 
       return { success: true, data: data as CalendarEvent }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error creating event:", error)
-      return { success: false, error: error.message || "이벤트 생성에 실패했습니다" }
+      return { success: false, error: error instanceof Error ? error.message : "이벤트 생성에 실패했습니다" }
     }
   }
 
@@ -303,9 +304,9 @@ export class CalendarService {
 
       if (error) throw error
       return { success: true }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating event:", error)
-      return { success: false, error: error.message || "이벤트 업데이트에 실패했습니다" }
+      return { success: false, error: error instanceof Error ? error.message : "이벤트 업데이트에 실패했습니다" }
     }
   }
 
@@ -316,9 +317,9 @@ export class CalendarService {
 
       if (error) throw error
       return { success: true }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error deleting event:", error)
-      return { success: false, error: error.message || "이벤트 삭제에 실패했습니다" }
+      return { success: false, error: error instanceof Error ? error.message : "이벤트 삭제에 실패했습니다" }
     }
   }
 

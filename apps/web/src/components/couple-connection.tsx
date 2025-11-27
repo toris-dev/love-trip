@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Heart, UserPlus, Check, X, Mail, Search, User } from "lucide-react"
+import { Heart, UserPlus, Check, X, Mail, Search } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { calendarService, type Couple } from "@/lib/services/calendar-service"
 import { createClient } from "@/lib/supabase/client"
@@ -28,7 +28,7 @@ export function CoupleConnection() {
   const [isSearching, setIsSearching] = useState(false)
   const [pendingRequests, setPendingRequests] = useState<Couple[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ id: string; email: string } | null>(null)
   const [partnerInfo, setPartnerInfo] = useState<{ nickname?: string; display_name?: string; email: string } | null>(null)
 
   useEffect(() => {

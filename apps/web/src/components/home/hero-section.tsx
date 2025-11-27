@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client"
 import { PointsStats } from "@/components/gamification"
 
 export function HeroSection() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [gamificationData] = useState({
     points: 12500,
     streak: 7,

@@ -43,7 +43,6 @@ export async function getCoupleRecommendations(
       const areaCodes = [1, 2, 3, 4, 5, 6, 7, 8, 31, 32, 33, 34, 35, 36, 37, 38, 39]
       // 각 지역에서 충분한 데이터를 가져오기 위해 최소 50개씩 확보
       const placesPerRegion = Math.max(50, Math.ceil(limit / areaCodes.length))
-      const allPlaces: Place[] = []
 
       // 각 지역에서 병렬로 데이터 가져오기
       const promises = areaCodes.map(async areaCode => {
