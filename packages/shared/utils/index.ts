@@ -24,4 +24,3 @@ export function calculateTotal(items: Array<{ planned: number; actual: number }>
     actual: items.reduce((sum, item) => sum + item.actual, 0),
   }
 }
-
