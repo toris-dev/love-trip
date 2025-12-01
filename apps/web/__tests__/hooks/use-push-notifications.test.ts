@@ -1,19 +1,21 @@
+import { describe, it, expect, beforeEach, vi } from "vitest"
 import { renderHook, act } from "@testing-library/react"
 import { usePushNotifications } from "@/hooks/use-push-notifications"
-import jest from "jest" // Declare jest variable
 
 // Mock service worker and push manager
+const mockPushManager = {
+  getSubscription: vi.fn(),
+  subscribe: vi.fn(),
+}
+
 const mockServiceWorker = {
   ready: Promise.resolve({
-    pushManager: {
-      getSubscription: jest.fn(),
-      subscribe: jest.fn(),
-    },
+    pushManager: mockPushManager,
   }),
 }
 
 const mockNotification = {
-  requestPermission: jest.fn(),
+  requestPermission: vi.fn(),
 }
 
 Object.defineProperty(global, "navigator", {
@@ -30,14 +32,14 @@ Object.defineProperty(global, "Notification", {
 
 Object.defineProperty(global, "window", {
   value: {
-    atob: jest.fn((str) => str),
+    atob: vi.fn((str: string) => str),
   },
   writable: true,
 })
 
 describe("usePushNotifications", () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockNotification.requestPermission.mockResolvedValue("granted")
   })
 
@@ -67,12 +69,8 @@ describe("usePushNotifications", () => {
       }),
     }
 
-    mockServiceWorker.ready = Promise.resolve({
-      pushManager: {
-        getSubscription: jest.fn().mockResolvedValue(null),
-        subscribe: jest.fn().mockResolvedValue(mockSubscription),
-      },
-    })
+    mockPushManager.getSubscription = vi.fn().mockResolvedValue(null)
+    mockPushManager.subscribe = vi.fn().mockResolvedValue(mockSubscription)
 
     const { result } = renderHook(() => usePushNotifications())
 

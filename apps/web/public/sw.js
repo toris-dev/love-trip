@@ -6,6 +6,19 @@ self.addEventListener("install", (event) => {
 })
 
 self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url)
+  
+  // CSS 파일과 개발 환경의 정적 파일은 캐싱하지 않음 (Brave 브라우저 호환)
+  const isCSS = url.pathname.endsWith('.css')
+  const isDevStatic = url.pathname.includes('/_next/static/')
+  const isDevMode = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+  
+  if (isCSS || (isDevMode && isDevStatic)) {
+    // CSS 파일과 개발 환경 정적 파일은 네트워크에서 직접 가져옴
+    event.respondWith(fetch(event.request))
+    return
+  }
+  
   event.respondWith(
     caches.match(event.request).then((response) => {
       // Cache hit - return response
