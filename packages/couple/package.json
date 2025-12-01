@@ -1,0 +1,26 @@
+{
+  "name": "@lovetrip/couple",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./services": "./services/index.ts",
+    "./types": "./types/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lovetrip/api": "workspace:*",
+    "@lovetrip/shared": "workspace:*",
+    "@lovetrip/ui": "workspace:*",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0"
+  }
+}
