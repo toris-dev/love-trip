@@ -1,60 +1,61 @@
-"use client"
-
 import { Heart, Sparkles, Users, MapPin, Target, Zap, Shield, Globe, Wallet } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
+import { Button } from "@lovetrip/ui/components/button"
 import Link from "next/link"
-import { Footer } from "@/components/footer"
+import { Footer } from "@/components/layout/footer"
+
+const features = [
+  {
+    icon: Sparkles,
+    title: "AI 기반 맞춤 추천",
+    description: "커플의 취향과 예산에 맞는 최적의 여행 코스를 AI가 추천해드립니다",
+    color: "text-yellow-500",
+  },
+  {
+    icon: MapPin,
+    title: "실시간 지도 연동",
+    description: "네이버 지도와 연동하여 실제 위치 기반으로 정확한 여행 계획을 세울 수 있습니다",
+    color: "text-green-500",
+  },
+  {
+    icon: Wallet,
+    title: "스마트 예산 관리",
+    description: "실시간 지출 추적과 예산 분석으로 여행 경비를 완벽하게 관리하세요",
+    color: "text-blue-500",
+  },
+  {
+    icon: Users,
+    title: "커플 협업 기능",
+    description: "파트너와 함께 실시간으로 여행 계획을 공유하고 수정할 수 있습니다",
+    color: "text-pink-500",
+  },
+  {
+    icon: Shield,
+    title: "안전한 정보 보호",
+    description: "개인정보를 안전하게 보호하며, 모든 데이터는 암호화되어 저장됩니다",
+    color: "text-purple-500",
+  },
+  {
+    icon: Globe,
+    title: "다양한 여행지",
+    description: "전국 어디든, 다양한 테마의 여행지를 추천하고 관리할 수 있습니다",
+    color: "text-cyan-500",
+  },
+]
+
+const stats = [
+  { number: "10,000+", label: "활성 사용자" },
+  { number: "50,000+", label: "완성된 여행 계획" },
+  { number: "4.8/5", label: "평균 만족도" },
+  { number: "98%", label: "재방문율" },
+]
+
+// ISR: 1시간마다 재생성 (Incremental Static Regeneration)
+export const revalidate = 3600
 
 export default function AboutPage() {
-  const features = [
-    {
-      icon: Sparkles,
-      title: "AI 기반 맞춤 추천",
-      description: "커플의 취향과 예산에 맞는 최적의 여행 코스를 AI가 추천해드립니다",
-      color: "text-yellow-500",
-    },
-    {
-      icon: MapPin,
-      title: "실시간 지도 연동",
-      description: "네이버 지도와 연동하여 실제 위치 기반으로 정확한 여행 계획을 세울 수 있습니다",
-      color: "text-green-500",
-    },
-    {
-      icon: Wallet,
-      title: "스마트 예산 관리",
-      description: "실시간 지출 추적과 예산 분석으로 여행 경비를 완벽하게 관리하세요",
-      color: "text-blue-500",
-    },
-    {
-      icon: Users,
-      title: "커플 협업 기능",
-      description: "파트너와 함께 실시간으로 여행 계획을 공유하고 수정할 수 있습니다",
-      color: "text-pink-500",
-    },
-    {
-      icon: Shield,
-      title: "안전한 정보 보호",
-      description: "개인정보를 안전하게 보호하며, 모든 데이터는 암호화되어 저장됩니다",
-      color: "text-purple-500",
-    },
-    {
-      icon: Globe,
-      title: "다양한 여행지",
-      description: "전국 어디든, 다양한 테마의 여행지를 추천하고 관리할 수 있습니다",
-      color: "text-cyan-500",
-    },
-  ]
-
-  const stats = [
-    { number: "10,000+", label: "활성 사용자" },
-    { number: "50,000+", label: "완성된 여행 계획" },
-    { number: "4.8/5", label: "평균 만족도" },
-    { number: "98%", label: "재방문율" },
-  ]
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="fixed inset-0 w-full h-full overflow-y-auto bg-background">
       {/* Hero Section */}
       <section className="relative py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10 overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.03]" />
@@ -201,4 +202,3 @@ export default function AboutPage() {
     </div>
   )
 }
-

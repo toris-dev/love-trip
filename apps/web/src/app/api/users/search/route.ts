@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
+// Edge Runtime 설정 - 빠른 응답을 위해 Edge에서 실행
+export const runtime = "edge"
+export const dynamic = "force-dynamic"
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
