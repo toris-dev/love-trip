@@ -250,6 +250,11 @@ pnpm dev
 ### Frontend
 
 - **Next.js 15.2.4** - React 프레임워크
+  - Edge Functions 지원
+  - ISR (Incremental Static Regeneration)
+  - ISG (Incremental Static Generation)
+  - Lazy Loading 및 코드 스플리팅
+  - PWA 지원 (manifest.ts)
 - **TypeScript** - 타입 안정성
 - **Tailwind CSS** - 스타일링
 - **Radix UI** - 접근성 있는 UI 컴포넌트
@@ -276,6 +281,9 @@ pnpm dev
 - **ESLint** - 코드 린팅
 - **Prettier** - 코드 포맷팅
 - **TypeScript** - 타입 체크
+- **Vitest** - Unit 테스트
+- **Cypress** - E2E 테스트
+- **Storybook** - 컴포넌트 문서화
 
 ## 🗄 데이터베이스 구조
 
@@ -326,14 +334,23 @@ pnpm lint:fix
 # 타입 체크
 pnpm type-check
 
-# 테스트 실행
-pnpm --filter web test
+# Unit 테스트 실행 (Vitest)
+pnpm test
 
-# 테스트 UI 실행
-pnpm --filter web test:ui
+# Unit 테스트 UI 실행
+pnpm test:ui
+
+# E2E 테스트 실행 (Cypress)
+pnpm test:e2e
+
+# E2E 테스트 UI 열기
+pnpm test:e2e:open
 
 # 코드 포맷팅
 pnpm format
+
+# Storybook 실행
+pnpm storybook
 ```
 
 ## 🔑 API 키 발급
@@ -384,9 +401,10 @@ Private - All rights reserved
 
 ## 🔗 관련 문서
 
-- [아키텍처 문서](./ARCHITECTURE.md)
-- [마이그레이션 요약](./MIGRATION_SUMMARY.md)
-- [크롤러 README](./packages/crawler/README.md)
+- [아키텍처 문서](./docs/ARCHITECTURE.md) - 프로젝트 구조 및 아키텍처 설명
+- [테스트 가이드](./docs/TESTING.md) - 테스트 작성 및 실행 방법
+- [배포 가이드](./docs/DEPLOYMENT.md) - 배포 전략 및 절차
+- [크롤러 README](./packages/crawler/README.md) - 크롤러 사용법
 
 ---
 
