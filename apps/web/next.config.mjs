@@ -18,6 +18,17 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Turbopack 활성화 (Next.js 16에서는 기본이지만 명시적으로 설정)
+  experimental: {
+    turbo: {
+      // Turbopack 설정
+    },
+  },
+  // ESLint 설정
+  eslint: {
+    dirs: ["src", "app"],
+    ignoreDuringBuilds: false,
+  },
   transpilePackages: ["@love-trip/shared", "@lovetrip/ui"],
   typescript: {
     // node_modules의 타입 에러는 무시 (skipLibCheck가 작동하지 않는 경우)
@@ -46,11 +57,45 @@ const nextConfig = {
         ],
       },
       {
-        source: "/manifest.json",
+        source: "/manifest",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // CSS 파일 캐시 설정 (개발 환경에서 캐시 완전 비활성화 - Brave 브라우저 호환)
+        source: "/:path*.css",
+        headers: [
+          {
+            key: "Cache-Control",
+            value:
+              process.env.NODE_ENV === "production"
+                ? "public, max-age=31536000, immutable"
+                : "no-cache, no-store, must-revalidate, max-age=0",
+          },
+          {
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
+          },
+        ],
+      },
+      {
+        // _next/static CSS 파일도 캐시 비활성화 (개발 환경)
+        source: "/_next/static/:path*.css",
+        headers: [
+          {
+            key: "Cache-Control",
+            value:
+              process.env.NODE_ENV === "production"
+                ? "public, max-age=31536000, immutable"
+                : "no-cache, no-store, must-revalidate, max-age=0",
           },
         ],
       },
