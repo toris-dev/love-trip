@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@lovetrip/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
@@ -23,12 +23,18 @@ import {
   ArrowRight,
   ArrowLeft,
   Plane,
-  Clock,
   Users,
+  Share2,
+  Gift,
+  X,
+  GripVertical,
 } from "lucide-react"
-import { useTravelCourses, type TravelCourse } from "@lovetrip/planner/components/travel"
+import { Switch } from "@lovetrip/ui/components/switch"
+import { LocationInput } from "@/components/shared/location-input"
 import { toast } from "sonner"
-import Image from "next/image"
+import dynamic from "next/dynamic"
+
+const NaverMapView = dynamic(() => import("@/components/shared/naver-map-view"), { ssr: false })
 
 interface TravelPlanWizardProps {
   user: { id: string; email?: string } | null
@@ -36,7 +42,7 @@ interface TravelPlanWizardProps {
   onOpenChange: (open: boolean) => void
 }
 
-type WizardStep = "course" | "budget" | "confirm"
+type WizardStep = "places" | "budget" | "confirm"
 
 interface BudgetData {
   total: number
@@ -50,8 +56,19 @@ interface BudgetData {
 
 export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardProps) {
   const router = useRouter()
-  const [step, setStep] = useState<WizardStep>("course")
-  const [selectedCourse, setSelectedCourse] = useState<TravelCourse | null>(null)
+  const [step, setStep] = useState<WizardStep>("places")
+  const [places, setPlaces] = useState<
+    Array<{
+      id: string
+      name: string
+      address: string
+      lat: number
+      lng: number
+      type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
+    }>
+  >([])
+  const [courseTitle, setCourseTitle] = useState("")
+  const [courseDescription, setCourseDescription] = useState("")
   const [budget, setBudget] = useState<BudgetData>({
     total: 0,
     transportation: 0,
@@ -65,36 +82,52 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
     start: "",
     end: "",
   })
+  const [departureLocation, setDepartureLocation] = useState<{
+    address: string
+    lat: number
+    lng: number
+  } | null>(null)
+  const [destinationLocation, setDestinationLocation] = useState<{
+    address: string
+    lat: number
+    lng: number
+  } | null>(null)
+  const [isPublic, setIsPublic] = useState(false)
+  const [isPremium, setIsPremium] = useState(false)
 
-  const { courses, isLoading } = useTravelCourses()
-
-  const progress = step === "course" ? 33 : step === "budget" ? 66 : 100
-
-  const handleCourseSelect = (course: TravelCourse) => {
-    setSelectedCourse(course)
-    // 코스 기반 예산 추정
-    const estimatedBudget = estimateBudget(course)
-    setBudget(estimatedBudget)
-    setStep("budget")
-  }
-
-  const estimateBudget = (course: TravelCourse): BudgetData => {
-    const placeCount = course.place_count
-    const durationStr = course.duration || ""
-    let numbersOnly = ""
-    for (let i = 0; i < durationStr.length; i++) {
-      const char = durationStr[i]
-      if (char >= "0" && char <= "9") {
-        numbersOnly += char
-      }
+  // 프리미엄 구독 확인 (필요시 사용)
+  useEffect(() => {
+    if (user) {
+      fetch("/api/subscription/check")
+        .then(res => res.json())
+        .then(data => setIsPremium(data.isPremium || false))
+        .catch(() => setIsPremium(false))
     }
-    const duration = numbersOnly ? parseInt(numbersOnly, 10) : 2
+  }, [user])
 
-    // 기본 예산 추정 (1박2일 기준)
+  const progress = step === "places" ? 33 : step === "budget" ? 66 : 100
+
+  const estimateBudgetFromPlaces = (
+    placesList: Array<{ type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC" }>,
+    startDate: string,
+    endDate: string
+  ): BudgetData => {
+    let duration = 1
+    if (startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      const diffTime = Math.abs(end.getTime() - start.getTime())
+      duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+    }
+
+    // 장소 타입별 예산 추정
+    const foodPlaces = placesList.filter(p => p.type === "FOOD" || p.type === "CAFE").length
+    const activityPlaces = placesList.filter(p => p.type === "VIEW" || p.type === "MUSEUM").length
+
     const baseTransportation = duration >= 3 ? 300000 : 200000
     const baseAccommodation = duration * 150000
-    const baseFood = duration * 2 * 50000
-    const baseActivity = placeCount * 20000
+    const baseFood = foodPlaces * 50000
+    const baseActivity = activityPlaces * 20000
     const baseShopping = 100000
     const baseOther = 50000
 
@@ -145,9 +178,15 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
       return
     }
 
-    if (!selectedCourse) {
-      toast.error("여행 코스를 선택해주세요")
-      setStep("course")
+    if (places.length === 0) {
+      toast.error("최소 1개 이상의 장소를 추가해주세요")
+      setStep("places")
+      return
+    }
+
+    if (!courseTitle.trim()) {
+      toast.error("코스 제목을 입력해주세요")
+      setStep("places")
       return
     }
 
@@ -163,20 +202,188 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
     }
 
     try {
-      // 여행 계획 저장 로직 (API 호출)
-      // TODO: 실제 API 연동
-      toast.success("여행 계획이 저장되었습니다!")
+      // 코스 정보 준비
+      const coursePlaces = places.map(p => ({
+        id: p.id,
+        name: p.name,
+        lat: p.lat,
+        lng: p.lng,
+        type: p.type,
+        rating: 0,
+        price_level: 0,
+        description: "",
+        image_url: "",
+      }))
+
+      // 지역 자동 추출 (첫 장소 주소에서)
+      const firstPlace = places[0]
+      let courseDestination = "기타"
+      if (firstPlace?.address) {
+        // 주소에서 지역 추출 (예: "서울특별시 강남구" -> "서울")
+        const match = firstPlace.address.match(
+          /(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/
+        )
+        courseDestination = match ? match[1] : "기타"
+      }
+
+      // 1. travel_plan 생성
+      const response = await fetch("/api/travel-plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: courseTitle,
+          destination: courseDestination,
+          description: courseDescription,
+          start_date: travelDates.start,
+          end_date: travelDates.end,
+          total_budget: budget.total,
+          course_type: travelDates.start === travelDates.end ? "date" : "travel",
+          places: coursePlaces.map((p, index) => ({
+            place_id: p.id,
+            day_number: calculateDayNumber(
+              index,
+              coursePlaces.length,
+              travelDates.start,
+              travelDates.end
+            ),
+            order_index: index,
+          })),
+          budget_items: [
+            { category: "교통비", name: "교통비", planned_amount: budget.transportation },
+            { category: "숙박비", name: "숙박비", planned_amount: budget.accommodation },
+            { category: "식비", name: "식비", planned_amount: budget.food },
+            { category: "액티비티", name: "액티비티", planned_amount: budget.activity },
+            { category: "쇼핑", name: "쇼핑", planned_amount: budget.shopping },
+            { category: "기타", name: "기타", planned_amount: budget.other },
+          ],
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || "여행 계획 저장에 실패했습니다")
+      }
+
+      const { plan } = await response.json()
+
+      // 2. 공개 옵션이 선택된 경우 user_course로 변환
+      if (isPublic) {
+        const publishResponse = await fetch(`/api/user-courses/${plan.id}/publish`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: courseTitle,
+            description: courseDescription,
+            isPublic: true,
+          }),
+        })
+
+        if (publishResponse.ok) {
+          const { rewards } = await publishResponse.json()
+
+          // 배지 획득 시 특별 알림
+          if (rewards?.badge) {
+            toast.success(
+              `🎉 축하합니다! 코스가 공개되었고 "${rewards.badge.name}" 배지를 획득했습니다!`,
+              {
+                description: `보상: XP ${rewards.xp || 0} + 포인트 ${rewards.points || 0}${rewards.leveledUp ? " (레벨 업!)" : ""}`,
+                duration: 5000,
+              }
+            )
+          } else {
+            toast.success(`여행 계획이 공개되었습니다!`, {
+              description: `보상: XP ${rewards?.xp || 0} + 포인트 ${rewards?.points || 0}${rewards?.leveledUp ? " (레벨 업!)" : ""}`,
+              duration: 4000,
+            })
+          }
+        } else {
+          toast.success("여행 계획이 저장되었습니다! (공개는 나중에 설정할 수 있습니다)")
+        }
+      } else {
+        toast.success("여행 계획이 저장되었습니다!")
+      }
+
       onOpenChange(false)
       router.push("/my-trips")
     } catch (error) {
-      toast.error("여행 계획 저장에 실패했습니다")
+      toast.error(error instanceof Error ? error.message : "여행 계획 저장에 실패했습니다")
       console.error(error)
     }
   }
 
+  // 일차 계산 함수
+  const calculateDayNumber = (
+    index: number,
+    totalPlaces: number,
+    startDate: string,
+    endDate: string
+  ): number => {
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const diffTime = Math.abs(end.getTime() - start.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+
+    if (diffDays === 1) return 1 // 당일 코스
+
+    // 여러 일차에 장소를 균등 분배
+    const placesPerDay = Math.ceil(totalPlaces / diffDays)
+    return Math.floor(index / placesPerDay) + 1
+  }
+
+  // LocationInput에서 선택한 위치를 Place 형식으로 변환하여 추가
+  const handleAddPlace = (location: {
+    address: string
+    lat: number
+    lng: number
+    name?: string
+  }) => {
+    if (places.some(p => p.lat === location.lat && p.lng === location.lng)) {
+      toast.error("이미 추가된 장소입니다")
+      return
+    }
+
+    const newPlace = {
+      id: `place-${Date.now()}-${Math.random()}`,
+      name: location.name || location.address,
+      address: location.address,
+      lat: location.lat,
+      lng: location.lng,
+      type: "ETC" as const,
+    }
+
+    setPlaces([...places, newPlace])
+    toast.success("장소가 추가되었습니다")
+  }
+
+  const handleRemovePlace = (placeId: string) => {
+    setPlaces(places.filter(p => p.id !== placeId))
+    toast.success("장소가 제거되었습니다")
+  }
+
+  const handlePlacesNext = () => {
+    if (places.length === 0) {
+      toast.error("최소 1개 이상의 장소를 추가해주세요")
+      return
+    }
+    if (!courseTitle.trim()) {
+      toast.error("코스 제목을 입력해주세요")
+      return
+    }
+
+    const estimatedBudget = estimateBudgetFromPlaces(
+      places,
+      travelDates.start || new Date().toISOString().split("T")[0],
+      travelDates.end || new Date().toISOString().split("T")[0]
+    )
+    setBudget(estimatedBudget)
+    setStep("budget")
+  }
+
   const handleClose = () => {
-    setStep("course")
-    setSelectedCourse(null)
+    setStep("places")
+    setPlaces([])
+    setCourseTitle("")
+    setCourseDescription("")
     setBudget({
       total: 0,
       transportation: 0,
@@ -187,6 +394,9 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
       other: 0,
     })
     setTravelDates({ start: "", end: "" })
+    setDepartureLocation(null)
+    setDestinationLocation(null)
+    setIsPublic(false)
     onOpenChange(false)
   }
 
@@ -211,10 +421,10 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
             <div className="flex items-center justify-between text-xs sm:text-sm">
               <span
                 className={
-                  step === "course" ? "font-semibold text-primary" : "text-muted-foreground"
+                  step === "places" ? "font-semibold text-primary" : "text-muted-foreground"
                 }
               >
-                1. 코스 선택
+                1. 장소 추가
               </span>
               <span
                 className={
@@ -235,69 +445,113 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
           </div>
         </div>
 
-        {/* Step 1: 코스 선택 */}
-        {step === "course" && (
+        {/* Step 1: 장소 추가 */}
+        {step === "places" && (
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4">
-            <div className="space-y-4">
-              <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-                여행하고 싶은 코스를 선택해주세요
-              </p>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                </div>
-              ) : courses.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">여행 코스가 없습니다</div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-4">
-                  {courses.map(course => (
-                    <Card
-                      key={course.id}
-                      className={`cursor-pointer transition-all hover:shadow-lg ${
-                        selectedCourse?.id === course.id ? "ring-2 ring-primary shadow-lg" : ""
-                      }`}
-                      onClick={() => handleCourseSelect(course)}
-                    >
-                      <CardContent className="p-3 sm:p-4">
-                        {course.image_url && (
-                          <div className="relative w-full h-24 sm:h-32 mb-2 sm:mb-3 rounded-lg overflow-hidden">
-                            <Image
-                              src={course.image_url}
-                              alt={course.title}
-                              fill
-                              className="object-cover"
-                            />
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">데이트 코스 만들기</h3>
+                <p className="text-sm text-muted-foreground">
+                  장소를 검색하여 추가하고 순서를 정해보세요
+                </p>
+              </div>
+
+              {/* 코스 정보 입력 */}
+              <Card>
+                <CardHeader className="p-3 sm:p-4">
+                  <CardTitle className="text-sm sm:text-base">코스 정보</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 pt-0 space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="course-title">코스 제목 *</Label>
+                    <Input
+                      id="course-title"
+                      value={courseTitle}
+                      onChange={e => setCourseTitle(e.target.value)}
+                      placeholder="예: 서울 로맨틱 데이트 코스"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="course-description">코스 설명 (선택)</Label>
+                    <Input
+                      id="course-description"
+                      value={courseDescription}
+                      onChange={e => setCourseDescription(e.target.value)}
+                      placeholder="코스에 대한 간단한 설명을 입력하세요"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 장소 검색 및 추가 */}
+              <Card>
+                <CardHeader className="p-3 sm:p-4">
+                  <CardTitle className="text-sm sm:text-base">장소 추가</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 pt-0">
+                  <LocationInput
+                    label=""
+                    value=""
+                    onChange={() => {}}
+                    onLocationSelect={handleAddPlace}
+                    placeholder="장소명 또는 주소를 입력하세요"
+                  />
+                </CardContent>
+              </Card>
+
+              {/* 추가된 장소 목록 */}
+              {places.length > 0 && (
+                <Card>
+                  <CardHeader className="p-3 sm:p-4">
+                    <CardTitle className="text-sm sm:text-base">
+                      추가된 장소 ({places.length}개)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 sm:p-4 pt-0">
+                    <div className="space-y-2">
+                      {places.map((place, index) => (
+                        <div
+                          key={place.id}
+                          className="flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <GripVertical className="h-4 w-4" />
+                            <span className="text-sm font-medium w-6">{index + 1}</span>
                           </div>
-                        )}
-                        <div className="flex items-start justify-between mb-2">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-sm sm:text-base lg:text-lg mb-1 line-clamp-1">
-                              {course.title}
-                            </h3>
-                            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                              {course.description}
-                            </p>
+                            <p className="font-medium text-sm truncate">{place.name}</p>
+                            {place.address && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {place.address}
+                              </p>
+                            )}
                           </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemovePlace(place.id)}
+                            className="flex-shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-3">
-                          <Badge variant="secondary" className="text-[10px] sm:text-xs">
-                            <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                            {course.region}
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px] sm:text-xs">
-                            <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                            {course.duration}
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px] sm:text-xs">
-                            <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                            {course.place_count}개
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
+
+              {/* 다음 버튼 */}
+              <div className="flex justify-end pt-2">
+                <Button
+                  onClick={handlePlacesNext}
+                  disabled={places.length === 0 || !courseTitle.trim()}
+                  className="w-full sm:w-auto"
+                >
+                  다음
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -315,6 +569,49 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
                   각 항목별 예산을 입력해주세요
                 </p>
               </div>
+
+              {/* 출발지/목적지 입력 */}
+              <Card>
+                <CardHeader className="p-3 sm:p-4">
+                  <CardTitle className="text-sm sm:text-base">출발지 및 목적지</CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-4 pt-0 space-y-4">
+                  <LocationInput
+                    label="출발지"
+                    value={departureLocation?.address || ""}
+                    onChange={address => {
+                      if (!address) {
+                        setDepartureLocation(null)
+                      }
+                    }}
+                    onLocationSelect={location => {
+                      setDepartureLocation({
+                        address: location.address,
+                        lat: location.lat,
+                        lng: location.lng,
+                      })
+                    }}
+                    placeholder="출발지를 입력하세요 (예: 서울역, 강남역)"
+                  />
+                  <LocationInput
+                    label="목적지"
+                    value={destinationLocation?.address || ""}
+                    onChange={address => {
+                      if (!address) {
+                        setDestinationLocation(null)
+                      }
+                    }}
+                    onLocationSelect={location => {
+                      setDestinationLocation({
+                        address: location.address,
+                        lat: location.lat,
+                        lng: location.lng,
+                      })
+                    }}
+                    placeholder="목적지를 입력하세요 (예: 제주도, 부산)"
+                  />
+                </CardContent>
+              </Card>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
@@ -460,7 +757,7 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
               <div className="flex flex-col sm:flex-row gap-2 sm:justify-end pt-2">
                 <Button
                   variant="outline"
-                  onClick={() => setStep("course")}
+                  onClick={() => setStep("places")}
                   className="w-full sm:w-auto"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
@@ -476,7 +773,7 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
         )}
 
         {/* Step 3: 확인 및 저장 */}
-        {step === "confirm" && selectedCourse && (
+        {step === "confirm" && places.length > 0 && (
           <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4">
             <div className="space-y-4 sm:space-y-6">
               <div>
@@ -491,38 +788,40 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
                   <CardTitle className="text-sm sm:text-base">선택한 코스</CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 sm:p-6 pt-0">
-                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
-                    {selectedCourse.image_url && (
-                      <div className="relative w-full sm:w-24 h-32 sm:h-24 rounded-lg overflow-hidden flex-shrink-0">
-                        <Image
-                          src={selectedCourse.image_url}
-                          alt={selectedCourse.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
+                  <div className="space-y-3">
+                    <div>
                       <h4 className="font-semibold text-sm sm:text-base lg:text-lg mb-1">
-                        {selectedCourse.title}
+                        {courseTitle}
                       </h4>
-                      <p className="text-xs sm:text-sm text-muted-foreground mb-2 line-clamp-2">
-                        {selectedCourse.description}
-                      </p>
+                      {courseDescription && (
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2">
+                          {courseDescription}
+                        </p>
+                      )}
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary" className="text-[10px] sm:text-xs">
-                          <MapPin className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                          {selectedCourse.region}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px] sm:text-xs">
-                          <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                          {selectedCourse.duration}
-                        </Badge>
                         <Badge variant="outline" className="text-[10px] sm:text-xs">
                           <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                          {selectedCourse.place_count}개 장소
+                          {places.length}개 장소
                         </Badge>
                       </div>
+                    </div>
+                    <div className="space-y-2">
+                      {places.map((place, index) => (
+                        <div
+                          key={place.id}
+                          className="flex items-center gap-3 p-2 border rounded-lg bg-muted/30"
+                        >
+                          <span className="text-xs font-medium w-6">{index + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{place.name}</p>
+                            {place.address && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {place.address}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
@@ -577,6 +876,113 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
                         : "일정을 선택해주세요"}
                     </span>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* 출발지/목적지 지도 */}
+              {(departureLocation || destinationLocation) && (
+                <Card>
+                  <CardHeader className="p-3 sm:p-6">
+                    <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      출발지 및 목적지
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-3 sm:p-6 pt-0 space-y-3">
+                    {departureLocation && (
+                      <div className="text-xs sm:text-sm">
+                        <span className="font-medium text-muted-foreground">출발지: </span>
+                        <span>{departureLocation.address}</span>
+                      </div>
+                    )}
+                    {destinationLocation && (
+                      <div className="text-xs sm:text-sm">
+                        <span className="font-medium text-muted-foreground">목적지: </span>
+                        <span>{destinationLocation.address}</span>
+                      </div>
+                    )}
+                    <div className="h-64 rounded-lg overflow-hidden border">
+                      <NaverMapView
+                        places={[
+                          ...(departureLocation
+                            ? [
+                                {
+                                  id: "departure",
+                                  name: "출발지",
+                                  lat: departureLocation.lat,
+                                  lng: departureLocation.lng,
+                                  type: "ETC" as const,
+                                  rating: 0,
+                                  priceLevel: 0,
+                                  description: departureLocation.address,
+                                  image: "",
+                                },
+                              ]
+                            : []),
+                          ...(destinationLocation
+                            ? [
+                                {
+                                  id: "destination",
+                                  name: "목적지",
+                                  lat: destinationLocation.lat,
+                                  lng: destinationLocation.lng,
+                                  type: "ETC" as const,
+                                  rating: 0,
+                                  priceLevel: 0,
+                                  description: destinationLocation.address,
+                                  image: "",
+                                },
+                              ]
+                            : []),
+                        ]}
+                        path={
+                          departureLocation && destinationLocation
+                            ? [
+                                { lat: departureLocation.lat, lng: departureLocation.lng },
+                                { lat: destinationLocation.lat, lng: destinationLocation.lng },
+                              ]
+                            : []
+                        }
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* 공개 옵션 */}
+              <Card className="bg-primary/5 border-primary/20">
+                <CardHeader className="p-3 sm:p-6">
+                  <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                    <Share2 className="h-4 w-4 text-primary" />
+                    코스 공개하기
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 sm:p-6 pt-0 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs sm:text-sm font-medium mb-1">
+                        다른 커플과 코스를 공유하시겠어요?
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        공개하면 다른 사용자들이 내 코스를 볼 수 있고, 좋아요/저장을 받을 때마다
+                        보상을 받을 수 있어요!
+                      </p>
+                    </div>
+                    <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+                  </div>
+                  {isPublic && (
+                    <div className="flex items-start gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                      <Gift className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="text-xs">
+                        <p className="font-medium mb-1">공개 보상:</p>
+                        <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+                          <li>XP 100 + 포인트 50 (첫 코스 공개 시 배지 추가)</li>
+                          <li>좋아요 받기: XP 5 + 포인트 2</li>
+                          <li>저장 받기: XP 10 + 포인트 5</li>
+                        </ul>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

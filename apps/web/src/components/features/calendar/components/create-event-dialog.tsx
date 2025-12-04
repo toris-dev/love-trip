@@ -22,10 +22,19 @@ import { PlaceSearch } from "./place-search"
 interface CreateEventDialogProps {
   selectedCalendar: string | null
   onSuccess?: () => void
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function CreateEventDialog({ selectedCalendar, onSuccess }: CreateEventDialogProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+export function CreateEventDialog({
+  selectedCalendar,
+  onSuccess,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: CreateEventDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isDialogOpen = controlledOpen !== undefined ? controlledOpen : internalOpen
+  const setIsDialogOpen = controlledOnOpenChange || setInternalOpen
   const {
     newEvent,
     setNewEvent,
@@ -50,6 +59,7 @@ export function CreateEventDialog({ selectedCalendar, onSuccess }: CreateEventDi
     await handleCreateEvent(newEvent, () => {
       resetForm()
       setIsDialogOpen(false)
+      onSuccess?.()
     })
   }
 
@@ -77,12 +87,14 @@ export function CreateEventDialog({ selectedCalendar, onSuccess }: CreateEventDi
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-      <DialogTrigger asChild>
-        <Button className="w-full" size="lg">
-          <Plus className="h-4 w-4 mr-2" />
-          일정 추가
-        </Button>
-      </DialogTrigger>
+      {controlledOpen === undefined && (
+        <DialogTrigger asChild>
+          <Button className="w-full" size="lg">
+            <Plus className="h-4 w-4 mr-2" />
+            일정 추가
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>새 일정 추가</DialogTitle>

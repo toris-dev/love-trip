@@ -62,35 +62,53 @@ export function CalendarGrid({
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+      <CardHeader className="p-3 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <CardTitle>
+            <CardTitle className="text-lg sm:text-xl">
               {currentMonth.getFullYear()}년 {currentMonth.getMonth() + 1}월
             </CardTitle>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => onNavigateMonth("prev")}>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onNavigateMonth("prev")}
+              className="flex-1 sm:flex-initial text-xs sm:text-sm"
+            >
               이전
             </Button>
-            <Button variant="outline" size="sm" onClick={onTodayClick}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onTodayClick}
+              className="flex-1 sm:flex-initial text-xs sm:text-sm"
+            >
               오늘
             </Button>
-            <Button variant="outline" size="sm" onClick={() => onNavigateMonth("next")}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onNavigateMonth("next")}
+              className="flex-1 sm:flex-initial text-xs sm:text-sm"
+            >
               다음
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-7 gap-1 mb-4">
+      <CardContent className="p-2 sm:p-6">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 sm:mb-4">
           {weekDays.map(day => (
-            <div key={day} className="text-center font-semibold text-sm py-2">
+            <div
+              key={day}
+              className="text-center font-semibold text-xs sm:text-sm py-1 sm:py-2"
+            >
               {day}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
           {days.map((date, index) => {
             const dayEvents = getEventsForDate(date)
             const isToday = date && date.toDateString() === new Date().toDateString()
@@ -98,7 +116,7 @@ export function CalendarGrid({
             return (
               <motion.div
                 key={index}
-                className={`min-h-[100px] p-2 border rounded-lg ${
+                className={`min-h-[60px] sm:min-h-[100px] p-1 sm:p-2 border rounded sm:rounded-lg ${
                   isToday ? "bg-primary/10 border-primary" : "bg-card"
                 } ${date ? "cursor-pointer hover:bg-muted/50" : ""}`}
                 whileHover={date ? { scale: 1.02 } : {}}
@@ -111,12 +129,14 @@ export function CalendarGrid({
                 {date && (
                   <>
                     <div
-                      className={`text-sm font-medium mb-1 ${isToday ? "text-primary" : ""}`}
+                      className={`text-xs sm:text-sm font-medium mb-0.5 sm:mb-1 ${
+                        isToday ? "text-primary" : ""
+                      }`}
                     >
                       {date.getDate()}
                     </div>
-                    <div className="space-y-1">
-                      {dayEvents.slice(0, 2).map(event => {
+                    <div className="space-y-0.5 sm:space-y-1">
+                      {dayEvents.slice(0, 1).map(event => {
                         const isMyEvent = currentUserInfo?.id === event.created_by
                         const eventColor = isMyEvent
                           ? "bg-primary/20 border-primary/50"
@@ -129,33 +149,29 @@ export function CalendarGrid({
                           <Badge
                             key={event.id}
                             variant="secondary"
-                            className={`w-full text-xs p-1 cursor-pointer hover:opacity-80 border ${eventColor}`}
+                            className={`w-full text-[8px] sm:text-xs p-0.5 sm:p-1 cursor-pointer hover:opacity-80 border ${eventColor}`}
                             onClick={e => {
                               e.stopPropagation()
-                              if (event.place_id) {
-                                onEventClick(event)
-                              } else {
-                                if (confirm(`"${event.title}" 일정을 삭제하시겠습니까?`)) {
-                                  onDeleteEvent(event.id)
-                                }
-                              }
+                              onEventClick(event)
                             }}
                           >
-                            <div className="truncate flex items-center gap-1">
-                              <span className="font-semibold text-[10px]">{eventNickname}</span>
-                              <span className="truncate">{event.title}</span>
+                            <div className="truncate flex items-center gap-0.5 sm:gap-1">
+                              <span className="font-semibold text-[8px] sm:text-[10px]">
+                                {eventNickname}
+                              </span>
+                              <span className="truncate hidden sm:inline">{event.title}</span>
                             </div>
                           </Badge>
                         )
                       })}
-                      {dayEvents.length > 2 && (
-                        <div className="text-xs text-muted-foreground">
-                          +{dayEvents.length - 2}개 더
+                      {dayEvents.length > 1 && (
+                        <div className="text-[8px] sm:text-xs text-muted-foreground">
+                          +{dayEvents.length - 1}
                         </div>
                       )}
                       {dayEvents.length === 0 && (
-                        <div className="flex items-center justify-center py-2">
-                          <Plus className="h-4 w-4 text-muted-foreground/50" />
+                        <div className="flex items-center justify-center py-1 sm:py-2">
+                          <Plus className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground/50" />
                         </div>
                       )}
                     </div>
