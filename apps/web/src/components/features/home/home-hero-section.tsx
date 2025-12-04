@@ -13,7 +13,7 @@ export function HomeHeroSection() {
         함께 계획해보세요
       </h1>
       <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-        AI가 추천하는 맞춤형 데이트 코스와 여행 계획으로 특별한 추억을 만들어보세요
+        여행 계획으로 특별한 추억을 만들어보세요
       </p>
     </div>
   )
