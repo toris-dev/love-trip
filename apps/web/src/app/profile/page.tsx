@@ -1,185 +1,123 @@
-"use client"
+import { createClient } from "@lovetrip/api/supabase/server"
+import { ProfilePageClient } from "@/components/features/profile/profile-page-client"
+import { getOrCreateUserGamification } from "@lovetrip/gamification"
 
-import { useRouter } from "next/navigation"
-import { Footer } from "@/components/layout/footer"
-import { XPLevel, Achievements, PointsStats } from "@/components/shared/gamification"
-import { CoupleConnection } from "@/components/features/profile/couple-connection"
-import { useProfile } from "@/components/features/profile/hooks/use-profile"
-import { ProfileHeader } from "@/components/features/profile/components/profile-header"
-import { ProfileCard } from "@/components/features/profile/components/profile-card"
-import { ProfileStats } from "@/components/features/profile/components/profile-stats"
-import { SettingsSection } from "@/components/features/profile/components/settings-section"
-import { createClient } from "@lovetrip/api/supabase/client"
-import { toast } from "sonner"
-import type { GamificationData, Achievement } from "@/components/features/profile/types"
-import { Heart, MapPin, Trophy, Star, Wallet, Camera, Calendar } from "lucide-react"
+async function getProfileStats(userId: string) {
+  const supabase = await createClient()
 
-// 게이미피케이션 데이터
-const gamificationData: GamificationData = {
-  level: 5,
-  currentXP: 2450,
-  xpToNextLevel: 3000,
-  totalXP: 12450,
-  points: 12500,
-  streak: 7,
-  completedTrips: 12,
-  visitedPlaces: 48,
-}
+  // 1. 게이미피케이션 데이터 조회
+  const gamification = await getOrCreateUserGamification(userId)
+  const xpPerLevel = 1000
+  const xpToNextLevel = (gamification.level + 1) * xpPerLevel
 
-// 업적 데이터
-const achievements: Achievement[] = [
-  {
-    id: "1",
-    name: "첫 여행",
-    description: "첫 번째 여행 계획을 완성하세요",
-    icon: Heart,
-    unlocked: true,
-    rarity: "common",
-  },
-  {
-    id: "2",
-    name: "탐험가",
-    description: "10개의 장소를 방문하세요",
-    icon: MapPin,
-    unlocked: true,
-    rarity: "rare",
-  },
-  {
-    id: "3",
-    name: "여행 마스터",
-    description: "10개의 여행을 완료하세요",
-    icon: Trophy,
-    unlocked: true,
-    rarity: "epic",
-  },
-  {
-    id: "4",
-    name: "연속 기록",
-    description: "7일 연속으로 로그인하세요",
-    icon: Calendar,
-    unlocked: true,
-    rarity: "rare",
-  },
-  {
-    id: "5",
-    name: "사진 작가",
-    description: "50개의 사진을 업로드하세요",
-    icon: Camera,
-    unlocked: false,
-    progress: 32,
-    maxProgress: 50,
-    rarity: "common",
-  },
-  {
-    id: "6",
-    name: "예산 관리자",
-    description: "예산을 100% 정확하게 지키세요",
-    icon: Wallet,
-    unlocked: false,
-    progress: 0,
-    maxProgress: 1,
-    rarity: "epic",
-  },
-  {
-    id: "7",
-    name: "레벨 10 달성",
-    description: "레벨 10에 도달하세요",
-    icon: Star,
-    unlocked: false,
-    progress: 5,
-    maxProgress: 10,
-    rarity: "legendary",
-  },
-  {
-    id: "8",
-    name: "100일 연속",
-    description: "100일 연속으로 로그인하세요",
-    icon: Calendar,
-    unlocked: false,
-    progress: 7,
-    maxProgress: 100,
-    rarity: "legendary",
-  },
-  {
-    id: "9",
-    name: "모든 지역 탐험",
-    description: "서울, 부산, 제주를 모두 방문하세요",
-    icon: MapPin,
-    unlocked: false,
-    progress: 1,
-    maxProgress: 3,
-    rarity: "epic",
-  },
-]
+  // 2. 여행 통계 조회
+  const [travelPlansResult, completedPlansResult, placesResult, badgesResult, achievementsResult] =
+    await Promise.all([
+      // 전체 여행 계획 수
+      supabase
+        .from("travel_plans")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId),
+      // 완료된 여행 계획 수
+      supabase
+        .from("travel_plans")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("status", "completed"),
+      // 방문한 장소 수 (travel_day_places를 통해)
+      supabase
+        .from("travel_plans")
+        .select(
+          `
+          id,
+          travel_days (
+            id,
+            travel_day_places (place_id)
+          )
+        `
+        )
+        .eq("user_id", userId),
+      // 배지 수
+      supabase
+        .from("user_badges")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId),
+      // 업적 조회
+      supabase.from("user_achievements").select("*").eq("user_id", userId),
+    ])
 
-export default function ProfilePage() {
-  const router = useRouter()
-  const { profile, setProfile, isEditing, setIsEditing, handleSave } = useProfile()
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    toast.success("로그아웃되었습니다")
-    router.push("/")
-    router.refresh()
+  // 방문한 장소 수 계산 (중복 제거)
+  const visitedPlaceIds = new Set<string>()
+  if (placesResult.data) {
+    placesResult.data.forEach(plan => {
+      plan.travel_days?.forEach((day: any) => {
+        day.travel_day_places?.forEach((place: any) => {
+          if (place.place_id) {
+            visitedPlaceIds.add(place.place_id)
+          }
+        })
+      })
+    })
   }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <ProfileHeader />
+  return {
+    gamification: {
+      level: gamification.level,
+      currentXP: gamification.current_xp,
+      xpToNextLevel,
+      totalXP: gamification.total_xp,
+      points: gamification.points,
+      streak: gamification.streak || 0,
+    },
+    stats: {
+      totalPlans: travelPlansResult.count || 0,
+      completedTrips: completedPlansResult.count || 0,
+      planningTrips: (travelPlansResult.count || 0) - (completedPlansResult.count || 0),
+      visitedPlaces: visitedPlaceIds.size,
+      badgeCount: badgesResult.count || 0,
+    },
+    achievements: achievementsResult.data || [],
+  }
+}
 
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <ProfileCard
-              profile={profile}
-              isEditing={isEditing}
-              onProfileChange={setProfile}
-              onEdit={() => setIsEditing(true)}
-              onCancel={() => setIsEditing(false)}
-              onSave={handleSave}
-            />
+async function getProfileData(userId: string) {
+  const supabase = await createClient()
+  const { data: profileData } = await supabase
+    .from("profiles")
+    .select("display_name, nickname, avatar_url, created_at")
+    .eq("id", userId)
+    .single()
 
-            {/* 게이미피케이션: XP 레벨 */}
-            <div className="mb-8">
-              <XPLevel
-                currentXP={gamificationData.currentXP}
-                level={gamificationData.level}
-                xpToNextLevel={gamificationData.xpToNextLevel}
-                totalXP={gamificationData.totalXP}
-              />
-            </div>
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-            {/* 게이미피케이션: 포인트 통계 */}
-            <div className="mb-8">
-              <PointsStats
-                points={gamificationData.points}
-                streak={gamificationData.streak}
-                completedTrips={gamificationData.completedTrips}
-                visitedPlaces={gamificationData.visitedPlaces}
-              />
-            </div>
+  return {
+    name: profileData?.display_name || user?.user_metadata?.full_name || "사용자",
+    email: user?.email || "",
+    nickname: profileData?.nickname || "",
+    bio: "커플 여행을 좋아하는 여행러입니다. 새로운 곳을 탐험하는 것을 즐깁니다.",
+    joinDate: profileData?.created_at
+      ? new Date(profileData.created_at).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
+    avatar: profileData?.avatar_url || "",
+  }
+}
 
-            {/* 게이미피케이션: 업적 */}
-            <div className="mb-8">
-              <Achievements achievements={achievements} />
-            </div>
+export default async function ProfilePage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-            {/* 커플 연결 */}
-            <div className="mb-8">
-              <CoupleConnection />
-            </div>
+  if (!user) {
+    return null
+  }
 
-            {/* Stats */}
-            <ProfileStats />
+  const [stats, profile] = await Promise.all([
+    getProfileStats(user.id),
+    getProfileData(user.id),
+  ])
 
-            {/* Settings */}
-            <SettingsSection profile={profile} onProfileChange={setProfile} onLogout={handleLogout} />
-          </div>
-        </div>
-      </section>
-
-      <Footer />
-    </div>
-  )
+  return <ProfilePageClient initialStats={stats} initialProfile={profile} />
 }
