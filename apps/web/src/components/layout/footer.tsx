@@ -7,7 +7,7 @@ export function Footer() {
   return (
     <footer className="border-t bg-card/50 backdrop-blur-sm mt-auto">
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <Heart className="h-6 w-6 text-primary fill-primary" />
@@ -41,21 +41,6 @@ export function Footer() {
               <li>
                 <Link href="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
                   개인정보처리방침
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-4">지원</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
-                  내 프로필
-                </Link>
-              </li>
-              <li>
-                <Link href="/my-trips" className="text-muted-foreground hover:text-foreground transition-colors">
-                  내 여행
                 </Link>
               </li>
             </ul>
