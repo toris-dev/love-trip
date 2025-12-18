@@ -8,7 +8,8 @@ async function getProfileStats(userId: string) {
   // 1. 게이미피케이션 데이터 조회
   const gamification = await getOrCreateUserGamification(userId)
   const xpPerLevel = 1000
-  const xpToNextLevel = (gamification.level + 1) * xpPerLevel
+  const level = gamification.level ?? 1
+  const xpToNextLevel = level * xpPerLevel
 
   // 2. 여행 통계 조회
   const [travelPlansResult, completedPlansResult, placesResult, badgesResult, achievementsResult] =
@@ -60,14 +61,14 @@ async function getProfileStats(userId: string) {
     })
   }
 
-    return {
+  return {
     gamification: {
-      level: gamification.level,
-      currentXP: gamification.current_xp,
+      level,
+      currentXP: gamification.current_xp ?? 0,
       xpToNextLevel,
-      totalXP: gamification.total_xp,
-      points: gamification.points,
-      streak: gamification.streak || 0,
+      totalXP: gamification.total_xp ?? 0,
+      points: gamification.points ?? 0,
+      streak: gamification.streak ?? 0,
     },
     stats: {
       totalPlans: travelPlansResult.count || 0,
@@ -104,9 +105,21 @@ async function getProfileData(userId: string) {
   }
 }
 
-async function getUserCourses(userId: string) {
+async function getUserCourses(userId: string): Promise<
+  Array<{
+    id: string
+    title: string
+    description?: string | null
+    course_type: "date" | "travel"
+    region: string
+    place_count: number
+    duration?: string | null
+    image_url?: string | null
+    created_at: string
+  }>
+> {
   const supabase = await createClient()
-  
+
   const { data: courses, error } = await supabase
     .from("user_courses")
     .select("*")
@@ -118,12 +131,22 @@ async function getUserCourses(userId: string) {
     return []
   }
 
-  return courses
+  return courses.map(course => ({
+    id: course.id,
+    title: course.title,
+    description: course.description,
+    course_type: course.course_type as "date" | "travel",
+    region: course.region,
+    place_count: course.place_count ?? 0,
+    duration: course.duration,
+    image_url: course.image_url,
+    created_at: course.created_at ?? new Date().toISOString(),
+  }))
 }
 
 async function getTravelPlans(userId: string) {
   const supabase = await createClient()
-  
+
   const { data: plans, error } = await supabase
     .from("travel_plans")
     .select("*")
