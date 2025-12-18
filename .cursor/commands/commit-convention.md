@@ -275,7 +275,7 @@ feat: 코스 공개 기능을 추가했습니다 (#12)
 
 - [Google Commit Convention](https://google.github.io/eng-practices/review/developer/cl-descriptions.html)
 - [Conventional Commits](https://www.conventionalcommits.org/)
-- [PR 규칙](./PR_GUIDELINES.md)
+- [PR 규칙](./pr-guidelines.md)
 
 ---
 

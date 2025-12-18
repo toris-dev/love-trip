@@ -76,7 +76,7 @@ PR 설명은 다음 구조를 따릅니다:
 
 #### 3.2 커밋 메시지
 
-- PR 내 커밋 메시지는 [커밋 컨벤션](./COMMIT_CONVENTION.md)을 따름
+- PR 내 커밋 메시지는 [커밋 컨벤션](./commit-convention.md)을 따름
 - 의미 있는 커밋 단위로 분리
 - `WIP`, `fix typo` 같은 불명확한 메시지 지양
 
@@ -181,9 +181,9 @@ refactor/30-travel-service
 
 ### 8. 참고 자료
 
-- [커밋 컨벤션](./COMMIT_CONVENTION.md)
-- [코드 리뷰 가이드](./../commands/review-code.md)
-- [테스트 작성 가이드](./../commands/write-tests.md)
+- [커밋 컨벤션](./commit-convention.md)
+- [코드 리뷰 가이드](./review-code.md)
+- [테스트 작성 가이드](./write-tests.md)
 
 ---
 
