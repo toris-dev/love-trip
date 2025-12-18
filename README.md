@@ -160,22 +160,22 @@ Next.js App Router 기반의 주요 페이지:
 
 ```mermaid
 flowchart TD
-    Start([사용자 접속]) --> Home[/ 홈페이지]
+    Start([사용자 접속]) --> Home[홈페이지]
     Home --> Login{로그인 여부}
-    Login -->|미로그인| LoginPage[/login 로그인]
-    Login -->|로그인| DatePage[/date 코스 탐색]
+    Login -->|미로그인| LoginPage[login 로그인]
+    Login -->|로그인| DatePage[date 코스 탐색]
 
     LoginPage --> DatePage
 
-    DatePage --> ExploreCourses[/courses 공개 코스 탐색]
+    DatePage --> ExploreCourses[courses 공개 코스 탐색]
     DatePage --> CreateCourse[코스 만들기]
     DatePage --> SelectCourse[코스 선택]
 
-    SelectCourse --> CourseDetail[/date/[id] 코스 상세]
+    SelectCourse --> CourseDetail[date/[id] 코스 상세]
     CourseDetail --> SaveCourse[코스 저장]
-    SaveCourse --> MyTrips[/my-trips 내 여행]
+    SaveCourse --> MyTrips[my-trips 내 여행]
 
-    CreateCourse --> TravelPage[/travel 여행 계획 생성]
+    CreateCourse --> TravelPage[travel 여행 계획 생성]
     TravelPage --> AddPlaces[장소 추가]
     AddPlaces --> SavePlan[여행 계획 저장]
     SavePlan --> PublishOption{공개 여부}
@@ -189,14 +189,14 @@ flowchart TD
     ViewCourse --> LikeSave[좋아요/저장]
     LikeSave --> Reward2[보상 지급<br/>좋아요: XP 5<br/>저장: XP 10]
 
-    MyTrips --> TripDetail[/my-trips/[id] 여행 상세]
+    MyTrips --> TripDetail[my-trips/[id] 여행 상세]
     TripDetail --> Budget[예산 관리]
     TripDetail --> Expense[지출 기록]
     TripDetail --> Settlement[1/N 정산]
-    TripDetail --> Calendar[/calendar 캘린더 연동]
+    TripDetail --> Calendar[calendar 캘린더 연동]
 
-    MyTrips --> Profile[/profile 프로필]
-    Profile --> ProfileDate[/profile/date 내 코스 관리]
+    MyTrips --> Profile[profile 프로필]
+    Profile --> ProfileDate[profile/date 내 코스 관리]
     ProfileDate --> EditCourse[코스 수정/삭제]
     ProfileDate --> PublishToggle[공개/비공개 전환]
 
@@ -206,8 +206,8 @@ flowchart TD
     Calendar --> ShareCalendar[커플 캘린더 공유]
     Calendar --> Notifications[알림 설정]
 
-    Home --> About[/about 서비스 소개]
-    Home --> Contact[/contact 문의]
+    Home --> About[about 서비스 소개]
+    Home --> Contact[contact 문의]
 ```
 
 ### 코스 공개 및 보상 플로우
@@ -281,35 +281,35 @@ flowchart LR
 ```mermaid
 graph TB
     subgraph "인증 및 랜딩"
-        HOME[/ 홈]
-        LOGIN[/login]
-        ABOUT[/about]
-        CONTACT[/contact]
+        HOME[홈]
+        LOGIN[login]
+        ABOUT[about]
+        CONTACT[contact]
     end
 
     subgraph "코스 탐색 및 선택"
-        DATE[/date]
-        DATE_DETAIL[/date/[id]]
-        TRAVEL[/travel]
+        DATE[date]
+        DATE_DETAIL[date/[id]]
+        TRAVEL[travel]
     end
 
     subgraph "커뮤니티 UGC"
-        COURSES[/courses]
+        COURSES[courses]
     end
 
     subgraph "여행 계획 관리"
-        MY_TRIPS[/my-trips]
-        TRIP_DETAIL[/my-trips/[id]]
+        MY_TRIPS[my-trips]
+        TRIP_DETAIL[my-trips/[id]]
     end
 
     subgraph "프로필 및 통계"
-        PROFILE[/profile]
-        PROFILE_COURSES[/profile/date]
+        PROFILE[profile]
+        PROFILE_COURSES[profile/date]
     end
 
     subgraph "부가 기능"
-        CALENDAR[/calendar]
-        FAVORITES[/favorites]
+        CALENDAR[calendar]
+        FAVORITES[favorites]
     end
 
     HOME --> LOGIN
