@@ -1,0 +1,30 @@
+{
+  "name": "@lovetrip/planner",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./services": "./services/index.ts",
+    "./types": "./types/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lovetrip/api": "workspace:*",
+    "@lovetrip/shared": "workspace:*",
+    "@lovetrip/ui": "workspace:*",
+    "@lovetrip/gamification": "workspace:*",
+    "framer-motion": "^12.23.24",
+    "lucide-react": "^0.454.0",
+    "next": "16.0.7",
+    "react": "19.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0"
+  }
+}

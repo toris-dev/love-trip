@@ -6,24 +6,48 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
-    "lint": "pnpm --filter web lint",
-    "lint:fix": "pnpm --filter web lint:fix",
+    "lint": "pnpm -r --filter \"./apps/**\" --filter \"./packages/**\" lint",
+    "lint:fix": "pnpm -r --filter \"./apps/**\" --filter \"./packages/**\" lint --fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "type-check": "pnpm --filter web type-check",
-    "gen-types": "supabase gen types typescript --project-id dyomownljgsbwaxnljau > apps/web/src/lib/types/database.ts",
-    "crawler": "pnpm --filter crawler start",
-    "crawler:sync": "pnpm --filter crawler sync",
-    "crawler:server": "pnpm --filter crawler run server",
-    "crawler:sync-date-travel": "pnpm --filter crawler sync:date-travel",
+    "gen-types": "supabase gen types typescript --project-id dyomownljgsbwaxnljau > packages/shared/types/database.ts",
+    "import:date-courses": "pnpm exec tsx scripts/import-date-courses-from-json.ts",
+    "setup:github": "tsx scripts/setup-github-labels.ts",
     "test": "pnpm --filter web test",
-    "test:ui": "pnpm --filter web test:ui"
+    "test:ui": "pnpm --filter web test:ui",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
   "devDependencies": {
-    "prettier": "^3.4.2"
+    "@eslint/js": "^9.39.1",
+    "@supabase/supabase-js": "^2.87.1",
+    "@types/node": "^24.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "baseline-browser-mapping": "^2.8.32",
+    "cypress": "^13.7.0",
+    "dotenv": "^16.6.1",
+    "eslint": "^9.0.0",
+    "globals": "^15.15.0",
+    "jiti": "^2.6.1",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.48.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "typescript": "^5.6.0",
+      "eslint": "^9.0.0",
+      "@typescript-eslint/eslint-plugin": "^8.0.0",
+      "@typescript-eslint/parser": "^8.0.0"
+    }
   }
 }

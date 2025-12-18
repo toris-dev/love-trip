@@ -1,0 +1,28 @@
+{
+  "name": "@lovetrip/api",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./supabase": "./supabase/index.ts",
+    "./supabase/*": "./supabase/*.ts",
+    "./clients": "./clients/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lovetrip/shared": "workspace:*",
+    "@supabase/ssr": "latest",
+    "@supabase/supabase-js": "latest",
+    "next": "16.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

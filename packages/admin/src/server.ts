@@ -2,7 +2,6 @@ import express, { type Request, type Response } from "express"
 import cors from "cors"
 import { config } from "./config.js"
 import { metricsMiddleware } from "./middleware/metrics.js"
-import crawlerRouter from "./routes/crawler.js"
 import metricsRouter from "./routes/metrics.js"
 import dashboardRouter from "./routes/dashboard.js"
 import { logStream, type LogMessage } from "./lib/log-stream.js"
@@ -66,7 +65,6 @@ app.get("/api/logs", (req: Request, res: Response) => {
 })
 
 // API 라우트
-app.use("/api/crawler", crawlerRouter)
 app.use("/api/metrics", metricsRouter)
 app.use("/api/dashboard", dashboardRouter)
 
@@ -88,4 +86,3 @@ app.listen(PORT, () => {
   console.log(`📊 Metrics endpoint: http://localhost:${PORT}/api/metrics`)
   console.log(`🎯 Dashboard API: http://localhost:${PORT}/api/dashboard/stats`)
 })
-

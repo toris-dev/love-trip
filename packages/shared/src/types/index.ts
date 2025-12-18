@@ -13,6 +13,7 @@ export type Place = {
   address?: string
   area_code?: number | null
   sigungu_code?: number | null
+  place_id?: string | null // places 테이블의 id (하이브리드 방식 지원)
 }
 
 export type TravelPlan = {
@@ -58,4 +59,3 @@ export type Trip = {
   places: number
   score?: number
 }
-

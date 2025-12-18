@@ -18,7 +18,28 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@love-trip/shared", "@lovetrip/ui"],
+  // Turbopack 활성화 (Next.js 16에서는 기본이지만 명시적으로 설정)
+  experimental: {
+    turbo: {
+      // Turbopack 설정
+    },
+  },
+  // ESLint 설정
+  eslint: {
+    dirs: ["src", "app"],
+    ignoreDuringBuilds: false,
+  },
+  transpilePackages: [
+    "@love-trip/shared",
+    "@lovetrip/ui",
+    "@lovetrip/api",
+    "@lovetrip/planner",
+    "@lovetrip/shared",
+    "@lovetrip/gamification",
+    "@radix-ui/react-dropdown-menu",
+  ],
+  // 서버 컴포넌트에서 외부 패키지 의존성을 제대로 해석하도록 설정
+  serverComponentsExternalPackages: ["@supabase/ssr", "@supabase/supabase-js"],
   typescript: {
     // node_modules의 타입 에러는 무시 (skipLibCheck가 작동하지 않는 경우)
     ignoreBuildErrors: true,
@@ -29,6 +50,9 @@ const nextConfig = {
   // 환경 변수를 명시적으로 전달
   env: {
     NEXT_PUBLIC_ENABLE_MSW: process.env.NEXT_PUBLIC_ENABLE_MSW,
+    NEXT_PUBLIC_NAVER_CLOUD_API_KEY_ID: process.env.NEXT_PUBLIC_NAVER_CLOUD_API_KEY_ID,
+    NEXT_PUBLIC_NAVER_DEV_CLIENT_ID: process.env.NEXT_PUBLIC_NAVER_DEV_CLIENT_ID,
+    NEXT_PUBLIC_NAVER_CLOUD_API_KEY: process.env.NEXT_PUBLIC_NAVER_CLOUD_API_KEY,
   },
   async headers() {
     return [
@@ -46,11 +70,45 @@ const nextConfig = {
         ],
       },
       {
-        source: "/manifest.json",
+        source: "/manifest",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // CSS 파일 캐시 설정 (개발 환경에서 캐시 완전 비활성화 - Brave 브라우저 호환)
+        source: "/:path*.css",
+        headers: [
+          {
+            key: "Cache-Control",
+            value:
+              process.env.NODE_ENV === "production"
+                ? "public, max-age=31536000, immutable"
+                : "no-cache, no-store, must-revalidate, max-age=0",
+          },
+          {
+            key: "Pragma",
+            value: "no-cache",
+          },
+          {
+            key: "Expires",
+            value: "0",
+          },
+        ],
+      },
+      {
+        // _next/static CSS 파일도 캐시 비활성화 (개발 환경)
+        source: "/_next/static/:path*.css",
+        headers: [
+          {
+            key: "Cache-Control",
+            value:
+              process.env.NODE_ENV === "production"
+                ? "public, max-age=31536000, immutable"
+                : "no-cache, no-store, must-revalidate, max-age=0",
           },
         ],
       },

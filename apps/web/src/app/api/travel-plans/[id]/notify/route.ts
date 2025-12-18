@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { notificationService } from "@/lib/services/notification-service"
+import { notificationService } from "@lovetrip/api/clients"
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const success = await notificationService.sendTravelPlanNotification(
       planId,
-      type as "created" | "updated" | "reminder",
+      type as "created" | "updated" | "reminder"
     )
 
     if (success) {

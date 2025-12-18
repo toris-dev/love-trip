@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@lovetrip/api/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(_request: NextRequest) {
