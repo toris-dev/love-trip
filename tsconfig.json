@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@lovetrip/shared": ["./packages/shared"],
+      "@lovetrip/shared/*": ["./packages/shared/*"],
+      "@lovetrip/ui": ["./packages/ui"],
+      "@lovetrip/ui/*": ["./packages/ui/*"],
+      "@lovetrip/api": ["./packages/api"],
+      "@lovetrip/api/*": ["./packages/api/*"],
+      "@lovetrip/utils": ["./packages/utils"],
+      "@lovetrip/user": ["./packages/user"],
+      "@lovetrip/user/*": ["./packages/user/*"],
+      "@lovetrip/couple": ["./packages/couple"],
+      "@lovetrip/couple/*": ["./packages/couple/*"],
+      "@lovetrip/planner": ["./packages/planner"],
+      "@lovetrip/planner/*": ["./packages/planner/*"],
+      "@lovetrip/recommendation": ["./packages/recommendation"],
+      "@lovetrip/recommendation/*": ["./packages/recommendation/*"],
+      "@lovetrip/gamification": ["./packages/gamification"],
+      "@lovetrip/gamification/*": ["./packages/gamification/*"]
+    }
+  },
+  "include": [],
+  "exclude": ["node_modules", "dist"]
+}
