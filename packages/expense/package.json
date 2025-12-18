@@ -1,5 +1,5 @@
 {
-  "name": "@lovetrip/recommendation",
+  "name": "@lovetrip/expense",
   "version": "0.1.0",
   "type": "module",
   "private": true,
@@ -17,10 +17,12 @@
   "dependencies": {
     "@lovetrip/api": "workspace:*",
     "@lovetrip/shared": "workspace:*",
-    "react": "19.2.1"
+    "@lovetrip/planner": "workspace:*"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0"
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.2"
   }
 }
 

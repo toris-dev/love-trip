@@ -12,9 +12,19 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "types": ["react"]
+    "types": ["react"],
+    "baseUrl": ".",
+    "paths": {
+      "@lovetrip/shared": ["../shared"],
+      "@lovetrip/shared/*": ["../shared/*"],
+      "@lovetrip/api": ["../api"],
+      "@lovetrip/api/*": ["../api/*"],
+      "@lovetrip/ui": ["../ui"],
+      "@lovetrip/ui/*": ["../ui/*"],
+      "@lovetrip/gamification": ["../gamification"],
+      "@lovetrip/gamification/*": ["../gamification/*"]
+    }
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }
-

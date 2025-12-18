@@ -5,7 +5,8 @@
     "baseUrl": ".",
     "paths": {
       "@lovetrip/api/*": ["../api/*"],
-      "@lovetrip/shared/*": ["../shared/*"]
+      "@lovetrip/shared/*": ["../shared/*"],
+      "@lovetrip/planner/*": ["../planner/*"]
     }
   },
   "include": ["./**/*.ts", "./**/*.tsx"],

@@ -8,6 +8,7 @@
   "exports": {
     ".": "./index.ts",
     "./types": "./types/index.ts",
+    "./types/database": "./types/database.ts",
     "./api": "./api/index.ts"
   },
   "scripts": {
