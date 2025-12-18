@@ -68,3 +68,5 @@ Thumbs.db
 # Database documentation (contains sensitive DB structure info)
 # All database-related documentation is stored locally and not tracked in git
 docs/database/
+
+scripts/**/*

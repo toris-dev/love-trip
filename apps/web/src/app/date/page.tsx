@@ -597,6 +597,9 @@ interface DatePageProps {
   searchParams: Promise<{ type?: string }>
 }
 
+// 동적 렌더링 강제: 항상 최신 데이터를 가져오도록 설정
+export const dynamic = "force-dynamic"
+
 export default async function DatePage({ searchParams }: DatePageProps) {
   const supabase = await createClient()
   const {
