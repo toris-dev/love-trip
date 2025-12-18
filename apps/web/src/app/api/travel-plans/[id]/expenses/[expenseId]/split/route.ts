@@ -67,7 +67,18 @@ export async function POST(
     }
 
     // 기존 분할 정보 삭제
-    await supabase.from("expense_splits").delete().eq("expense_id", expenseId)
+    const { error: deleteError } = await supabase
+      .from("expense_splits")
+      .delete()
+      .eq("expense_id", expenseId)
+
+    if (deleteError) {
+      console.error("Error deleting existing expense splits:", deleteError)
+      return NextResponse.json(
+        { error: deleteError.message || "기존 분할 정보 삭제에 실패했습니다" },
+        { status: 500 }
+      )
+    }
 
     // 새로운 분할 정보 생성
     const splitData: ExpenseSplitInsert[] = splits.map(

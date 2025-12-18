@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, address, lat, lng, type = "ETC", region } = body
+    const { name, address, lat, lng, type = "ETC" } = body
 
     if (!name || !lat || !lng) {
       return NextResponse.json({ error: "장소명, 위도, 경도는 필수입니다" }, { status: 400 })
@@ -56,9 +56,28 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 정확히 일치하는 것이 없으면 첫 번째 결과 사용
+      // 정확히 일치하는 것이 없으면 부분 매치 결과들도 좌표 검증
       if (!placeId && existingPlaces.length > 0) {
-        placeId = existingPlaces[0].id
+        // 모든 부분 매치 결과에 대해 좌표 확인
+        for (const place of existingPlaces) {
+          const { data: placeInfo } = await supabase
+            .from("places")
+            .select("id, lat, lng")
+            .eq("id", place.id)
+            .single()
+
+          if (placeInfo) {
+            // 좌표 거리 계산
+            const distance = Math.sqrt(
+              Math.pow(Number(placeInfo.lat) - lat, 2) + Math.pow(Number(placeInfo.lng) - lng, 2)
+            )
+            // 약 0.001도 = 약 100m 이내면 같은 장소로 간주
+            if (distance < 0.001) {
+              placeId = placeInfo.id
+              break
+            }
+          }
+        }
       }
     }
 
@@ -141,4 +160,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
