@@ -21,20 +21,34 @@ export function PWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
 
-  useEffect(() => {
-    // 오늘 보지 않기 확인
+  // 오늘 보지 않기 확인 함수
+  const shouldShowPrompt = (): boolean => {
     const dismissedData = localStorage.getItem(PWA_INSTALL_DISMISSED_KEY)
     if (dismissedData) {
+      try {
       const { timestamp } = JSON.parse(dismissedData)
       const now = Date.now()
       // 하루가 지나지 않았으면 표시하지 않음
       if (now - timestamp < ONE_DAY_MS) {
-        return
+          return false
+        }
+      } catch (e) {
+        // 파싱 에러가 있으면 로컬 스토리지 클리어
+        localStorage.removeItem(PWA_INSTALL_DISMISSED_KEY)
       }
     }
+    return true
+  }
 
+  useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault()
+      
+      // 오늘 보지 않기 확인
+      if (!shouldShowPrompt()) {
+        return
+      }
+      
       setDeferredPrompt(e as BeforeInstallPromptEvent)
       setShowInstallPrompt(true)
     }

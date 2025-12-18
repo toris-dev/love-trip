@@ -88,12 +88,12 @@ export function CreateEventDialog({
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       {controlledOpen === undefined && (
-        <DialogTrigger asChild>
-          <Button className="w-full" size="lg">
-            <Plus className="h-4 w-4 mr-2" />
-            일정 추가
-          </Button>
-        </DialogTrigger>
+      <DialogTrigger asChild>
+        <Button className="w-full" size="lg">
+          <Plus className="h-4 w-4 mr-2" />
+          일정 추가
+        </Button>
+      </DialogTrigger>
       )}
       <DialogContent className="max-w-md">
         <DialogHeader>

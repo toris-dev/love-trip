@@ -73,20 +73,20 @@ export function CalendarSidebar({
             </p>
           ) : (
             calendars.map(cal => (
-              <button
-                key={cal.id}
-                onClick={() => onSelectCalendar(cal.id)}
-                className={`w-full text-left p-3 rounded-lg transition-colors ${
-                  selectedCalendar === cal.id
-                    ? "bg-primary/10 border-2 border-primary"
-                    : "hover:bg-muted"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: cal.color }} />
-                  <span className="font-medium">{cal.name}</span>
-                </div>
-              </button>
+            <button
+              key={cal.id}
+              onClick={() => onSelectCalendar(cal.id)}
+              className={`w-full text-left p-3 rounded-lg transition-colors ${
+                selectedCalendar === cal.id
+                  ? "bg-primary/10 border-2 border-primary"
+                  : "hover:bg-muted"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: cal.color }} />
+                <span className="font-medium">{cal.name}</span>
+              </div>
+            </button>
             ))
           )}
         </CardContent>

@@ -13,7 +13,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   // 서버와 클라이언트에서 동일하게 렌더링되도록
   return (
-    <div className="fixed inset-0 w-full h-full overflow-hidden">
+    <div className="min-h-screen flex flex-col">
       {children}
       {isMounted && (
         <>
@@ -24,4 +24,3 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     </div>
   )
 }
-

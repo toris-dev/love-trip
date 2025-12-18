@@ -2,19 +2,21 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { XPLevel, Achievements, PointsStats } from "@/components/shared/gamification"
+import { XPLevel, Achievements } from "@/components/shared/gamification"
 import { CoupleConnection } from "@/components/features/profile/couple-connection"
 import { useProfile } from "@/components/features/profile/hooks/use-profile"
 import { ProfileHeader } from "@/components/features/profile/components/profile-header"
 import { ProfileCard } from "@/components/features/profile/components/profile-card"
 import { ProfileStats } from "@/components/features/profile/components/profile-stats"
 import { SettingsSection } from "@/components/features/profile/components/settings-section"
-import { AnniversaryRemindersSection } from "@/components/features/profile/anniversary-reminders-section"
 import { createClient } from "@lovetrip/api/supabase/client"
 import { toast } from "sonner"
-import { Heart, MapPin, Trophy, Star, Calendar } from "lucide-react"
+import { Heart, MapPin, Trophy, Star, Calendar, Plane, Clock } from "lucide-react"
 import { Alert, AlertDescription } from "@lovetrip/ui/components/alert"
 import { AlertCircle } from "lucide-react"
+import { Card, CardContent } from "@lovetrip/ui/components/card"
+import { Badge } from "@lovetrip/ui/components/badge"
+import { Button } from "@lovetrip/ui/components/button"
 
 interface ProfileStatsData {
   gamification: {
@@ -45,6 +47,27 @@ interface ProfilePageClientProps {
     joinDate: string
     avatar: string
   }
+  initialUserCourses?: Array<{
+    id: string
+    title: string
+    description?: string | null
+    course_type: "date" | "travel"
+    region: string
+    place_count: number
+    duration?: string | null
+    image_url?: string | null
+    created_at: string
+  }>
+  initialTravelPlans?: Array<{
+    id: string
+    title: string
+    destination: string
+    start_date: string
+    end_date: string
+    total_budget: number
+    status: "planning" | "ongoing" | "completed"
+    places: number
+  }>
 }
 
 // 기본 업적 정의
@@ -101,6 +124,8 @@ function getMaxProgress(achievementId: string): number {
 export function ProfilePageClient({
   initialStats,
   initialProfile: initialProfileData,
+  initialUserCourses = [],
+  initialTravelPlans = [],
 }: ProfilePageClientProps) {
   const router = useRouter()
   const { profile, setProfile, isEditing, setIsEditing, handleSave } = useProfile()
@@ -193,14 +218,175 @@ export function ProfilePageClient({
               <>
                 {/* 통계 카드 */}
                 <ProfileStats
-                  completedTrips={statsData.stats.completedTrips}
                   planningTrips={statsData.stats.planningTrips}
-                  visitedPlaces={statsData.stats.visitedPlaces}
                   totalPlans={statsData.stats.totalPlans}
                 />
 
+                {/* 내가 등록한 코스 */}
+                <div className="grid md:grid-cols-2 gap-4 mb-8">
+                  <Card
+                    className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
+                    onClick={() => router.push("/profile/date?type=date")}
+                  >
+                    <CardContent className="pt-6 text-center">
+                      <div className="inline-flex items-center justify-center mb-4">
+                        <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/20">
+                          <Heart className="h-6 w-6 text-primary" />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-bold text-primary mb-2">데이트 코스</div>
+                      <div className="text-sm text-muted-foreground font-medium">
+                        내가 등록한 데이트 코스 보기
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card
+                    className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
+                    onClick={() => router.push("/profile/date?type=travel")}
+                  >
+                    <CardContent className="pt-6 text-center">
+                      <div className="inline-flex items-center justify-center mb-4">
+                        <div className="p-3 rounded-full bg-blue-50 dark:bg-blue-950">
+                          <Plane className="h-6 w-6 text-blue-600" />
+                        </div>
+                      </div>
+                      <div className="text-2xl font-bold text-blue-600 mb-2">여행 코스</div>
+                      <div className="text-sm text-muted-foreground font-medium">
+                        내가 등록한 여행 코스 보기
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* 내가 만든 코스 목록 */}
+                {initialUserCourses.length > 0 && (
+                  <div className="mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-bold">내가 만든 코스</h2>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push("/profile/date")}
+                      >
+                        전체 보기
+                      </Button>
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {initialUserCourses.slice(0, 6).map(course => (
+                        <Card
+                          key={course.id}
+                          className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
+                          onClick={() => router.push(`/profile/date?type=${course.course_type}`)}
+                        >
+                          <CardContent className="pt-6">
+                            <div className="flex items-center gap-2 mb-2">
+                              {course.course_type === "date" ? (
+                                <Heart className="h-4 w-4 text-primary" />
+                              ) : (
+                                <Plane className="h-4 w-4 text-blue-600" />
+                              )}
+                              <Badge variant="outline" className="text-xs">
+                                {course.course_type === "date" ? "데이트" : "여행"}
+                              </Badge>
+                            </div>
+                            <h3 className="font-semibold text-base mb-1 line-clamp-1">
+                              {course.title}
+                            </h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                              <MapPin className="h-3.5 w-3.5" />
+                              <span>{course.region}</span>
+                              <span>•</span>
+                              <span>{course.place_count}개 장소</span>
+                            </div>
+                            {course.duration && (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span>{course.duration}</span>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 여행 계획 목록 */}
+                {initialTravelPlans.length > 0 && (
+                  <div className="mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-bold">내 여행 계획</h2>
+                      <Button variant="ghost" size="sm" onClick={() => router.push("/my-trips")}>
+                        전체 보기
+                      </Button>
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {initialTravelPlans.slice(0, 6).map(plan => {
+                        const statusColors = {
+                          planning: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+                          ongoing: "bg-green-500/10 text-green-500 border-green-500/20",
+                          completed: "bg-muted text-muted-foreground border-border",
+                        }
+                        const statusLabels = {
+                          planning: "계획 중",
+                          ongoing: "여행 중",
+                          completed: "완료",
+                        }
+                        return (
+                          <Card
+                            key={plan.id}
+                            className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
+                            onClick={() => router.push(`/my-trips/${plan.id}`)}
+                          >
+                            <CardContent className="pt-6">
+                              <div className="flex items-start justify-between mb-2">
+                                <h3 className="font-semibold text-base flex-1 line-clamp-1">
+                                  {plan.title}
+                                </h3>
+                                <Badge className={statusColors[plan.status]}>
+                                  {statusLabels[plan.status]}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
+                                <MapPin className="h-3.5 w-3.5" />
+                                <span className="line-clamp-1">{plan.destination}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                                <Calendar className="h-3.5 w-3.5" />
+                                <span>
+                                  {new Date(plan.start_date).toLocaleDateString("ko-KR", {
+                                    month: "long",
+                                    day: "numeric",
+                                  })}
+                                  {" - "}
+                                  {new Date(plan.end_date).toLocaleDateString("ko-KR", {
+                                    month: "long",
+                                    day: "numeric",
+                                  })}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  <span>{plan.places}개 장소</span>
+                                </div>
+                                {plan.total_budget > 0 && (
+                                  <div className="text-muted-foreground">
+                                    {plan.total_budget.toLocaleString()}원
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* 게이미피케이션 섹션 */}
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-1 gap-6">
                   {/* XP 레벨 */}
                   <div>
                     <XPLevel
@@ -208,16 +394,6 @@ export function ProfilePageClient({
                       level={statsData.gamification.level}
                       xpToNextLevel={statsData.gamification.xpToNextLevel}
                       totalXP={statsData.gamification.totalXP}
-                    />
-                  </div>
-
-                  {/* 포인트 통계 */}
-                  <div>
-                    <PointsStats
-                      points={statsData.gamification.points}
-                      streak={statsData.gamification.streak}
-                      completedTrips={statsData.stats.completedTrips}
-                      visitedPlaces={statsData.stats.visitedPlaces}
                     />
                   </div>
                 </div>
@@ -234,11 +410,6 @@ export function ProfilePageClient({
               <CoupleConnection />
             </div>
 
-            {/* 기념일 알림 (프리미엄 기능) */}
-            <div>
-              <AnniversaryRemindersSection />
-            </div>
-
             {/* Settings */}
             <SettingsSection
               profile={profile}
@@ -251,4 +422,3 @@ export function ProfilePageClient({
     </div>
   )
 }
-

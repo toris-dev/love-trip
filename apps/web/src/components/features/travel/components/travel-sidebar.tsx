@@ -36,7 +36,7 @@ export function TravelSidebar({
   )
 
   return (
-    <div className="absolute top-16 left-0 bottom-0 w-full md:w-96 z-50 pointer-events-none">
+    <div className="absolute left-0 top-0 w-full md:w-96 h-full z-50 pointer-events-none">
       <div className="h-full w-full md:w-96 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-r border-black/10 dark:border-white/10 shadow-xl pointer-events-auto overflow-hidden flex flex-col">
         {/* 사이드바 헤더 */}
         <div className="p-4 border-b border-black/10 dark:border-white/10">
@@ -142,4 +142,3 @@ export function TravelSidebar({
     </div>
   )
 }
-

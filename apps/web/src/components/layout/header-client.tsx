@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@lovetrip/ui/components/button"
-import { Calendar, MapPin, Heart, Menu } from "lucide-react"
+import { Calendar, MapPin, Heart, Menu, Plane } from "lucide-react"
 import { InteractiveLogo } from "@/components/shared/interactive-logo"
 import { createClient } from "@lovetrip/api/supabase/client"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -70,9 +70,10 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
     router.refresh()
   }
 
-  const defaultGamificationData = gamificationData ?? {
-    level: 5,
-    points: 12500,
+  // 게이미피케이션 데이터가 없으면 기본값 사용
+  const displayGamificationData = gamificationData || {
+    level: 1,
+    points: 0,
   }
 
   return (
@@ -82,16 +83,16 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
           <InteractiveLogo />
           <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
             {/* 게이미피케이션 미리보기 */}
-            {user && (
+            {user && gamificationData && (
               <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-primary/5 border border-primary/20">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white">
-                    {defaultGamificationData.level}
+                    {gamificationData.level}
                   </div>
                   <div className="text-xs">
-                    <div className="font-semibold">Lv.{defaultGamificationData.level}</div>
+                    <div className="font-semibold">Lv.{gamificationData.level}</div>
                     <div className="text-muted-foreground">
-                      {defaultGamificationData.points.toLocaleString()}P
+                      {gamificationData.points.toLocaleString()}P
                     </div>
                   </div>
                 </div>
@@ -166,6 +167,30 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
                       >
                         <Calendar className="h-4 w-4 mr-2" />
                         캘린더
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/courses"
+                        className={`flex items-center w-full ${
+                          pathname === "/courses" ? "bg-primary/10 text-primary font-semibold" : ""
+                        }`}
+                      >
+                        <Plane className="h-4 w-4 mr-2" />
+                        코스 탐색
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/favorites"
+                        className={`flex items-center w-full ${
+                          pathname === "/favorites"
+                            ? "bg-primary/10 text-primary font-semibold"
+                            : ""
+                        }`}
+                      >
+                        <Heart className="h-4 w-4 mr-2" />
+                        즐겨찾기
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -253,6 +278,34 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
                     </Link>
                   )}
                   {user && (
+                    <Link
+                      href="/courses"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        pathname === "/courses"
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <Plane className="h-5 w-5" />
+                      <span>코스 탐색</span>
+                    </Link>
+                  )}
+                  {user && (
+                    <Link
+                      href="/favorites"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                        pathname === "/favorites"
+                          ? "bg-primary/10 text-primary font-semibold"
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <Heart className="h-5 w-5" />
+                      <span>즐겨찾기</span>
+                    </Link>
+                  )}
+                  {user && (
                     <>
                       <div className="border-t my-2" />
                       <Link
@@ -275,12 +328,12 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
                       <div className="text-xs text-muted-foreground mb-1">레벨</div>
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white">
-                          {defaultGamificationData.level}
+                          {displayGamificationData.level}
                         </div>
                         <div>
-                          <div className="font-semibold">Lv.{defaultGamificationData.level}</div>
+                          <div className="font-semibold">Lv.{displayGamificationData.level}</div>
                           <div className="text-xs text-muted-foreground">
-                            {defaultGamificationData.points.toLocaleString()}P
+                            {displayGamificationData.points.toLocaleString()}P
                           </div>
                         </div>
                       </div>

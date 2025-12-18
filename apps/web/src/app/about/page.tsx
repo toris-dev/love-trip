@@ -1,8 +1,13 @@
 import { Heart, Sparkles, Users, MapPin, Target, Zap, Shield, Globe, Wallet } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@lovetrip/ui/components/card"
 import { Button } from "@lovetrip/ui/components/button"
 import Link from "next/link"
-import { Footer } from "@/components/layout/footer"
 
 const features = [
   {
@@ -27,7 +32,7 @@ const features = [
     icon: Users,
     title: "커플 협업 기능",
     description: "파트너와 함께 실시간으로 여행 계획을 공유하고 수정할 수 있습니다",
-    color: "text-pink-500",
+    color: "text-primary",
   },
   {
     icon: Shield,
@@ -45,8 +50,8 @@ const features = [
 
 const stats = [
   { number: "10,000+", label: "활성 사용자" },
-  { number: "50,000+", label: "완성된 여행 계획" },
-  { number: "4.8/5", label: "평균 만족도" },
+  { number: "5,000+", label: "공개된 코스" },
+  { number: "42,000+", label: "추천 장소" },
   { number: "98%", label: "재방문율" },
 ]
 
@@ -55,7 +60,7 @@ export const revalidate = 3600
 
 export default function AboutPage() {
   return (
-    <div className="fixed inset-0 w-full h-full overflow-y-auto bg-background">
+    <div className="w-full min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10 overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-[0.03]" />
@@ -93,9 +98,14 @@ export default function AboutPage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
-              <Card key={index} className="text-center border-2 hover:border-primary/50 transition-all hover:shadow-lg">
+              <Card
+                key={index}
+                className="text-center border-2 hover:border-primary/50 transition-all hover:shadow-lg"
+              >
                 <CardContent className="pt-6">
-                  <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat.number}</div>
+                  <div className="text-3xl md:text-4xl font-bold text-primary mb-2">
+                    {stat.number}
+                  </div>
                   <div className="text-sm text-muted-foreground">{stat.label}</div>
                 </CardContent>
               </Card>
@@ -122,7 +132,7 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground leading-relaxed">
-                    기술과 로맨스가 만나는 곳에서, 모든 커플이 쉽고 즐겁게 여행을 계획할 수 있는 
+                    기술과 로맨스가 만나는 곳에서, 모든 커플이 쉽고 즐겁게 여행을 계획할 수 있는
                     세계 최고의 플랫폼이 되는 것입니다.
                   </p>
                 </CardContent>
@@ -134,7 +144,7 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground leading-relaxed">
-                    사용자 중심의 서비스, 혁신적인 기술, 그리고 커플들의 행복한 추억을 만드는 것이 
+                    사용자 중심의 서비스, 혁신적인 기술, 그리고 커플들의 행복한 추억을 만드는 것이
                     우리의 핵심 가치입니다.
                   </p>
                 </CardContent>
@@ -155,13 +165,15 @@ export default function AboutPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
-              <Card 
-                key={index} 
+              <Card
+                key={index}
                 className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/50 hover:-translate-y-1"
               >
                 <CardHeader>
                   <div className="mb-4">
-                    <feature.icon className={`h-10 w-10 ${feature.color} group-hover:scale-110 transition-transform`} />
+                    <feature.icon
+                      className={`h-10 w-10 ${feature.color} group-hover:scale-110 transition-transform`}
+                    />
                   </div>
                   <CardTitle>{feature.title}</CardTitle>
                 </CardHeader>
@@ -181,9 +193,7 @@ export default function AboutPage() {
         <div className="container mx-auto px-4">
           <Card className="border-2 border-primary/50 bg-gradient-to-br from-primary/10 to-accent/10">
             <CardContent className="pt-12 pb-12 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                지금 바로 시작해보세요
-              </h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">지금 바로 시작해보세요</h2>
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
                 특별한 여행 계획을 세우고 소중한 추억을 만들어보세요
               </p>
@@ -197,8 +207,6 @@ export default function AboutPage() {
           </Card>
         </div>
       </section>
-
-      <Footer />
     </div>
   )
 }

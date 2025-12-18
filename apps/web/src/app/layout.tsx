@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/shared/theme-provider-wrapper"
 import { LayoutWrapper } from "@/components/layout/layout-wrapper"
 import { ServiceWorkerScript } from "@/components/shared/service-worker-script"
 import { Header } from "@/components/layout/header"
+import { FooterWrapper } from "@/components/layout/footer-wrapper"
 import { MSWProvider } from "@/components/shared/msw-provider"
 import { Suspense } from "react"
 
@@ -78,8 +79,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#10b981" },
-    { media: "(prefers-color-scheme: dark)", color: "#059669" },
+    { media: "(prefers-color-scheme: light)", color: "#EE1D85" },
+    { media: "(prefers-color-scheme: dark)", color: "#EE1D85" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -122,7 +123,7 @@ export default function RootLayout({
             <LayoutWrapper>
               <Suspense
                 fallback={
-                  <header className="absolute top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 shadow-sm">
+                  <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 shadow-sm">
                     <div className="container mx-auto px-2 sm:px-3 md:px-4 py-3">
                       <div className="flex items-center justify-between">
                         <div className="h-8 w-32 bg-muted animate-pulse rounded" />
@@ -134,7 +135,8 @@ export default function RootLayout({
               >
                 <Header />
               </Suspense>
-              {children}
+              <main className="flex-1">{children}</main>
+              <FooterWrapper />
             </LayoutWrapper>
             <Toaster />
           </ThemeProvider>

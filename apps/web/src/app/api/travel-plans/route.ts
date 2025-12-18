@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@lovetrip/api/supabase/server"
-import type { Database } from "@lovetrip/shared/types/database"
+import { createUserCourseFromTravelPlan } from "@lovetrip/planner/services"
 
 /**
  * POST /api/travel-plans
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const diffTime = Math.abs(end.getTime() - start.getTime())
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
 
-    const days = []
+    const days: Array<{ id: string; day_number: number }> = []
     for (let i = 0; i < diffDays; i++) {
       const dayDate = new Date(start)
       dayDate.setDate(start.getDate() + i)
@@ -74,35 +74,84 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (dayError) throw dayError
-      days.push(day)
+      if (day) days.push(day)
     }
 
     // 3. travel_day_places 생성
     if (places && places.length > 0) {
-      const placesToInsert = places.map((p: { place_id: string; day_number: number; order_index: number }) => {
-        const day = days.find((d) => d.day_number === p.day_number)
-        if (!day) return null
+      // UUID 형식 검증 함수
+      const isValidUUID = (str: string): boolean => {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        return uuidRegex.test(str)
+      }
 
-        return {
-          travel_day_id: day.id,
-          place_id: p.place_id,
-          order_index: p.order_index,
+      // place_id 유효성 검증 (UUID 형식만 필터링)
+      const validPlaceIds: string[] = places
+        .map((p: { place_id: string }) => p.place_id)
+        .filter((id: string | undefined): id is string => typeof id === "string" && isValidUUID(id))
+
+      if (validPlaceIds.length > 0) {
+        const { data: existingPlaces, error: checkError } = await supabase
+          .from("places")
+          .select("id")
+          .in("id", validPlaceIds)
+
+        if (checkError) {
+          console.error("Error checking places:", checkError)
+          throw new Error(`장소 확인 중 오류가 발생했습니다: ${checkError.message}`)
         }
-      }).filter(Boolean)
 
-      if (placesToInsert.length > 0) {
-        const { error: placesError } = await supabase
-          .from("travel_day_places")
-          .insert(placesToInsert)
+        const existingPlaceIds = new Set(existingPlaces?.map(p => p.id) || [])
 
-        if (placesError) throw placesError
+        const placesToInsert = places
+          .map((p: { place_id: string; day_number: number; order_index: number }) => {
+            // UUID 형식 검증
+            if (!p.place_id || !isValidUUID(p.place_id)) {
+              console.warn(`Invalid UUID format for place_id: ${p.place_id}`)
+              return null
+            }
+
+            // places 테이블에 존재하는지 확인
+            if (!existingPlaceIds.has(p.place_id)) {
+              console.warn(`Place not found in database: ${p.place_id}`)
+              return null
+            }
+
+            const day = days.find(d => d.day_number === p.day_number)
+            if (!day) {
+              console.warn(`Day not found for day_number: ${p.day_number}`)
+              return null
+            }
+
+            return {
+              travel_day_id: day.id,
+              place_id: p.place_id,
+              order_index: p.order_index ?? 0,
+            }
+          })
+          .filter(Boolean)
+
+        if (placesToInsert.length > 0) {
+          const { error: placesError } = await supabase
+            .from("travel_day_places")
+            .insert(placesToInsert)
+
+          if (placesError) {
+            console.error("Error inserting travel_day_places:", placesError)
+            throw new Error(`장소 추가 중 오류가 발생했습니다: ${placesError.message}`)
+          }
+        } else {
+          console.warn("No valid places to insert after validation")
+        }
+      } else {
+        console.warn("No valid UUID place_ids found in places array")
       }
     }
 
     // 4. budget_items 생성
     if (budget_items && budget_items.length > 0) {
       const budgetItemsToInsert = budget_items.map(
-        (item: { category: string; name: string; planned_amount: number }, index: number) => {
+        (item: { category: string; name: string; planned_amount: number }) => {
           // 첫 번째 일차에 연결 (또는 전체 계획에)
           const firstDay = days[0]
           return {
@@ -115,9 +164,7 @@ export async function POST(request: NextRequest) {
         }
       )
 
-      const { error: budgetError } = await supabase
-        .from("budget_items")
-        .insert(budgetItemsToInsert)
+      const { error: budgetError } = await supabase.from("budget_items").insert(budgetItemsToInsert)
 
       if (budgetError) throw budgetError
     }
@@ -148,7 +195,7 @@ export async function POST(request: NextRequest) {
               couple_id: couple.id,
               name: "여행 일정",
               color: "#3b82f6",
-              description: "여행 계획이 자동으로 추가됩니다",
+              created_by: user.id,
             })
             .select()
             .single()
@@ -182,6 +229,21 @@ export async function POST(request: NextRequest) {
       console.error("Failed to add to calendar:", calendarError)
     }
 
+    // 6. 코스인 경우 user_courses에도 자동 저장 (프로필에서 보이도록)
+    if (course_type === "date" || course_type === "travel") {
+      try {
+        await createUserCourseFromTravelPlan(plan.id, user.id, {
+          isPublic: false, // 기본적으로 비공개
+          title: title,
+          description: description,
+        })
+        console.log(`[TravelPlans] User course created from travel plan: ${plan.id}`)
+      } catch (courseError) {
+        // user_course 생성 실패해도 travel_plan 생성은 성공으로 처리
+        console.error("Failed to create user course from travel plan:", courseError)
+      }
+    }
+
     return NextResponse.json({ plan })
   } catch (error) {
     console.error("Error creating travel plan:", error)
@@ -196,7 +258,7 @@ export async function POST(request: NextRequest) {
  * GET /api/travel-plans
  * 내 여행 계획 목록 조회
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createClient()
     const {
@@ -219,9 +281,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching travel plans:", error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "여행 계획을 불러오는 중 오류가 발생했습니다" },
+      {
+        error:
+          error instanceof Error ? error.message : "여행 계획을 불러오는 중 오류가 발생했습니다",
+      },
       { status: 500 }
     )
   }
 }
-

@@ -60,7 +60,7 @@ async function getProfileStats(userId: string) {
     })
   }
 
-  return {
+    return {
     gamification: {
       level: gamification.level,
       currentXP: gamification.current_xp,
@@ -104,6 +104,87 @@ async function getProfileData(userId: string) {
   }
 }
 
+async function getUserCourses(userId: string) {
+  const supabase = await createClient()
+  
+  const { data: courses, error } = await supabase
+    .from("user_courses")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(6)
+
+  if (error || !courses) {
+    return []
+  }
+
+  return courses
+}
+
+async function getTravelPlans(userId: string) {
+  const supabase = await createClient()
+  
+  const { data: plans, error } = await supabase
+    .from("travel_plans")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(6)
+
+  if (error || !plans) {
+    return []
+  }
+
+  // 각 여행 계획의 장소 개수 조회
+  const plansWithPlaces = await Promise.all(
+    plans.map(async plan => {
+      const { data: days } = await supabase
+        .from("travel_days")
+        .select("id")
+        .eq("travel_plan_id", plan.id)
+
+      let places = 0
+      if (days && days.length > 0) {
+        const dayIds = days.map(d => d.id)
+        const { count } = await supabase
+          .from("travel_day_places")
+          .select("*", { count: "exact", head: true })
+          .in("travel_day_id", dayIds)
+
+        places = count || 0
+      }
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const startDate = new Date(plan.start_date)
+      const endDate = new Date(plan.end_date)
+      startDate.setHours(0, 0, 0, 0)
+      endDate.setHours(0, 0, 0, 0)
+
+      let status: "planning" | "ongoing" | "completed" = "planning"
+      if (endDate < today) {
+        status = "completed"
+      } else if (startDate <= today && today <= endDate) {
+        status = "ongoing"
+      }
+
+      return {
+        id: plan.id,
+        title: plan.title,
+        destination: plan.destination,
+        start_date: plan.start_date,
+        end_date: plan.end_date,
+        total_budget: plan.total_budget || 0,
+        status,
+        places,
+      }
+    })
+  )
+
+  return plansWithPlaces
+}
+
 export default async function ProfilePage() {
   const supabase = await createClient()
   const {
@@ -114,10 +195,19 @@ export default async function ProfilePage() {
     return null
   }
 
-  const [stats, profile] = await Promise.all([
+  const [stats, profile, userCourses, travelPlans] = await Promise.all([
     getProfileStats(user.id),
     getProfileData(user.id),
+    getUserCourses(user.id),
+    getTravelPlans(user.id),
   ])
 
-  return <ProfilePageClient initialStats={stats} initialProfile={profile} />
+  return (
+    <ProfilePageClient
+      initialStats={stats}
+      initialProfile={profile}
+      initialUserCourses={userCourses}
+      initialTravelPlans={travelPlans}
+    />
+  )
 }

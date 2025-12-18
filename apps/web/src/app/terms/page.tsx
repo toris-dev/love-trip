@@ -2,12 +2,6 @@ import { FileText, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
 import dynamic from "next/dynamic"
 
-// Lazy loading Footer
-const Footer = dynamic(() => import("@/components/layout/footer").then((mod) => ({ default: mod.Footer })), {
-  ssr: true,
-  loading: () => <div className="h-32" />,
-})
-
 const sections = [
   {
     title: "제1조 (목적)",
@@ -91,10 +85,10 @@ const sections = [
 export const revalidate = 86400
 
 export default function TermsPage() {
-  const lastModifiedDate = new Date().toLocaleDateString("ko-KR", { 
-    year: "numeric", 
-    month: "long", 
-    day: "numeric" 
+  const lastModifiedDate = new Date().toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   })
 
   return (
@@ -112,9 +106,7 @@ export default function TermsPage() {
             <p className="text-lg text-muted-foreground">
               LOVETRIP 서비스 이용약관입니다. 서비스를 이용하시기 전에 반드시 읽어보시기 바랍니다.
             </p>
-            <p className="text-sm text-muted-foreground mt-4">
-              최종 수정일: {lastModifiedDate}
-            </p>
+            <p className="text-sm text-muted-foreground mt-4">최종 수정일: {lastModifiedDate}</p>
           </div>
         </div>
       </section>
@@ -132,8 +124,8 @@ export default function TermsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground leading-relaxed">
-                  본 약관은 LOVETRIP 서비스 이용에 필요한 사항을 규정하고 있습니다. 
-                  서비스를 이용하시면 본 약관에 동의한 것으로 간주됩니다.
+                  본 약관은 LOVETRIP 서비스 이용에 필요한 사항을 규정하고 있습니다. 서비스를
+                  이용하시면 본 약관에 동의한 것으로 간주됩니다.
                 </p>
               </CardContent>
             </Card>
@@ -167,8 +159,6 @@ export default function TermsPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   )
 }

@@ -10,7 +10,7 @@ export default async function HomePage() {
   } = await supabase.auth.getUser()
 
   return (
-    <div className="fixed inset-0 w-full h-full overflow-y-auto pt-16 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="w-full bg-gradient-to-br from-primary/5 via-background to-accent/5">
       <section className="relative py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <HomeHeroSection />

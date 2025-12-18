@@ -2,12 +2,6 @@ import { Shield, Lock, Eye, FileCheck, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
 import dynamic from "next/dynamic"
 
-// Lazy loading Footer
-const Footer = dynamic(() => import("@/components/layout/footer").then((mod) => ({ default: mod.Footer })), {
-  ssr: true,
-  loading: () => <div className="h-32" />,
-})
-
 const sections = [
   {
     icon: FileCheck,
@@ -120,10 +114,10 @@ const sections = [
 export const revalidate = 86400
 
 export default function PrivacyPage() {
-  const lastModifiedDate = new Date().toLocaleDateString("ko-KR", { 
-    year: "numeric", 
-    month: "long", 
-    day: "numeric" 
+  const lastModifiedDate = new Date().toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   })
 
   return (
@@ -141,9 +135,7 @@ export default function PrivacyPage() {
             <p className="text-lg text-muted-foreground">
               LOVETRIP은 이용자의 개인정보를 소중히 다루며, 관련 법령을 준수합니다.
             </p>
-            <p className="text-sm text-muted-foreground mt-4">
-              최종 수정일: {lastModifiedDate}
-            </p>
+            <p className="text-sm text-muted-foreground mt-4">최종 수정일: {lastModifiedDate}</p>
           </div>
         </div>
       </section>
@@ -161,9 +153,9 @@ export default function PrivacyPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground leading-relaxed">
-                  LOVETRIP은 이용자의 개인정보를 보호하기 위해 최선을 다하고 있으며, 
-                  개인정보 보호법 및 관련 법령을 준수합니다. 본 방침은 관련 법령의 변경 및 
-                  내부 정책 변경에 따라 변경될 수 있으며, 변경 시 사전에 공지하겠습니다.
+                  LOVETRIP은 이용자의 개인정보를 보호하기 위해 최선을 다하고 있으며, 개인정보 보호법
+                  및 관련 법령을 준수합니다. 본 방침은 관련 법령의 변경 및 내부 정책 변경에 따라
+                  변경될 수 있으며, 변경 시 사전에 공지하겠습니다.
                 </p>
               </CardContent>
             </Card>
@@ -200,8 +192,6 @@ export default function PrivacyPage() {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   )
 }

@@ -93,17 +93,6 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
     lng: number
   } | null>(null)
   const [isPublic, setIsPublic] = useState(false)
-  const [isPremium, setIsPremium] = useState(false)
-
-  // 프리미엄 구독 확인 (필요시 사용)
-  useEffect(() => {
-    if (user) {
-      fetch("/api/subscription/check")
-        .then(res => res.json())
-        .then(data => setIsPremium(data.isPremium || false))
-        .catch(() => setIsPremium(false))
-    }
-  }, [user])
 
   const progress = step === "places" ? 33 : step === "budget" ? 66 : 100
 
@@ -281,7 +270,7 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
         if (publishResponse.ok) {
           const { rewards } = await publishResponse.json()
 
-          // 배지 획득 시 특별 알림
+          // 보상 알림 표시 (RewardNotification 컴포넌트는 별도로 관리)
           if (rewards?.badge) {
             toast.success(
               `🎉 축하합니다! 코스가 공개되었고 "${rewards.badge.name}" 배지를 획득했습니다!`,
@@ -295,6 +284,11 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
               description: `보상: XP ${rewards?.xp || 0} + 포인트 ${rewards?.points || 0}${rewards?.leveledUp ? " (레벨 업!)" : ""}`,
               duration: 4000,
             })
+          }
+
+          // 보상 정보를 세션 스토리지에 저장하여 페이지 이동 후 표시
+          if (rewards) {
+            sessionStorage.setItem("coursePublishRewards", JSON.stringify(rewards))
           }
         } else {
           toast.success("여행 계획이 저장되었습니다! (공개는 나중에 설정할 수 있습니다)")

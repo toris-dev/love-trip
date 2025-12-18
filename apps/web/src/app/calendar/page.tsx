@@ -86,8 +86,8 @@ export default async function CalendarPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return null
-  }
+      return null
+    }
 
   const { couple, calendars, partnerInfo, currentUserInfo } = await getCalendarData(user.id)
 
@@ -98,6 +98,6 @@ export default async function CalendarPage() {
       initialPartnerInfo={partnerInfo}
       initialCurrentUserInfo={currentUserInfo}
       user={user ? { id: user.id, email: user.email } : null}
-    />
+      />
   )
 }

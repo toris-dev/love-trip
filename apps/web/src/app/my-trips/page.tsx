@@ -1,8 +1,12 @@
 import { Plus } from "lucide-react"
 import { Button } from "@lovetrip/ui/components/button"
 import Link from "next/link"
-import { Footer } from "@/components/layout/footer"
 import { MyTripsList } from "@/components/features/my-trips/my-trips-list"
+import { MyTripsClient } from "@/components/features/my-trips/my-trips-client"
+import { createClient } from "@lovetrip/api/supabase/server"
+import type { Database } from "@lovetrip/shared/types/database"
+
+type TravelPlan = Database["public"]["Tables"]["travel_plans"]["Row"]
 
 type Trip = {
   id: string
@@ -16,71 +20,104 @@ type Trip = {
   score?: number
 }
 
-const trips: Trip[] = [
-  {
-    id: "1",
-    title: "서울 로맨틱 데이트",
-    destination: "서울",
-    startDate: "2024-02-14",
-    endDate: "2024-02-15",
-    budget: 230000,
-    status: "completed",
-    places: 5,
-    score: 95,
-  },
-  {
-    id: "2",
-    title: "부산 바다 여행",
-    destination: "부산",
-    startDate: "2024-03-01",
-    endDate: "2024-03-03",
-    budget: 350000,
-    status: "planning",
-    places: 8,
-  },
-  {
-    id: "3",
-    title: "제주 힐링 여행",
-    destination: "제주",
-    startDate: "2024-04-10",
-    endDate: "2024-04-13",
-    budget: 500000,
-    status: "planning",
-    places: 12,
-  },
-  {
-    id: "4",
-    title: "강릉 커피 투어",
-    destination: "강릉",
-    startDate: "2024-01-20",
-    endDate: "2024-01-21",
-    budget: 150000,
-    status: "completed",
-    places: 6,
-    score: 88,
-  },
-]
-
 // 사용자별 데이터이므로 동적 렌더링
 export const dynamic = "force-dynamic"
 
-export default function MyTripsPage() {
+async function getTravelPlans(): Promise<Trip[]> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return []
+  }
+
+  // travel_plans 조회
+  const { data: plans, error } = await supabase
+    .from("travel_plans")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching travel plans:", error)
+    return []
+  }
+
+  if (!plans) {
+    return []
+  }
+
+  // 각 여행 계획의 장소 개수 조회
+  const plansWithPlaces = await Promise.all(
+    plans.map(async plan => {
+      // travel_days와 travel_day_places를 통해 장소 개수 조회
+      const { data: days, error: daysError } = await supabase
+        .from("travel_days")
+        .select("id")
+        .eq("travel_plan_id", plan.id)
+
+      let places = 0
+      if (!daysError && days && days.length > 0) {
+        const dayIds = days.map(d => d.id)
+        const { count, error: placesError } = await supabase
+          .from("travel_day_places")
+          .select("*", { count: "exact", head: true })
+          .in("travel_day_id", dayIds)
+
+        places = placesError ? 0 : count || 0
+      }
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const startDate = new Date(plan.start_date)
+      const endDate = new Date(plan.end_date)
+      startDate.setHours(0, 0, 0, 0)
+      endDate.setHours(0, 0, 0, 0)
+
+      let status: "planning" | "ongoing" | "completed" = "planning"
+      if (endDate < today) {
+        status = "completed"
+      } else if (startDate <= today && today <= endDate) {
+        status = "ongoing"
+      }
+
+      return {
+        id: plan.id,
+        title: plan.title,
+        destination: plan.destination,
+        startDate: plan.start_date,
+        endDate: plan.end_date,
+        budget: plan.total_budget || 0,
+        status,
+        places,
+      }
+    })
+  )
+
+  return plansWithPlaces
+}
+
+export default async function MyTripsPage() {
+  const trips = await getTravelPlans()
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <section className="relative py-16 bg-gradient-to-br from-primary/10 via-background to-accent/10">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+      <section className="relative py-12 md:py-16 bg-gradient-to-br from-primary/10 via-background to-accent/10 border-b">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="flex-1">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                   내 여행
                 </h1>
-                <p className="text-lg text-muted-foreground">
+                <p className="text-base md:text-lg text-muted-foreground">
                   계획한 여행들을 한눈에 확인하고 관리하세요
                 </p>
               </div>
-              <Button asChild size="lg" className="group">
+              <Button asChild size="lg" className="group shrink-0">
                 <Link href="/">
                   <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform" />새
                   여행 만들기
@@ -92,15 +129,14 @@ export default function MyTripsPage() {
       </section>
 
       {/* Content */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
+      <section className="py-8 md:py-12">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <MyTripsClient />
             <MyTripsList trips={trips} />
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   )
 }

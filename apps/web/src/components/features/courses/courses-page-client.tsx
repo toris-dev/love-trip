@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@lovetrip/ui/components/button"
-import { Plus, ArrowLeft, Save, GripVertical, X, Heart, Plane } from "lucide-react"
+import { Plus, ArrowLeft, Save, GripVertical, X, Heart, Plane, Menu } from "lucide-react"
 import { LocationInput } from "@/components/shared/location-input"
 import { Label } from "@lovetrip/ui/components/label"
 import { toast } from "sonner"
@@ -18,6 +18,7 @@ import {
 import { Input } from "@lovetrip/ui/components/input"
 import { Badge } from "@lovetrip/ui/components/badge"
 import { Alert, AlertDescription } from "@lovetrip/ui/components/alert"
+import { Switch } from "@lovetrip/ui/components/switch"
 import {
   Search,
   MapPin,
@@ -29,7 +30,6 @@ import {
   AlertCircle,
   ChevronRight,
   Loader2,
-  Calendar,
 } from "lucide-react"
 import { createClient } from "@lovetrip/api/supabase/client"
 import { getCoupleRecommendations } from "@lovetrip/recommendation/services"
@@ -39,8 +39,6 @@ import dynamic from "next/dynamic"
 import type { Database } from "@lovetrip/shared/types/database"
 import {
   TravelSidebar,
-  PlaceDetailCard,
-  CourseInfoOverlay,
   type Place as TravelPlace,
   type TravelCourse,
 } from "@lovetrip/planner/components/travel"
@@ -80,42 +78,59 @@ interface CoursesPageClientProps {
 export function CoursesPageClient({
   initialDateCourses,
   initialDateHasMore,
-  initialDateTotalCount,
+  initialDateTotalCount: _initialDateTotalCount,
   initialTravelCourses,
-  initialTravelHasMore,
-  initialTravelTotalCount,
-  initialCourseType,
+  initialTravelHasMore: _initialTravelHasMore,
+  initialTravelTotalCount: _initialTravelTotalCount,
+  initialCourseType: _initialCourseType,
   user: initialUser,
 }: CoursesPageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const courseType = (searchParams.get("type") === "travel" ? "travel" : "date") as "date" | "travel"
+  const courseType = (searchParams.get("type") === "travel" ? "travel" : "date") as
+    | "date"
+    | "travel"
   const isMobile = useIsMobile()
 
   // Date Course 상태
-  const [dateCourses, setDateCourses] = useState<DateCourse[]>(initialDateCourses)
-  const [filteredDateCourses, setFilteredDateCourses] = useState<DateCourse[]>(initialDateCourses)
+  const [dateCourses] = useState<DateCourse[]>(initialDateCourses)
+  const [_filteredDateCourses, setFilteredDateCourses] = useState<DateCourse[]>(initialDateCourses)
   const [displayedDateCourses, setDisplayedDateCourses] = useState<DateCourse[]>(
     initialDateCourses.slice(0, ITEMS_PER_PAGE)
   )
   const [selectedDateCourse, setSelectedDateCourse] = useState<DateCourse | null>(null)
   const [dateSearchQuery, setDateSearchQuery] = useState("")
   const [dateHasMore, setDateHasMore] = useState(initialDateHasMore)
-  const [datePage, setDatePage] = useState(0)
-  const [dateIsLoading, setDateIsLoading] = useState(false)
-  const [dateIsLoadingMore, setDateIsLoadingMore] = useState(false)
-  const [dateError, setDateError] = useState<string | null>(null)
+  const [_datePage, setDatePage] = useState(0)
+  const [dateIsLoading] = useState(false)
+  const [dateIsLoadingMore] = useState(false)
+  const [dateError] = useState<string | null>(null)
 
   // Travel Course 상태
-  const [travelCourses, setTravelCourses] = useState<TravelCourse[]>(initialTravelCourses)
+  const [travelCourses] = useState<TravelCourse[]>(initialTravelCourses)
   const [selectedTravelCourse, setSelectedTravelCourse] = useState<TravelCourse | null>(null)
   const [travelSearchQuery, setTravelSearchQuery] = useState("")
-  const [travelHasMore, setTravelHasMore] = useState(initialTravelHasMore)
-  const [travelIsLoading, setTravelIsLoading] = useState(false)
-  const [travelError, setTravelError] = useState<string | null>(null)
+  const [travelIsLoading] = useState(false)
+  const [travelError] = useState<string | null>(null)
 
   // 공통 상태
   const [selectedPlace, setSelectedPlace] = useState<Place | TravelPlace | null>(null)
+  const [placeDetails, setPlaceDetails] = useState<{
+    category?: string
+    telephone?: string
+    link?: string
+    roadAddress?: string
+    blogs?: Array<{
+      title: string
+      link: string
+      description: string
+      bloggername: string
+      bloggerlink: string
+      postdate: string
+      image?: string
+    }>
+  } | null>(null)
+  const [isLoadingPlaceDetails, setIsLoadingPlaceDetails] = useState(false)
   const [sidebarMode, setSidebarMode] = useState<"browse" | "create">("browse")
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [user, setUser] = useState<{ id: string; email?: string } | null>(initialUser)
@@ -127,6 +142,7 @@ export function CoursesPageClient({
       id: string
       title: string
       description: string
+      is_public: boolean
       places: Array<{
         id: string
         name: string
@@ -215,8 +231,37 @@ export function CoursesPageClient({
     setSelectedPlace(null)
   }
 
-  const handlePlaceClick = (place: Place | TravelPlace) => {
+  const handlePlaceClick = async (place: Place | TravelPlace) => {
     setSelectedPlace(place)
+    setPlaceDetails(null)
+    setIsLoadingPlaceDetails(true)
+
+    try {
+      // 네이버 Places API로 장소 상세 정보 가져오기
+      const query = `${place.name} ${place.address || ""}`.trim()
+      const response = await fetch(`/api/places/details?query=${encodeURIComponent(query)}`)
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.error) {
+          console.warn("Failed to fetch place details:", data.error)
+        } else {
+          setPlaceDetails({
+            category: data.place?.category || "",
+            telephone: data.place?.telephone || "",
+            link: data.place?.link || "",
+            roadAddress: data.place?.roadAddress || "",
+            blogs: data.blogs || [],
+          })
+        }
+      } else {
+        console.warn("Failed to fetch place details:", response.status)
+      }
+    } catch (error) {
+      console.error("Failed to fetch place details:", error)
+    } finally {
+      setIsLoadingPlaceDetails(false)
+    }
   }
 
   const getMapPlaces = () => {
@@ -285,17 +330,9 @@ export function CoursesPageClient({
       }))
     }
 
-    return recommendedPlaces.slice(0, 30).map(p => ({
-      id: p.id,
-      name: p.name,
-      lat: p.lat,
-      lng: p.lng,
-      type: p.type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC",
-      rating: p.rating ?? 0,
-      priceLevel: p.price_level ?? 0,
-      description: p.description || "",
-      image: p.image_url || "",
-    }))
+    // 검색했을 때나 코스를 선택했을 때만 표시
+    // 기본적으로는 빈 배열 반환
+    return []
   }
 
   const getMapPath = () => {
@@ -351,11 +388,6 @@ export function CoursesPageClient({
   }, [])
 
   const selectedCourse = courseType === "date" ? selectedDateCourse : selectedTravelCourse
-  const currentCourses = courseType === "date" ? filteredDateCourses : travelCourses
-  const currentSearchQuery = courseType === "date" ? dateSearchQuery : travelSearchQuery
-  const setCurrentSearchQuery = courseType === "date" ? setDateSearchQuery : setTravelSearchQuery
-  const currentError = courseType === "date" ? dateError : travelError
-  const currentIsLoading = courseType === "date" ? dateIsLoading : travelIsLoading
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
@@ -419,21 +451,22 @@ export function CoursesPageClient({
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute top-6 left-6 bg-card border border-border rounded-lg p-4 shadow-lg max-w-sm z-40"
+              className="absolute top-4 sm:top-6 left-4 sm:left-6 bg-card border border-border rounded-lg p-3 sm:p-4 shadow-lg max-w-[calc(100vw-2rem)] sm:max-w-sm z-40 max-h-[80vh] overflow-y-auto"
+              style={{ WebkitOverflowScrolling: "touch" }}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg mb-2 text-foreground">
+              <div className="flex items-start justify-between gap-2 sm:gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-base sm:text-lg mb-2 text-foreground line-clamp-2">
                     {selectedCourse.title}
                   </h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
+                      <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       <span>{selectedCourse.duration}</span>
                     </div>
                     <span>•</span>
                     <div className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />
+                      <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       <span>{selectedCourse.place_count}개 장소</span>
                     </div>
                   </div>
@@ -441,34 +474,70 @@ export function CoursesPageClient({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
+                  type="button"
+                  onClick={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
                     if (courseType === "date") {
                       setSelectedDateCourse(null)
+                      setSelectedPlace(null)
                     } else {
                       setSelectedTravelCourse(null)
+                      setSelectedPlace(null)
                     }
                   }}
-                  className="h-8 w-8 p-0"
+                  className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex-shrink-0 z-50 relative touch-manipulation"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+
+              {/* 장소 목록 */}
+              {selectedCourse.places && selectedCourse.places.length > 0 && (
+                <div className="mt-3 sm:mt-4 space-y-2 border-t border-border/50 pt-3">
+                  <div className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                    방문 순서
+                  </div>
+                  {selectedCourse.places.map((place, index) => {
+                    const placeWithOrder = place as Place & { order_index?: number }
+                    const placeNumber =
+                      placeWithOrder.order_index !== undefined
+                        ? placeWithOrder.order_index + 1
+                        : index + 1
+                    return (
+                      <div
+                        key={place.id || index}
+                        className="flex items-start gap-2 p-2 sm:p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation"
+                        onClick={() => handlePlaceClick(place)}
+                      >
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                          {placeNumber}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-xs sm:text-sm text-foreground truncate">
+                            {place.name}
+                          </div>
+                          {place.address && (
+                            <div className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">
+                              {place.address}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </motion.div>
-          )}
-          {courseType === "travel" && selectedTravelCourse && (
-            <CourseInfoOverlay
-              course={selectedTravelCourse}
-              onClose={() => setSelectedTravelCourse(null)}
-            />
           )}
         </div>
       </div>
 
-      {/* 코스 타입 전환 버튼 - 우측 상단 */}
+      {/* 코스 타입 전환 버튼 - 모바일에서는 검색창 아래 우측, 데스크톱에서는 우측 상단 */}
       <div
-        className={`absolute top-4 right-4 z-10 ${
+        className={`absolute top-20 sm:top-4 right-4 z-10 ${
           isMobile
-            ? "flex flex-row gap-2 flex-wrap max-w-[calc(100vw-2rem)]"
+            ? "flex flex-row gap-2 flex-wrap max-w-[calc(100vw-8rem)]"
             : "flex flex-col gap-3"
         }`}
       >
@@ -476,10 +545,8 @@ export function CoursesPageClient({
           onClick={() => handleCourseTypeChange("date")}
           size={isMobile ? "sm" : "lg"}
           variant={courseType === "date" ? "default" : "outline"}
-          className={`shadow-2xl border-0 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 ${
-            isMobile
-              ? "px-3 py-2.5 text-xs"
-              : "px-6 py-6 h-auto text-base"
+          className={`shadow-2xl border-0 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 touch-manipulation ${
+            isMobile ? "px-3 py-2.5 text-xs" : "px-6 py-6 h-auto text-base"
           } ${
             courseType === "date"
               ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/30 hover:shadow-primary/40"
@@ -495,10 +562,8 @@ export function CoursesPageClient({
           onClick={() => handleCourseTypeChange("travel")}
           size={isMobile ? "sm" : "lg"}
           variant={courseType === "travel" ? "default" : "outline"}
-          className={`shadow-2xl border-0 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 ${
-            isMobile
-              ? "px-3 py-2.5 text-xs"
-              : "px-6 py-6 h-auto text-base"
+          className={`shadow-2xl border-0 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 touch-manipulation ${
+            isMobile ? "px-3 py-2.5 text-xs" : "px-6 py-6 h-auto text-base"
           } ${
             courseType === "travel"
               ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/30 hover:shadow-primary/40"
@@ -513,7 +578,7 @@ export function CoursesPageClient({
         <Button
           onClick={() => setSidebarMode("create")}
           size={isMobile ? "sm" : "lg"}
-          className={`shadow-2xl shadow-purple-500/30 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-purple-500/40 ${
+          className={`shadow-2xl shadow-primary/30 bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700 text-white border-0 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-primary/40 touch-manipulation ${
             isMobile ? "px-3 py-2.5 text-xs" : "px-6 py-6 h-auto text-base"
           }`}
           aria-label="새 코스 만들기"
@@ -532,14 +597,14 @@ export function CoursesPageClient({
         }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
       >
-        <div className="h-full w-full bg-background border-r border-border shadow-xl pointer-events-auto flex flex-col relative">
+        <div className="h-full w-full bg-background border-r border-border shadow-xl pointer-events-auto flex flex-col relative overflow-hidden">
           {/* 모바일에서 사이드바 닫기 버튼 */}
           {isMobile && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsSidebarOpen(false)}
-              className="absolute top-4 right-4 z-50 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm border border-border shadow-lg"
+              className="absolute top-4 right-4 z-50 h-10 w-10 sm:h-8 sm:w-8 rounded-full bg-background/80 backdrop-blur-sm border border-border shadow-lg touch-manipulation"
               aria-label="사이드바 닫기"
             >
               <X className="h-4 w-4" />
@@ -549,28 +614,30 @@ export function CoursesPageClient({
             <>
               {courseType === "date" ? (
                 <>
-                  <div className="p-6 border-b border-border bg-card">
-                    <div className="flex items-center gap-4 mb-3">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Heart className="h-6 w-6 text-primary fill-primary" />
+                  <div className="p-4 sm:p-5 md:p-6 border-b border-border bg-card">
+                    <div className="flex items-center gap-3 sm:gap-4 mb-3">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Heart className="h-5 w-5 sm:h-6 sm:w-6 text-primary fill-primary" />
                       </div>
                       <div>
-                        <h1 className="text-2xl font-bold text-foreground">데이트 코스</h1>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+                          데이트 코스
+                        </h1>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                           당일로 즐길 수 있는 로맨틱한 데이트 코스
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-4 border-b border-border bg-muted/30">
+                  <div className="p-3 sm:p-4 border-b border-border bg-muted/30">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                       <Input
                         placeholder="지역명으로 검색..."
                         value={dateSearchQuery}
                         onChange={e => setDateSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 h-11 bg-background"
+                        className="pl-9 sm:pl-10 pr-3 sm:pr-4 h-10 sm:h-11 bg-background"
                       />
                     </div>
                   </div>
@@ -584,26 +651,136 @@ export function CoursesPageClient({
                     </div>
                   )}
 
-                  <div className="flex-1 overflow-y-auto min-h-0">
-                    <div className="p-4 pb-16">
+                  {/* 선택된 데이트 코스 정보 */}
+                  <AnimatePresence>
+                    {selectedDateCourse && (
+                      <motion.div
+                        key={`date-course-${selectedDateCourse.id}`}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        className="p-3 sm:p-4 border-b border-border bg-card"
+                      >
+                        <Card className="border-primary/50 shadow-md">
+                          <CardContent className="p-3 sm:p-4">
+                            <div className="flex items-start justify-between gap-2 sm:gap-3 mb-3">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-base sm:text-lg mb-2 text-foreground line-clamp-2">
+                                  {selectedDateCourse.title}
+                                </h3>
+                                <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground mb-2">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                                    <span>{selectedDateCourse.duration}</span>
+                                  </div>
+                                  <span>•</span>
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                                    <span>{selectedDateCourse.place_count}개 장소</span>
+                                  </div>
+                                  <span>•</span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {selectedDateCourse.region}
+                                  </Badge>
+                                </div>
+                                {selectedDateCourse.description && (
+                                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-3">
+                                    {selectedDateCourse.description}
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                type="button"
+                                onClick={e => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  // 현재 선택된 코스를 비우기
+                                  if (courseType === "date") {
+                                    setSelectedDateCourse(null)
+                                  } else {
+                                    setSelectedTravelCourse(null)
+                                  }
+                                  setSelectedPlace(null)
+                                }}
+                                className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex-shrink-0 z-50 relative touch-manipulation"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            {/* 장소 목록 */}
+                            {selectedDateCourse.places && selectedDateCourse.places.length > 0 && (
+                              <div
+                                className="mt-3 space-y-2 border-t border-border/50 pt-3 max-h-48 sm:max-h-64 overflow-y-auto"
+                                style={{ WebkitOverflowScrolling: "touch" }}
+                              >
+                                <div className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                                  방문 순서
+                                </div>
+                                {selectedDateCourse.places.map((place, index) => {
+                                  const placeWithOrder = place as Place & { order_index?: number }
+                                  const placeNumber =
+                                    placeWithOrder.order_index !== undefined
+                                      ? placeWithOrder.order_index + 1
+                                      : index + 1
+                                  return (
+                                    <div
+                                      key={place.id || index}
+                                      className="flex items-start gap-2 p-2 sm:p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation"
+                                      onClick={() => handlePlaceClick(place)}
+                                    >
+                                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                                        {placeNumber}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-xs sm:text-sm text-foreground truncate">
+                                          {place.name}
+                                        </div>
+                                        {place.address && (
+                                          <div className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">
+                                            {place.address}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div
+                    className="flex-1 overflow-y-auto min-h-0"
+                    style={{ WebkitOverflowScrolling: "touch" }}
+                  >
+                    <div className="p-3 sm:p-4 pb-16">
                       {dateIsLoading ? (
                         <div className="flex items-center justify-center h-full min-h-[400px]">
                           <div className="text-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
-                            <p className="text-sm text-muted-foreground">
+                            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary mx-auto mb-3" />
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               데이트 코스를 불러오는 중...
                             </p>
                           </div>
                         </div>
                       ) : displayedDateCourses.length === 0 ? (
-                        <div className="text-center py-16">
-                          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                            <Heart className="h-8 w-8 text-muted-foreground" />
+                        <div className="text-center py-12 sm:py-16">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                            <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                           </div>
-                          <p className="text-base font-semibold text-foreground mb-1">
+                          <p className="text-sm sm:text-base font-semibold text-foreground mb-1">
                             검색 결과가 없습니다
                           </p>
-                          <p className="text-sm text-muted-foreground">다른 키워드로 검색해보세요</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            다른 키워드로 검색해보세요
+                          </p>
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -617,16 +794,16 @@ export function CoursesPageClient({
                                 transition={{ duration: 0.2 }}
                               >
                                 <Card
-                                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 ${
+                                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 touch-manipulation ${
                                     selectedDateCourse?.id === course.id
                                       ? "ring-2 ring-primary border-primary"
                                       : "border-border hover:border-primary/30"
                                   }`}
                                   onClick={() => handleDateCourseSelect(course)}
                                 >
-                                  <CardContent className="p-4">
+                                  <CardContent className="p-3 sm:p-4">
                                     {course.image_url && (
-                                      <div className="relative w-full h-36 mb-3 rounded-lg overflow-hidden group">
+                                      <div className="relative w-full h-32 sm:h-36 md:h-40 mb-3 rounded-lg overflow-hidden group">
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-10" />
                                         <Image
                                           src={course.image_url}
@@ -635,52 +812,64 @@ export function CoursesPageClient({
                                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                                         />
                                         <div className="absolute bottom-2 left-2 right-2 z-20">
-                                          <Badge className="bg-background/80 backdrop-blur-sm text-foreground border-0">
+                                          <Badge className="bg-background/80 backdrop-blur-sm text-foreground border-0 text-[10px] sm:text-xs">
                                             {course.region}
                                           </Badge>
                                         </div>
                                       </div>
                                     )}
-                                    <div className="space-y-2">
-                                      <h3 className="font-semibold text-base line-clamp-1 text-foreground">
-                                        {course.title}
-                                      </h3>
-                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <div className="space-y-1.5 sm:space-y-2">
+                                      <div className="flex items-center gap-1.5 sm:gap-2">
+                                        <h3 className="font-semibold text-sm sm:text-base line-clamp-1 text-foreground">
+                                          {course.title}
+                                        </h3>
+                                      </div>
+                                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
                                         <div className="flex items-center gap-1">
-                                          <Clock className="h-3.5 w-3.5" />
+                                          <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                           <span>{course.duration}</span>
                                         </div>
                                         <span>•</span>
                                         <div className="flex items-center gap-1">
-                                          <MapPin className="h-3.5 w-3.5" />
+                                          <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                           <span>{course.place_count}개 장소</span>
                                         </div>
                                       </div>
                                       {course.description && (
-                                        <p className="text-sm text-muted-foreground line-clamp-2">
+                                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                                           {course.description}
                                         </p>
                                       )}
                                       <div className="flex items-center justify-between pt-2 border-t border-border">
-                                        <Badge variant="secondary" className="text-xs">
+                                        <Badge
+                                          variant="secondary"
+                                          className="text-[10px] sm:text-xs"
+                                        >
                                           {course.region}
                                         </Badge>
                                         <div className="flex items-center gap-1 text-primary">
-                                          <ChevronRight className="h-5 w-5" />
+                                          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-2 flex-wrap pt-2">
+                                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-2">
                                         {course.places.slice(0, 3).map(place => {
                                           const Icon = getTypeIcon(place.type)
                                           return (
-                                            <Badge key={place.id} variant="outline" className="text-xs">
-                                              <Icon className="h-3 w-3 mr-1" />
+                                            <Badge
+                                              key={place.id}
+                                              variant="outline"
+                                              className="text-[10px] sm:text-xs"
+                                            >
+                                              <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
                                               {place.type}
                                             </Badge>
                                           )
                                         })}
                                         {course.places.length > 3 && (
-                                          <Badge variant="outline" className="text-xs">
+                                          <Badge
+                                            variant="outline"
+                                            className="text-[10px] sm:text-xs"
+                                          >
                                             +{course.places.length - 3}
                                           </Badge>
                                         )}
@@ -711,6 +900,10 @@ export function CoursesPageClient({
                   onSearchChange={setTravelSearchQuery}
                   selectedCourse={selectedTravelCourse}
                   onCourseSelect={handleTravelCourseSelect}
+                  onClose={() => {
+                    setSelectedTravelCourse(null)
+                    setSelectedPlace(null)
+                  }}
                   isLoading={travelIsLoading}
                   error={travelError}
                 />
@@ -727,14 +920,14 @@ export function CoursesPageClient({
                     setIsSidebarOpen(false)
                     setSidebarMode("browse")
                   }}
-                  className="absolute top-4 right-4 z-50 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm border border-border shadow-lg"
+                  className="absolute top-4 right-4 z-50 h-10 w-10 sm:h-8 sm:w-8 rounded-full bg-background/80 backdrop-blur-sm border border-border shadow-lg touch-manipulation"
                   aria-label="사이드바 닫기"
                 >
                   <X className="h-4 w-4" />
                 </Button>
               )}
-              <div className="p-4 pb-16">
-                <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 sm:p-4 pb-16 max-w-full overflow-hidden">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 max-w-full overflow-hidden">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -743,15 +936,17 @@ export function CoursesPageClient({
                       setSelectedCourseId(null)
                       setCreatingCourses([])
                     }}
-                    className="h-9 w-9 p-0"
+                    className="h-9 w-9 p-0 flex-shrink-0 touch-manipulation"
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
-                  <h2 className="text-xl font-bold text-foreground">코스 만들기</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
+                    코스 만들기
+                  </h2>
                 </div>
 
                 {selectedCourseId === null ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     <Button
                       onClick={() => {
                         const newCourseId = `new-${Date.now()}`
@@ -761,37 +956,37 @@ export function CoursesPageClient({
                             id: newCourseId,
                             title: "",
                             description: "",
+                            is_public: false,
                             places: [],
                           },
                         ])
                         setSelectedCourseId(newCourseId)
                       }}
-                      className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground"
+                      className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 text-primary-foreground touch-manipulation"
                     >
-                      <Plus className="h-5 w-5 mr-2" />
-                      새 코스 만들기
+                      <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />새 코스 만들기
                     </Button>
 
                     {creatingCourses.length > 0 && (
                       <div className="space-y-2">
-                        <Label className="text-sm font-semibold">진행 중인 코스</Label>
+                        <Label className="text-xs sm:text-sm font-semibold">진행 중인 코스</Label>
                         {creatingCourses.map(course => (
                           <Card
                             key={course.id}
-                            className="cursor-pointer hover:border-primary/50 transition-colors"
+                            className="cursor-pointer hover:border-primary/50 transition-colors touch-manipulation"
                             onClick={() => setSelectedCourseId(course.id)}
                           >
-                            <CardContent className="p-4">
+                            <CardContent className="p-3 sm:p-4">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <h3 className="font-semibold text-sm">
+                                  <h3 className="font-semibold text-xs sm:text-sm">
                                     {course.title || "제목 없음"}
                                   </h3>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground">
                                     {course.places.length}개 장소
                                   </p>
                                 </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                               </div>
                             </CardContent>
                           </Card>
@@ -805,11 +1000,11 @@ export function CoursesPageClient({
                     if (!selectedCourse) return null
 
                     return (
-                      <div className="space-y-4">
-                        <Card className="border border-border">
-                          <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <div className="space-y-3 sm:space-y-4 max-w-full overflow-hidden">
+                        <Card className="border border-border max-w-full overflow-hidden">
+                          <CardHeader className="p-4 sm:p-6 max-w-full overflow-hidden">
+                            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 {courseType === "date" ? (
                                   <Heart className="h-4 w-4 text-primary" />
                                 ) : (
@@ -819,9 +1014,12 @@ export function CoursesPageClient({
                               코스 정보 입력
                             </CardTitle>
                           </CardHeader>
-                          <CardContent className="pt-5 space-y-4">
+                          <CardContent className="pt-4 sm:pt-5 space-y-3 sm:space-y-4 max-w-full overflow-hidden">
                             <div>
-                              <Label htmlFor="course-title" className="text-sm font-semibold mb-2">
+                              <Label
+                                htmlFor="course-title"
+                                className="text-xs sm:text-sm font-semibold mb-2"
+                              >
                                 코스 제목
                               </Label>
                               <Input
@@ -841,13 +1039,14 @@ export function CoursesPageClient({
                                     ? "예: 서울 데이트 코스"
                                     : "예: 제주도 2박 3일 여행"
                                 }
-                                className="h-11"
+                                className="h-10 sm:h-11 w-full max-w-full"
+                                maxLength={100}
                               />
                             </div>
                             <div>
                               <Label
                                 htmlFor="course-description"
-                                className="text-sm font-semibold mb-2"
+                                className="text-xs sm:text-sm font-semibold mb-2"
                               >
                                 코스 설명
                               </Label>
@@ -864,28 +1063,54 @@ export function CoursesPageClient({
                                   )
                                 }}
                                 placeholder="코스에 대한 간단한 설명을 입력하세요"
-                                className="h-11"
+                                className="h-10 sm:h-11 w-full max-w-full"
+                                maxLength={200}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between pt-2">
+                              <div className="space-y-0.5">
+                                <Label
+                                  htmlFor="course-public"
+                                  className="text-xs sm:text-sm font-semibold"
+                                >
+                                  공개 설정
+                                </Label>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                                  공개하면 다른 사용자들이 이 코스를 볼 수 있습니다
+                                </p>
+                              </div>
+                              <Switch
+                                id="course-public"
+                                checked={selectedCourse.is_public}
+                                onCheckedChange={checked => {
+                                  setCreatingCourses(
+                                    creatingCourses.map(c =>
+                                      c.id === selectedCourseId ? { ...c, is_public: checked } : c
+                                    )
+                                  )
+                                }}
                               />
                             </div>
                           </CardContent>
                         </Card>
 
                         <Card className="border border-border">
-                          <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
+                          <CardHeader className="p-4 sm:p-6">
+                            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
                               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                                 <MapPin className="h-4 w-4 text-primary" />
                               </div>
                               장소 추가
                             </CardTitle>
                           </CardHeader>
-                          <CardContent className="pt-5">
+                          <CardContent className="pt-4 sm:pt-5 max-w-full overflow-hidden">
                             <LocationInput
                               label=""
                               value=""
                               onChange={() => {}}
                               showPreview={true}
-                              onLocationSelect={location => {
+                              className="max-w-full"
+                              onLocationSelect={async location => {
                                 setSearchedPlace({
                                   id: `search-${Date.now()}`,
                                   name: location.name || location.address,
@@ -898,23 +1123,55 @@ export function CoursesPageClient({
                                   image: "",
                                 })
 
-                                const newPlace = {
-                                  id: `place-${Date.now()}-${Math.random()}`,
-                                  name: location.name || location.address,
-                                  address: location.address,
-                                  lat: location.lat,
-                                  lng: location.lng,
-                                  type: "ETC" as const,
-                                }
-                                setCreatingCourses(
-                                  creatingCourses.map(c =>
-                                    c.id === selectedCourseId
-                                      ? { ...c, places: [...c.places, newPlace] }
-                                      : c
+                                try {
+                                  // place_id 찾기 또는 생성
+                                  const placeResponse = await fetch("/api/places/find-or-create", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      name: location.name || location.address,
+                                      address: location.address,
+                                      lat: location.lat,
+                                      lng: location.lng,
+                                      type: "ETC",
+                                      region: selectedCourse.title.includes("서울")
+                                        ? "서울"
+                                        : selectedCourse.title.includes("부산")
+                                          ? "부산"
+                                          : undefined,
+                                    }),
+                                  })
+
+                                  if (!placeResponse.ok) {
+                                    throw new Error("장소를 찾거나 생성할 수 없습니다")
+                                  }
+
+                                  const { place_id } = await placeResponse.json()
+
+                                  const newPlace = {
+                                    id: place_id,
+                                    name: location.name || location.address,
+                                    address: location.address,
+                                    lat: location.lat,
+                                    lng: location.lng,
+                                    type: "ETC" as const,
+                                  }
+                                  setCreatingCourses(
+                                    creatingCourses.map(c =>
+                                      c.id === selectedCourseId
+                                        ? { ...c, places: [...c.places, newPlace] }
+                                        : c
+                                    )
                                   )
-                                )
-                                setTimeout(() => setSearchedPlace(null), 100)
-                                toast.success("장소가 추가되었습니다")
+                                  setTimeout(() => setSearchedPlace(null), 100)
+                                  toast.success("장소가 추가되었습니다")
+                                } catch (error) {
+                                  toast.error(
+                                    error instanceof Error
+                                      ? error.message
+                                      : "장소 추가에 실패했습니다"
+                                  )
+                                }
                               }}
                               placeholder="장소명 또는 주소를 입력하세요"
                             />
@@ -933,59 +1190,66 @@ export function CoursesPageClient({
                             </CardHeader>
                             <CardContent className="pt-5">
                               <div className="space-y-3">
-                                {selectedCourse.places.map((place, index) => (
-                                  <div
-                                    key={place.id}
-                                    className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                      <span className="text-sm font-semibold w-6 text-center p-1 rounded bg-primary text-primary-foreground">
-                                        {index + 1}
-                                      </span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-medium text-sm truncate text-foreground">
-                                        {place.name}
-                                      </p>
-                                      {place.address && (
-                                        <p className="text-xs text-muted-foreground truncate mt-1">
-                                          {place.address}
-                                        </p>
-                                      )}
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        setCreatingCourses(
-                                          creatingCourses.map(c =>
-                                            c.id === selectedCourseId
-                                              ? {
-                                                  ...c,
-                                                  places: c.places.filter(p => p.id !== place.id),
-                                                }
-                                              : c
-                                          )
-                                        )
-                                        toast.success("장소가 제거되었습니다")
-                                      }}
-                                      className="flex-shrink-0 h-8 w-8 p-0"
+                                {selectedCourse.places.map((place, index) => {
+                                  const placeWithOrder = place as Place & { order_index?: number }
+                                  const placeNumber =
+                                    placeWithOrder.order_index !== undefined
+                                      ? placeWithOrder.order_index + 1
+                                      : index + 1
+                                  return (
+                                    <div
+                                      key={place.id}
+                                      className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
                                     >
-                                      <X className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                ))}
+                                      <div className="flex items-center gap-2">
+                                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm font-semibold w-6 text-center p-1 rounded bg-primary text-primary-foreground">
+                                          {placeNumber}
+                                        </span>
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-sm truncate text-foreground">
+                                          {place.name}
+                                        </p>
+                                        {place.address && (
+                                          <p className="text-xs text-muted-foreground truncate mt-1">
+                                            {place.address}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setCreatingCourses(
+                                            creatingCourses.map(c =>
+                                              c.id === selectedCourseId
+                                                ? {
+                                                    ...c,
+                                                    places: c.places.filter(p => p.id !== place.id),
+                                                  }
+                                                : c
+                                            )
+                                          )
+                                          toast.success("장소가 제거되었습니다")
+                                        }}
+                                        className="flex-shrink-0 h-8 w-8 p-0"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  )
+                                })}
                               </div>
                             </CardContent>
                           </Card>
                         )}
 
-                        <div className="flex gap-3 pt-4">
+                        <div className="flex gap-2 sm:gap-3 pt-4">
                           <Button
                             variant="outline"
                             onClick={() => setSelectedCourseId(null)}
-                            className="flex-1 h-12"
+                            className="flex-1 h-11 sm:h-12 touch-manipulation"
                           >
                             취소
                           </Button>
@@ -1009,37 +1273,33 @@ export function CoursesPageClient({
                               setIsSaving(true)
                               try {
                                 const firstPlace = selectedCourse.places[0]
-                                let destination = "기타"
+                                let region = "기타"
                                 if (firstPlace?.address) {
                                   const match = firstPlace.address.match(
                                     /(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/
                                   )
-                                  destination = match ? match[1] : "기타"
+                                  region = match ? match[1] : "기타"
                                 }
 
-                                const today = new Date()
-                                const endDate =
-                                  courseType === "travel"
-                                    ? new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)
-                                    : today
-
-                                const response = await fetch("/api/travel-plans", {
+                                const response = await fetch("/api/user-courses/create", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({
                                     title: selectedCourse.title,
-                                    destination: destination,
                                     description: selectedCourse.description,
-                                    start_date: today.toISOString().split("T")[0],
-                                    end_date: endDate.toISOString().split("T")[0],
-                                    total_budget: 0,
                                     course_type: courseType,
+                                    region: region,
+                                    is_public: selectedCourse.is_public,
                                     places: selectedCourse.places.map((p, index) => ({
                                       place_id: p.id,
-                                      day_number: courseType === "travel" ? Math.floor(index / Math.ceil(selectedCourse.places.length / 3)) + 1 : 1,
+                                      day_number:
+                                        courseType === "travel"
+                                          ? Math.floor(
+                                              index / Math.ceil(selectedCourse.places.length / 3)
+                                            ) + 1
+                                          : 1,
                                       order_index: index,
                                     })),
-                                    budget_items: [],
                                   }),
                                 })
 
@@ -1048,17 +1308,28 @@ export function CoursesPageClient({
                                   throw new Error(errorData.error || "저장에 실패했습니다")
                                 }
 
+                                const data = await response.json()
                                 toast.success(
-                                  courseType === "date"
-                                    ? "데이트 코스가 저장되었습니다!"
-                                    : "여행 코스가 저장되었습니다!"
+                                  data.message ||
+                                    (courseType === "date"
+                                      ? "데이트 코스가 저장되었습니다!"
+                                      : "여행 코스가 저장되었습니다!")
                                 )
                                 setCreatingCourses(
                                   creatingCourses.filter(c => c.id !== selectedCourseId)
                                 )
                                 setSelectedCourseId(null)
                                 setSidebarMode("browse")
-                                router.refresh()
+
+                                // 서버 컴포넌트 새로고침 (서버에서 user_courses 포함하여 다시 로드)
+                                // 공개된 코스인 경우 사이드바에 표시되도록 페이지 새로고침
+                                if (selectedCourse.is_public) {
+                                  router.refresh()
+                                  // 약간의 지연 후 페이지를 다시 로드하여 최신 데이터 표시
+                                  setTimeout(() => {
+                                    router.refresh()
+                                  }, 500)
+                                }
                               } catch (error) {
                                 toast.error(
                                   error instanceof Error ? error.message : "저장에 실패했습니다"
@@ -1072,7 +1343,7 @@ export function CoursesPageClient({
                               !selectedCourse.title.trim() ||
                               selectedCourse.places.length === 0
                             }
-                            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground border-0 rounded-xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02] font-semibold h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground border-0 rounded-xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02] font-semibold h-11 sm:h-12 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                           >
                             {isSaving ? (
                               <>
@@ -1098,114 +1369,250 @@ export function CoursesPageClient({
         </div>
       </motion.div>
 
-      {selectedPlace && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          className="fixed bottom-0 left-0 right-0 md:absolute md:bottom-6 md:right-6 md:left-auto md:w-96 z-50"
-        >
-          <Card className="m-4 lg:m-0 shadow-2xl shadow-primary/20 border-2 border-primary/30 dark:border-primary/40 bg-gradient-to-br from-white via-primary/10 to-primary/5 dark:from-gray-900 dark:via-primary/20 dark:to-primary/10 backdrop-blur-xl rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 border-b border-primary/20 dark:border-primary/30">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-xl flex items-center gap-3 mb-2 text-gray-900 dark:text-white">
-                    {(() => {
-                      const Icon = getTypeIcon(selectedPlace.type)
-                      return (
-                        <div className="p-2 rounded-xl bg-primary shadow-lg">
-                          <Icon className="h-5 w-5 text-primary-foreground" />
+      {selectedPlace &&
+        (() => {
+          const place = selectedPlace
+          return (
+            <>
+              {/* 모달 - 전체 화면 (헤더 위에 표시) */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed inset-0 z-[100] flex flex-col bg-background"
+                onClick={e => {
+                  // 배경 클릭 시 닫기
+                  if (e.target === e.currentTarget) {
+                    setSelectedPlace(null)
+                  }
+                }}
+              >
+                <Card className="flex flex-col h-full w-full rounded-none border-0 shadow-none overflow-hidden">
+                  {/* 헤더 - sticky로 스크롤 시에도 보이도록 */}
+                  <CardHeader className="sticky top-0 z-10 pb-3 sm:pb-4 border-b border-border bg-card flex-shrink-0">
+                    <div className="flex items-start justify-between gap-3 sm:gap-4">
+                      <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                        {(() => {
+                          const Icon = getTypeIcon(place.type)
+                          return (
+                            <div className="p-2 sm:p-2.5 rounded-xl bg-primary/10 flex-shrink-0">
+                              <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                            </div>
+                          )
+                        })()}
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-1.5 text-foreground line-clamp-2">
+                            {place.name}
+                          </CardTitle>
+                          <CardDescription className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                            <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                            <span className="line-clamp-1">
+                              {place.address || "주소 정보 없음"}
+                            </span>
+                          </CardDescription>
                         </div>
-                      )
-                    })()}
-                    {selectedPlace.name}
-                  </CardTitle>
-                  <CardDescription className="mt-1 text-primary/70 dark:text-primary/80 flex items-center gap-2">
-                    <MapPin className="h-4 w-4" />
-                    {selectedPlace.address || "주소 정보 없음"}
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedPlace(null)}
-                  className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 dark:hover:bg-primary/20 text-primary dark:text-primary"
-                >
-                  ×
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-5">
-              {selectedPlace.image_url && (
-                <div className="relative w-full h-56 mb-5 rounded-2xl overflow-hidden shadow-lg group">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-10" />
-                  <Image
-                    src={selectedPlace.image_url}
-                    alt={selectedPlace.name}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-              )}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <Badge
-                    variant="outline"
-                    className="border-primary/30 dark:border-primary/40 text-primary dark:text-primary bg-primary/10 dark:bg-primary/20"
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSelectedPlace(null)}
+                        className="h-10 w-10 sm:h-8 sm:w-8 flex-shrink-0 rounded-lg hover:bg-muted touch-manipulation"
+                        aria-label="닫기"
+                      >
+                        <X className="h-5 w-5 sm:h-4 sm:w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  {/* 컨텐츠 - 스크롤 최적화 */}
+                  <CardContent
+                    className="p-3 sm:p-4 md:p-6 overflow-y-auto flex-1 min-h-0"
+                    style={{ WebkitOverflowScrolling: "touch" }}
                   >
-                    {selectedPlace.type}
-                  </Badge>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/30">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-semibold text-yellow-700 dark:text-yellow-300">
-                      {(selectedPlace.rating ?? 0).toFixed(1)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30">
-                    <span className="text-sm font-semibold text-green-700 dark:text-green-300">
-                      {"💰".repeat(selectedPlace.price_level ?? 0) || "💰"}
-                    </span>
-                  </div>
-                </div>
-                {selectedPlace.description && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-4">
-                    {selectedPlace.description}
-                  </p>
-                )}
-                {selectedPlace.phone && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/40">
-                    <span className="text-sm font-semibold text-primary dark:text-primary">
-                      전화:
-                    </span>
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {selectedPlace.phone}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-      
+                    <div className="space-y-4 sm:space-y-5 md:space-y-6">
+                      {/* 이미지 */}
+                      {place.image_url && (
+                        <div className="relative w-full h-48 sm:h-64 md:h-80 lg:h-96 rounded-xl overflow-hidden shadow-md border border-border">
+                          <Image
+                            src={place.image_url}
+                            alt={place.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+
+                      {/* 기본 정보 배지 */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="text-xs font-medium">
+                          {place.type}
+                        </Badge>
+                        {place.rating !== null && place.rating !== undefined && (
+                          <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-md bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/30">
+                            <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-yellow-400 text-yellow-400" />
+                            <span className="text-xs font-semibold text-yellow-700 dark:text-yellow-300">
+                              {place.rating.toFixed(1)}
+                            </span>
+                          </div>
+                        )}
+                        {place.price_level !== null && place.price_level !== undefined && (
+                          <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30">
+                            <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                              {"💰".repeat(place.price_level) || "💰"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 설명 */}
+                      {place.description && (
+                        <div>
+                          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                            {place.description}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* 상세 정보 그리드 */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                        {(place.phone || placeDetails?.telephone) && (
+                          <div className="p-2.5 sm:p-3 rounded-lg bg-muted/50 border border-border">
+                            <div className="text-xs font-medium text-muted-foreground mb-1">
+                              전화번호
+                            </div>
+                            <div className="text-xs sm:text-sm font-medium text-foreground break-words">
+                              {placeDetails?.telephone || place.phone}
+                            </div>
+                          </div>
+                        )}
+                        {placeDetails?.category && (
+                          <div className="p-2.5 sm:p-3 rounded-lg bg-muted/50 border border-border">
+                            <div className="text-xs font-medium text-muted-foreground mb-1">
+                              카테고리
+                            </div>
+                            <div className="text-xs sm:text-sm font-medium text-foreground break-words">
+                              {placeDetails.category}
+                            </div>
+                          </div>
+                        )}
+                        {placeDetails?.roadAddress &&
+                          placeDetails.roadAddress !== place.address && (
+                            <div className="p-2.5 sm:p-3 rounded-lg bg-muted/50 border border-border sm:col-span-2">
+                              <div className="text-xs font-medium text-muted-foreground mb-1">
+                                도로명 주소
+                              </div>
+                              <div className="text-xs sm:text-sm font-medium text-foreground break-words">
+                                {placeDetails.roadAddress}
+                              </div>
+                            </div>
+                          )}
+                      </div>
+
+                      {/* 네이버 지도 링크 */}
+                      {placeDetails?.link && (
+                        <div>
+                          <a
+                            href={placeDetails.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium touch-manipulation"
+                          >
+                            <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            네이버 지도에서 보기
+                            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          </a>
+                        </div>
+                      )}
+
+                      {/* 로딩 상태 */}
+                      {isLoadingPlaceDetails && (
+                        <div className="flex items-center justify-center py-6 sm:py-8">
+                          <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin text-primary" />
+                          <span className="text-xs sm:text-sm text-muted-foreground ml-2">
+                            장소 정보를 불러오는 중...
+                          </span>
+                        </div>
+                      )}
+                      {/* 블로그 포스트 */}
+                      {placeDetails?.blogs && placeDetails.blogs.length > 0 && (
+                        <div className="border-t border-border pt-4 sm:pt-6">
+                          <h4 className="text-sm sm:text-base font-semibold mb-3 sm:mb-4 text-foreground">
+                            관련 블로그 포스트
+                          </h4>
+                          <div className="space-y-2.5 sm:space-y-3">
+                            {placeDetails.blogs.map((blog, index) => (
+                              <a
+                                key={index}
+                                href={blog.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block border border-border rounded-lg p-3 sm:p-4 hover:border-primary/50 hover:bg-muted/30 transition-all group touch-manipulation"
+                              >
+                                <div className="flex gap-3 sm:gap-4">
+                                  {blog.image && (
+                                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 flex-shrink-0 rounded-lg overflow-hidden border border-border">
+                                      <Image
+                                        src={blog.image}
+                                        alt={blog.title}
+                                        fill
+                                        className="object-cover group-hover:scale-105 transition-transform"
+                                        onError={e => {
+                                          e.currentTarget.parentElement!.style.display = "none"
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <h5 className="font-semibold text-xs sm:text-sm md:text-base mb-1 sm:mb-1.5 text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                                      {blog.title}
+                                    </h5>
+                                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-1.5 sm:mb-2">
+                                      {blog.description}
+                                    </p>
+                                    <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-muted-foreground">
+                                      <span className="truncate">{blog.bloggername}</span>
+                                      {blog.postdate && (
+                                        <>
+                                          <span>•</span>
+                                          <span className="flex-shrink-0">
+                                            {`${blog.postdate.slice(0, 4)}.${blog.postdate.slice(4, 6)}.${blog.postdate.slice(6, 8)}`}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </>
+          )
+        })()}
+
       {/* 모바일에서 사이드바 열기 버튼 */}
       {isMobile && !isSidebarOpen && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="absolute bottom-6 left-6 z-50"
+          className="absolute bottom-16 right-6 z-50 pb-safe"
+          style={{ paddingBottom: "env(safe-area-inset-bottom, 0.5rem)" }}
         >
           <Button
             onClick={() => setIsSidebarOpen(true)}
             size="lg"
-            className="shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-14 w-14 p-0"
+            className="shadow-2xl bg-primary hover:bg-primary/90 text-primary-foreground rounded-full h-14 w-14 p-0 touch-manipulation"
             aria-label="사이드바 열기"
           >
-            <ChevronRight className="h-6 w-6" />
+            <Menu className="h-6 w-6" />
           </Button>
         </motion.div>
       )}
     </div>
   )
 }
-
