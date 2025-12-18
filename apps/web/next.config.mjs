@@ -29,7 +29,17 @@ const nextConfig = {
     dirs: ["src", "app"],
     ignoreDuringBuilds: false,
   },
-  transpilePackages: ["@love-trip/shared", "@lovetrip/ui"],
+  transpilePackages: [
+    "@love-trip/shared",
+    "@lovetrip/ui",
+    "@lovetrip/api",
+    "@lovetrip/planner",
+    "@lovetrip/shared",
+    "@lovetrip/gamification",
+    "@radix-ui/react-dropdown-menu",
+  ],
+  // 서버 컴포넌트에서 외부 패키지 의존성을 제대로 해석하도록 설정
+  serverComponentsExternalPackages: ["@supabase/ssr", "@supabase/supabase-js"],
   typescript: {
     // node_modules의 타입 에러는 무시 (skipLibCheck가 작동하지 않는 경우)
     ignoreBuildErrors: true,
@@ -40,6 +50,9 @@ const nextConfig = {
   // 환경 변수를 명시적으로 전달
   env: {
     NEXT_PUBLIC_ENABLE_MSW: process.env.NEXT_PUBLIC_ENABLE_MSW,
+    NEXT_PUBLIC_NAVER_CLOUD_API_KEY_ID: process.env.NEXT_PUBLIC_NAVER_CLOUD_API_KEY_ID,
+    NEXT_PUBLIC_NAVER_DEV_CLIENT_ID: process.env.NEXT_PUBLIC_NAVER_DEV_CLIENT_ID,
+    NEXT_PUBLIC_NAVER_CLOUD_API_KEY: process.env.NEXT_PUBLIC_NAVER_CLOUD_API_KEY,
   },
   async headers() {
     return [

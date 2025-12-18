@@ -13,6 +13,8 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "src"),
       "@love-trip/shared": path.resolve(__dirname, "../../packages/shared/src"),
+      // Mock @supabase/ssr for tests
+      "@supabase/ssr": path.resolve(__dirname, "__tests__/mocks/supabase-ssr.ts"),
     },
   },
 })

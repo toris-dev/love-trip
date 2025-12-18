@@ -1,4 +1,4 @@
-import { expect, afterEach, beforeAll, afterAll } from "vitest"
+import { expect, afterEach, beforeAll, afterAll, vi } from "vitest"
 import { cleanup } from "@testing-library/react"
 import * as matchers from "@testing-library/jest-dom/matchers"
 import { server } from "@/mocks/server"
@@ -25,9 +25,11 @@ afterEach(() => {
 })
 
 // Mock environment variables
-process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID = "test-client-id"
+process.env.NEXT_PUBLIC_NAVER_CLOUD_API_KEY_ID = "test-client-id"
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co"
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key"
+process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY =
+  "test-vapid-key-BG8BCMUpuLb-iIrv4oXx6Eme6NCgXyFDEeYyr3wzOSlGPUTeWSB-iAZa"
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
@@ -59,3 +61,32 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => {},
   }),
 })
+
+// Mock @supabase/ssr for tests
+vi.mock("@supabase/ssr", () => ({
+  createBrowserClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        data: [],
+        error: null,
+      })),
+    })),
+  })),
+  createServerClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        data: [],
+        error: null,
+      })),
+    })),
+  })),
+}))
+
+// Mock next/headers for tests
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(() => ({
+    get: vi.fn(() => null),
+    set: vi.fn(),
+    getAll: vi.fn(() => []),
+  })),
+}))
