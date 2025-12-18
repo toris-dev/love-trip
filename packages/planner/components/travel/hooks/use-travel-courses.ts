@@ -5,6 +5,8 @@ import { getCoupleRecommendations } from "@lovetrip/recommendation/services"
 import { createClient } from "@lovetrip/api/supabase/client"
 import type { Database } from "@lovetrip/shared/types/database"
 import type { TravelCourse, Place } from "../types"
+import { courseCache } from "@lovetrip/planner/services/course-cache"
+import { optimizeRoute, calculateTotalDistance } from "@lovetrip/planner/services/route-optimizer"
 
 type CourseWithPlaces = Database["public"]["Tables"]["travel_courses"]["Row"] & {
   travel_course_places: Array<{
@@ -92,6 +94,14 @@ export function useTravelCourses() {
       .filter(([, places]) => places.length >= 4) // 최소 4개 장소로 1박2일 코스 구성
       .map(([region, places]) => {
         const placeCount = places.length
+
+        // 최적 경로 계산 (첫 번째 장소를 시작점으로 사용)
+        const optimizedPlaces =
+          places.length > 1 ? optimizeRoute(places[0], places.slice(1)) : places
+
+        // 총 이동 거리 계산
+        const totalDistance = calculateTotalDistance(optimizedPlaces)
+
         // 장소 개수에 따라 일정 결정 (4-6개: 1박2일, 7-10개: 2박3일, 11개 이상: 3박4일)
         let duration = "1박2일"
         if (placeCount >= 11) {
@@ -104,33 +114,53 @@ export function useTravelCourses() {
           id: `travel-${region}`,
           title: `${region} 여행 코스`,
           region,
-          description: `${region}의 관광지와 문화시설을 포함한 ${duration} 여행 코스입니다.`,
-          image_url: places.find(p => p.image_url)?.image_url || null,
+          description: `${region}의 관광지와 문화시설을 포함한 ${duration} 여행 코스입니다. 총 이동 거리: ${totalDistance.toFixed(1)}km`,
+          image_url: optimizedPlaces.find(p => p.image_url)?.image_url || null,
           place_count: placeCount,
-          places,
+          places: optimizedPlaces,
           duration,
         }
       })
   }, [])
 
-  const loadCourses = useCallback(async (pageNum: number = 0, append: boolean = false) => {
-    if (append) {
-      setIsLoadingMore(true)
-    } else {
-      setIsLoading(true)
-      setPage(0)
-    }
-    setError(null)
-    try {
-      // DB의 travel_courses 테이블에서 직접 가져오기 (페이지네이션)
-      const supabase = createClient()
-      const from = pageNum * ITEMS_PER_PAGE
-      const to = from + ITEMS_PER_PAGE - 1
+  const loadCourses = useCallback(
+    async (pageNum: number = 0, append: boolean = false) => {
+      if (append) {
+        setIsLoadingMore(true)
+      } else {
+        setIsLoading(true)
+        setPage(0)
+      }
+      setError(null)
+      try {
+        // 캐시 키 생성
+        const cacheKey = `travel-courses-page-${pageNum}`
 
-      const { data: coursesData, error: coursesError, count } = await supabase
-        .from("travel_courses")
-        .select(
-          `
+        // 캐시에서 조회 시도
+        if (!append && pageNum === 0) {
+          const cached = courseCache.get<TravelCourse[]>(cacheKey)
+          if (cached) {
+            setCourses(cached)
+            setDisplayedCourses(cached.slice(0, ITEMS_PER_PAGE))
+            setHasMore(cached.length > ITEMS_PER_PAGE)
+            setIsLoading(false)
+            return
+          }
+        }
+
+        // DB의 travel_courses 테이블에서 직접 가져오기 (페이지네이션)
+        const supabase = createClient()
+        const from = pageNum * ITEMS_PER_PAGE
+        const to = from + ITEMS_PER_PAGE - 1
+
+        const {
+          data: coursesData,
+          error: coursesError,
+          count,
+        } = await supabase
+          .from("travel_courses")
+          .select(
+            `
           *,
           travel_course_places (
             order_index,
@@ -140,73 +170,103 @@ export function useTravelCourses() {
             places (*)
           )
         `,
-          { count: "exact" }
-        )
-        .order("region")
-        .range(from, to)
+            { count: "exact" }
+          )
+          .order("region")
+          .range(from, to)
 
-      // 더 불러올 데이터가 있는지 확인
-      const totalCount = count || 0
-      setHasMore(to < totalCount - 1)
+        // 더 불러올 데이터가 있는지 확인
+        const totalCount = count || 0
+        setHasMore(to < totalCount - 1)
 
-      if (coursesError) {
-        console.error("Failed to load travel courses:", coursesError)
-        if (pageNum === 0) {
-          // Fallback: 기존 방식 사용
-          const travelPlaces = await getCoupleRecommendations({
-            preferredTypes: ["VIEW", "MUSEUM"],
-            limit: 500,
+        if (coursesError) {
+          console.error("Failed to load travel courses:", {
+            message: coursesError.message,
+            details: coursesError.details,
+            hint: coursesError.hint,
+            code: coursesError.code,
+            fullError: coursesError,
           })
-          const travelCourses = groupTravelCoursesByRegion((travelPlaces || []) as unknown as Place[])
-          setCourses(travelCourses)
-          setDisplayedCourses(travelCourses.slice(0, ITEMS_PER_PAGE))
-          setHasMore(travelCourses.length > ITEMS_PER_PAGE)
-        }
-        return
-      }
+          if (pageNum === 0) {
+            // Fallback: 동적 생성 방식 사용 (캐시 확인)
+            const fallbackCacheKey = "travel-courses-fallback"
+            const cachedFallback = courseCache.get<TravelCourse[]>(fallbackCacheKey)
 
-      // DB 데이터를 TravelCourse 형식으로 변환
-      const travelCourses: TravelCourse[] = ((coursesData as CourseWithPlaces[]) || [])
-        .filter(course => course.place_count > 0) // 장소가 있는 코스만
-        .map(course => {
-          // travel_course_places를 day_number와 order_index 순으로 정렬
-          const sortedPlaces = (course.travel_course_places || [])
-            .sort((a, b) => {
-              if (a.day_number !== b.day_number) {
-                return a.day_number - b.day_number
-              }
-              return a.order_index - b.order_index
+            if (cachedFallback) {
+              setCourses(cachedFallback)
+              setDisplayedCourses(cachedFallback.slice(0, ITEMS_PER_PAGE))
+              setHasMore(cachedFallback.length > ITEMS_PER_PAGE)
+              setIsLoading(false)
+              return
+            }
+
+            const travelPlaces = await getCoupleRecommendations({
+              preferredTypes: ["VIEW", "MUSEUM"],
+              limit: 500,
             })
-            .map(tcp => tcp.places)
-            .filter((p): p is Place => p !== null)
+            const travelCourses = groupTravelCoursesByRegion(
+              (travelPlaces || []) as unknown as Place[]
+            )
 
-          return {
-            id: course.id,
-            title: course.title,
-            region: course.region,
-            description: course.description || undefined,
-            image_url: course.image_url,
-            place_count: course.place_count,
-            places: sortedPlaces,
-            duration: course.duration,
+            // 캐시에 저장 (10분 TTL)
+            courseCache.set(fallbackCacheKey, travelCourses, 10 * 60 * 1000)
+
+            setCourses(travelCourses)
+            setDisplayedCourses(travelCourses.slice(0, ITEMS_PER_PAGE))
+            setHasMore(travelCourses.length > ITEMS_PER_PAGE)
           }
-        })
+          return
+        }
 
-      if (append) {
-        setCourses(prev => [...prev, ...travelCourses])
-        setDisplayedCourses(prev => [...prev, ...travelCourses])
-      } else {
-        setCourses(travelCourses)
-        setDisplayedCourses(travelCourses)
+        // DB 데이터를 TravelCourse 형식으로 변환
+        const travelCourses: TravelCourse[] = ((coursesData as CourseWithPlaces[]) || [])
+          .filter(course => course.place_count > 0) // 장소가 있는 코스만
+          .map(course => {
+            // travel_course_places를 day_number와 order_index 순으로 정렬
+            const sortedPlaces = (course.travel_course_places || [])
+              .sort((a, b) => {
+                if (a.day_number !== b.day_number) {
+                  return a.day_number - b.day_number
+                }
+                return a.order_index - b.order_index
+              })
+              .map(tcp => tcp.places)
+              .filter((p): p is Place => p !== null)
+
+            return {
+              id: course.id,
+              title: course.title,
+              region: course.region,
+              description: course.description || undefined,
+              image_url: course.image_url,
+              place_count: course.place_count,
+              places: sortedPlaces,
+              duration: course.duration,
+            }
+          })
+
+        // 첫 페이지는 캐시에 저장
+        if (pageNum === 0) {
+          courseCache.set(cacheKey, travelCourses, 5 * 60 * 1000) // 5분 TTL
+        }
+
+        if (append) {
+          setCourses(prev => [...prev, ...travelCourses])
+          setDisplayedCourses(prev => [...prev, ...travelCourses])
+        } else {
+          setCourses(travelCourses)
+          setDisplayedCourses(travelCourses)
+        }
+      } catch (error) {
+        console.error("Failed to load courses:", error)
+        setError(error instanceof Error ? error.message : "코스를 불러오는 중 오류가 발생했습니다.")
+      } finally {
+        setIsLoading(false)
+        setIsLoadingMore(false)
       }
-    } catch (error) {
-      console.error("Failed to load courses:", error)
-      setError(error instanceof Error ? error.message : "코스를 불러오는 중 오류가 발생했습니다.")
-    } finally {
-      setIsLoading(false)
-      setIsLoadingMore(false)
-    }
-  }, [groupTravelCoursesByRegion])
+    },
+    [groupTravelCoursesByRegion]
+  )
 
   const loadMore = useCallback(() => {
     if (!isLoadingMore && hasMore) {
@@ -230,4 +290,3 @@ export function useTravelCourses() {
     loadMore,
   }
 }
-

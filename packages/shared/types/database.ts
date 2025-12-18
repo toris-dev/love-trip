@@ -8,6 +8,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      anniversary_reminders: {
+        Row: {
+          couple_id: string
+          created_at: string | null
+          date: string
+          id: string
+          is_recurring: boolean | null
+          notes: string | null
+          reminder_days_before: number[] | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          couple_id: string
+          created_at?: string | null
+          date: string
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          reminder_days_before?: number[] | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          couple_id?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          reminder_days_before?: number[] | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anniversary_reminders_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_items: {
         Row: {
           category: string
@@ -177,6 +224,44 @@ export type Database = {
         }
         Relationships: []
       }
+      course_rewards: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          reward_amount: number
+          reward_type: string
+          user_course_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reward_amount: number
+          reward_type: string
+          user_course_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reward_amount?: number
+          reward_type?: string
+          user_course_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_rewards_user_course_id_fkey"
+            columns: ["user_course_id"]
+            isOneToOne: false
+            referencedRelation: "user_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crawler_runs: {
         Row: {
           completed_at: string | null
@@ -230,7 +315,16 @@ export type Database = {
           id: string
           notes: string | null
           order_index: number
-          place_id: string
+          place_id: string | null
+          place_name: string | null
+          place_lat: number | null
+          place_lng: number | null
+          place_address: string | null
+          place_type: string | null
+          place_rating: number | null
+          place_price_level: number | null
+          place_image_url: string | null
+          place_description: string | null
           visit_duration_minutes: number | null
         }
         Insert: {
@@ -240,7 +334,16 @@ export type Database = {
           id?: string
           notes?: string | null
           order_index?: number
-          place_id: string
+          place_id?: string | null
+          place_name?: string | null
+          place_lat?: number | null
+          place_lng?: number | null
+          place_address?: string | null
+          place_type?: string | null
+          place_rating?: number | null
+          place_price_level?: number | null
+          place_image_url?: string | null
+          place_description?: string | null
           visit_duration_minutes?: number | null
         }
         Update: {
@@ -250,7 +353,16 @@ export type Database = {
           id?: string
           notes?: string | null
           order_index?: number
-          place_id?: string
+          place_id?: string | null
+          place_name?: string | null
+          place_lat?: number | null
+          place_lng?: number | null
+          place_address?: string | null
+          place_type?: string | null
+          place_rating?: number | null
+          place_price_level?: number | null
+          place_image_url?: string | null
+          place_description?: string | null
           visit_duration_minutes?: number | null
         }
         Relationships: [
@@ -630,6 +742,89 @@ export type Database = {
         }
         Relationships: []
       }
+      reservation_reminders: {
+        Row: {
+          calendar_event_id: string | null
+          contact_info: string | null
+          created_at: string | null
+          id: string
+          is_sent: boolean | null
+          notes: string | null
+          place_id: string | null
+          reminder_hours_before: number[] | null
+          reservation_date: string
+          reservation_number: string | null
+          reservation_type: string
+          title: string
+          travel_plan_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          calendar_event_id?: string | null
+          contact_info?: string | null
+          created_at?: string | null
+          id?: string
+          is_sent?: boolean | null
+          notes?: string | null
+          place_id?: string | null
+          reminder_hours_before?: number[] | null
+          reservation_date: string
+          reservation_number?: string | null
+          reservation_type: string
+          title: string
+          travel_plan_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          calendar_event_id?: string | null
+          contact_info?: string | null
+          created_at?: string | null
+          id?: string
+          is_sent?: boolean | null
+          notes?: string | null
+          place_id?: string | null
+          reminder_hours_before?: number[] | null
+          reservation_date?: string
+          reservation_number?: string | null
+          reservation_type?: string
+          title?: string
+          travel_plan_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_reminders_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_reminders_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservation_reminders_travel_plan_id_fkey"
+            columns: ["travel_plan_id"]
+            isOneToOne: false
+            referencedRelation: "expense_settlement_summary"
+            referencedColumns: ["travel_plan_id"]
+          },
+          {
+            foreignKeyName: "reservation_reminders_travel_plan_id_fkey"
+            columns: ["travel_plan_id"]
+            isOneToOne: false
+            referencedRelation: "travel_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shared_calendars: {
         Row: {
           color: string
@@ -668,45 +863,39 @@ export type Database = {
           },
         ]
       }
-      tour_api_sync: {
+      subscriptions: {
         Row: {
-          area_code: number | null
-          content_type_id: number | null
+          cancel_at_period_end: boolean | null
           created_at: string | null
-          error_message: string | null
+          end_date: string | null
           id: string
-          last_synced_at: string | null
-          sigungu_code: number | null
-          status: string | null
-          synced_items: number | null
-          total_items: number | null
+          start_date: string
+          status: string
+          tier: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
-          area_code?: number | null
-          content_type_id?: number | null
+          cancel_at_period_end?: boolean | null
           created_at?: string | null
-          error_message?: string | null
+          end_date?: string | null
           id?: string
-          last_synced_at?: string | null
-          sigungu_code?: number | null
-          status?: string | null
-          synced_items?: number | null
-          total_items?: number | null
+          start_date: string
+          status: string
+          tier: string
           updated_at?: string | null
+          user_id: string
         }
         Update: {
-          area_code?: number | null
-          content_type_id?: number | null
+          cancel_at_period_end?: boolean | null
           created_at?: string | null
-          error_message?: string | null
+          end_date?: string | null
           id?: string
-          last_synced_at?: string | null
-          sigungu_code?: number | null
-          status?: string | null
-          synced_items?: number | null
-          total_items?: number | null
+          start_date?: string
+          status?: string
+          tier?: string
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -718,7 +907,16 @@ export type Database = {
           id: string
           notes: string | null
           order_index: number
-          place_id: string
+          place_id: string | null
+          place_name: string | null
+          place_lat: number | null
+          place_lng: number | null
+          place_address: string | null
+          place_type: string | null
+          place_rating: number | null
+          place_price_level: number | null
+          place_image_url: string | null
+          place_description: string | null
           travel_course_id: string
           visit_duration_minutes: number | null
         }
@@ -729,7 +927,16 @@ export type Database = {
           id?: string
           notes?: string | null
           order_index?: number
-          place_id: string
+          place_id?: string | null
+          place_name?: string | null
+          place_lat?: number | null
+          place_lng?: number | null
+          place_address?: string | null
+          place_type?: string | null
+          place_rating?: number | null
+          place_price_level?: number | null
+          place_image_url?: string | null
+          place_description?: string | null
           travel_course_id: string
           visit_duration_minutes?: number | null
         }
@@ -740,7 +947,16 @@ export type Database = {
           id?: string
           notes?: string | null
           order_index?: number
-          place_id?: string
+          place_id?: string | null
+          place_name?: string | null
+          place_lat?: number | null
+          place_lng?: number | null
+          place_address?: string | null
+          place_type?: string | null
+          place_rating?: number | null
+          place_price_level?: number | null
+          place_image_url?: string | null
+          place_description?: string | null
           travel_course_id?: string
           visit_duration_minutes?: number | null
         }
@@ -902,8 +1118,70 @@ export type Database = {
           },
         ]
       }
+      travel_memories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          photo_url: string
+          place_id: string | null
+          taken_at: string | null
+          thumbnail_url: string | null
+          travel_plan_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          photo_url: string
+          place_id?: string | null
+          taken_at?: string | null
+          thumbnail_url?: string | null
+          travel_plan_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          photo_url?: string
+          place_id?: string | null
+          taken_at?: string | null
+          thumbnail_url?: string | null
+          travel_plan_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_memories_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "travel_memories_travel_plan_id_fkey"
+            columns: ["travel_plan_id"]
+            isOneToOne: false
+            referencedRelation: "expense_settlement_summary"
+            referencedColumns: ["travel_plan_id"]
+          },
+          {
+            foreignKeyName: "travel_memories_travel_plan_id_fkey"
+            columns: ["travel_plan_id"]
+            isOneToOne: false
+            referencedRelation: "travel_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       travel_plans: {
         Row: {
+          course_type: string | null
           created_at: string | null
           description: string | null
           destination: string
@@ -917,6 +1195,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          course_type?: string | null
           created_at?: string | null
           description?: string | null
           destination: string
@@ -930,6 +1209,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          course_type?: string | null
           created_at?: string | null
           description?: string | null
           destination?: string
@@ -939,6 +1219,322 @@ export type Database = {
           status?: string
           title?: string
           total_budget?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_description: string | null
+          achievement_id: string
+          achievement_name: string
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          progress: number | null
+          target: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          achievement_description?: string | null
+          achievement_id: string
+          achievement_name: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          progress?: number | null
+          target?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          achievement_description?: string | null
+          achievement_id?: string
+          achievement_name?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          progress?: number | null
+          target?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_badges: {
+        Row: {
+          badge_description: string | null
+          badge_id: string
+          badge_name: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_description?: string | null
+          badge_id: string
+          badge_name: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_description?: string | null
+          badge_id?: string
+          badge_name?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_course_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_course_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_course_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_course_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_course_likes_user_course_id_fkey"
+            columns: ["user_course_id"]
+            isOneToOne: false
+            referencedRelation: "user_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_course_places: {
+        Row: {
+          created_at: string | null
+          day_number: number | null
+          id: string
+          notes: string | null
+          order_index: number
+          place_id: string | null
+          place_name: string | null
+          place_lat: number | null
+          place_lng: number | null
+          place_address: string | null
+          place_type: string | null
+          place_rating: number | null
+          place_price_level: number | null
+          place_image_url: string | null
+          place_description: string | null
+          user_course_id: string
+          visit_duration_minutes: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_number?: number | null
+          id?: string
+          notes?: string | null
+          order_index: number
+          place_id?: string | null
+          place_name?: string | null
+          place_lat?: number | null
+          place_lng?: number | null
+          place_address?: string | null
+          place_type?: string | null
+          place_rating?: number | null
+          place_price_level?: number | null
+          place_image_url?: string | null
+          place_description?: string | null
+          user_course_id: string
+          visit_duration_minutes?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          day_number?: number | null
+          id?: string
+          notes?: string | null
+          order_index?: number
+          place_id?: string | null
+          place_name?: string | null
+          place_lat?: number | null
+          place_lng?: number | null
+          place_address?: string | null
+          place_type?: string | null
+          place_rating?: number | null
+          place_price_level?: number | null
+          place_image_url?: string | null
+          place_description?: string | null
+          user_course_id?: string
+          visit_duration_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_course_places_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_course_places_user_course_id_fkey"
+            columns: ["user_course_id"]
+            isOneToOne: false
+            referencedRelation: "user_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_course_saves: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_course_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_course_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_course_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_course_saves_user_course_id_fkey"
+            columns: ["user_course_id"]
+            isOneToOne: false
+            referencedRelation: "user_courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_courses: {
+        Row: {
+          course_type: string
+          created_at: string | null
+          description: string | null
+          duration: string | null
+          estimated_budget: number | null
+          id: string
+          image_url: string | null
+          is_public: boolean | null
+          like_count: number | null
+          place_count: number | null
+          published_at: string | null
+          rating: number | null
+          region: string
+          review_photos: string[] | null
+          review_text: string | null
+          save_count: number | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          view_count: number | null
+          visited_at: string | null
+        }
+        Insert: {
+          course_type: string
+          created_at?: string | null
+          description?: string | null
+          duration?: string | null
+          estimated_budget?: number | null
+          id?: string
+          image_url?: string | null
+          is_public?: boolean | null
+          like_count?: number | null
+          place_count?: number | null
+          published_at?: string | null
+          rating?: number | null
+          region: string
+          review_photos?: string[] | null
+          review_text?: string | null
+          save_count?: number | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          view_count?: number | null
+          visited_at?: string | null
+        }
+        Update: {
+          course_type?: string
+          created_at?: string | null
+          description?: string | null
+          duration?: string | null
+          estimated_budget?: number | null
+          id?: string
+          image_url?: string | null
+          is_public?: boolean | null
+          like_count?: number | null
+          place_count?: number | null
+          published_at?: string | null
+          rating?: number | null
+          region?: string
+          review_photos?: string[] | null
+          review_text?: string | null
+          save_count?: number | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          view_count?: number | null
+          visited_at?: string | null
+        }
+        Relationships: []
+      }
+      user_gamification: {
+        Row: {
+          created_at: string | null
+          current_xp: number | null
+          id: string
+          last_activity_date: string | null
+          level: number | null
+          points: number | null
+          streak: number | null
+          total_xp: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_xp?: number | null
+          id?: string
+          last_activity_date?: string | null
+          level?: number | null
+          points?: number | null
+          streak?: number | null
+          total_xp?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_xp?: number | null
+          id?: string
+          last_activity_date?: string | null
+          level?: number | null
+          points?: number | null
+          streak?: number | null
+          total_xp?: number | null
           updated_at?: string | null
           user_id?: string
         }

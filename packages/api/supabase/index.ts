@@ -2,6 +2,5 @@
  * Supabase 클라이언트
  */
 
-export * from "./client"
-export * from "./server"
-
+export { createClient as createBrowserClient } from "./client"
+export { createClient as createServerClient, createServiceClient } from "./server"
