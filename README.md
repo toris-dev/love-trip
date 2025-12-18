@@ -252,11 +252,11 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    A[/date 코스 탐색] --> B[코스 선택]
+    A[date 코스 탐색] --> B[코스 선택]
     B --> C[코스 저장]
-    C --> D[/my-trips 내 여행]
+    C --> D[my-trips 내 여행]
 
-    E[/travel 여행 계획 생성] --> F[장소 추가]
+    E[travel 여행 계획 생성] --> F[장소 추가]
     F --> G[일정 구성]
     G --> H[예산 설정]
     H --> I[여행 계획 저장]
@@ -266,7 +266,7 @@ flowchart LR
     J --> K[예산 관리]
     J --> L[지출 기록]
     J --> M[1/N 정산]
-    J --> N[/calendar 캘린더 연동]
+    J --> N[calendar 캘린더 연동]
 
     K --> O[예산 초과 경고]
     O --> P[대체 코스 제안<br/>프리미엄]
