@@ -31,7 +31,25 @@ const nextConfig = {
   // Next.js 16에서는 serverExternalPackages로 이름이 변경되고 stable feature가 됨
   serverExternalPackages: ["@supabase/ssr", "@supabase/supabase-js"],
   // Vercel 빌드 환경에서 모듈 해석 문제 해결
-  serverComponentsExternalPackages: ["@supabase/ssr", "@supabase/supabase-js"],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // 서버 사이드에서 ESM 모듈 처리
+      config.externals = config.externals || []
+      if (Array.isArray(config.externals)) {
+        config.externals.push({
+          "@supabase/supabase-js": "commonjs @supabase/supabase-js",
+          "@supabase/ssr": "commonjs @supabase/ssr",
+        })
+      }
+    }
+    // .mjs 파일 처리
+    config.module.rules.push({
+      test: /\.mjs$/,
+      include: /node_modules/,
+      type: "javascript/auto",
+    })
+    return config
+  },
   typescript: {
     // node_modules의 타입 에러는 무시 (skipLibCheck가 작동하지 않는 경우)
     ignoreBuildErrors: true,
