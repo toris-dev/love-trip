@@ -37,9 +37,11 @@ const nextConfig = {
     // experimental이지만 안정적으로 작동
   },
   // Turbopack 파일시스템 캐싱 (성능 개선)
+  // turbopackFileSystemCacheForDev는 기본적으로 활성화됨
+  // turbopackFileSystemCacheForBuild는 canary 버전에서만 사용 가능
   experimental: {
-    turbopackFileSystemCacheForDev: true,
-    turbopackFileSystemCacheForBuild: true,
+    // turbopackFileSystemCacheForDev: true, // 기본값이므로 명시 불필요
+    // turbopackFileSystemCacheForBuild: true, // canary 버전에서만 사용 가능
   },
   typescript: {
     // node_modules의 타입 에러는 무시 (skipLibCheck가 작동하지 않는 경우)
