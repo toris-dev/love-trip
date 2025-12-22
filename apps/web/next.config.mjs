@@ -31,6 +31,16 @@ const nextConfig = {
   // Next.js 16에서는 serverExternalPackages로 이름이 변경되고 stable feature가 됨
   // Turbopack과 webpack 모두에서 작동
   serverExternalPackages: ["@supabase/ssr", "@supabase/supabase-js"],
+  // Turbopack 설정 (Next.js 16에서 top-level 설정)
+  turbopack: {
+    // 파일시스템 캐싱 활성화 (빌드 성능 개선)
+    // experimental이지만 안정적으로 작동
+  },
+  // Turbopack 파일시스템 캐싱 (성능 개선)
+  experimental: {
+    turbopackFileSystemCacheForDev: true,
+    turbopackFileSystemCacheForBuild: true,
+  },
   typescript: {
     // node_modules의 타입 에러는 무시 (skipLibCheck가 작동하지 않는 경우)
     ignoreBuildErrors: true,
