@@ -11,10 +11,9 @@ import { CalendarGrid } from "@/components/features/calendar/components/calendar
 import { EventsList } from "@/components/features/calendar/components/events-list"
 import { EventDetailDialog } from "@/components/features/calendar/components/event-detail-dialog"
 import { CoupleRequired } from "@/components/features/calendar/components/couple-required"
-import { createClient } from "@lovetrip/api/supabase/client"
 import type { CalendarEventWithPlace, Place } from "@/components/features/calendar/types"
 import type { Couple, SharedCalendar } from "@lovetrip/couple/services"
-import type { PartnerInfo, CurrentUserInfo } from "../types"
+import type { PartnerInfo, CurrentUserInfo } from "@/components/features/calendar/types"
 
 interface CalendarPageClientProps {
   initialCouple: Couple | null
@@ -31,18 +30,16 @@ export function CalendarPageClient({
   initialCurrentUserInfo,
   user,
 }: CalendarPageClientProps) {
-  const [couple, setCouple] = useState<Couple | null>(initialCouple)
-  const [calendars, setCalendars] = useState<SharedCalendar[]>(initialCalendars)
+  const [couple] = useState<Couple | null>(initialCouple)
+  const [calendars] = useState<SharedCalendar[]>(initialCalendars)
   const [selectedCalendar, setSelectedCalendar] = useState<string | null>(
     initialCalendars.length > 0 ? initialCalendars[0].id : null
   )
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedEventForDetail, setSelectedEventForDetail] =
     useState<CalendarEventWithPlace | null>(null)
-  const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(initialPartnerInfo)
-  const [currentUserInfo, setCurrentUserInfo] = useState<CurrentUserInfo | null>(
-    initialCurrentUserInfo
-  )
+  const [partnerInfo] = useState<PartnerInfo | null>(initialPartnerInfo)
+  const [currentUserInfo] = useState<CurrentUserInfo | null>(initialCurrentUserInfo)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const isMobile = useIsMobile()
 
@@ -53,17 +50,9 @@ export function CalendarPageClient({
     // CreateEventDialog는 내부에서 상태를 관리하므로 여기서는 처리하지 않음
   }
 
-  const loadPlaceDetails = useCallback(async (placeId: string): Promise<Place | null> => {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase.from("places").select("*").eq("id", placeId).single()
-
-      if (error) throw error
-      return data as Place
-    } catch (error) {
-      console.error("Error loading place details:", error)
-      return null
-    }
+  const loadPlaceDetails = useCallback(async (_placeId: string): Promise<Place | null> => {
+    // places 테이블이 삭제되어 null 반환
+    return null
   }, [])
 
   const handleEventClick = useCallback(
@@ -133,11 +122,7 @@ export function CalendarPageClient({
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-bold">메뉴</h2>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSidebarOpen(false)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
                         <X className="h-5 w-5" />
                       </Button>
                     </div>
@@ -204,4 +189,3 @@ export function CalendarPageClient({
     </div>
   )
 }
-

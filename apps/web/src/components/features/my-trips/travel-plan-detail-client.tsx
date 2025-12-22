@@ -32,11 +32,17 @@ import {
 import { toast } from "sonner"
 import Link from "next/link"
 import { createClient } from "@lovetrip/api/supabase/client"
-import type { ExpenseCategory, ExpenseWithSplits, SettlementSummary } from "@lovetrip/expense/types"
+import type {
+  ExpenseCategory,
+  ExpenseWithSplits,
+  SettlementSummary,
+  BudgetSummary,
+} from "@lovetrip/expense/types"
 import type { Database } from "@lovetrip/shared/types/database"
 import { TravelDayPlaces } from "@/components/features/travel/components/travel-day-places"
 import { BudgetPlanner } from "@/components/features/expense/budget-planner"
 import { BudgetDashboard } from "@/components/features/expense/budget-dashboard"
+import { BudgetVisualization } from "@/components/features/expense/budget-visualization"
 import { SettlementView } from "@/components/features/expense/settlement-view"
 
 type TravelPlan = Database["public"]["Tables"]["travel_plans"]["Row"]
@@ -63,7 +69,7 @@ export function TravelPlanDetailClient({
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false)
   const [travelDays, setTravelDays] = useState<TravelDay[]>([])
   const [isLoadingDays, setIsLoadingDays] = useState(true)
-  const [budgetSummary, setBudgetSummary] = useState<any>(null)
+  const [budgetSummary, setBudgetSummary] = useState<BudgetSummary | null>(null)
 
   // 새 지출 입력 폼
   const [newExpense, setNewExpense] = useState({
@@ -75,6 +81,24 @@ export function TravelPlanDetailClient({
     receiptFile: null as File | null,
   })
   const [uploadingReceipt, setUploadingReceipt] = useState(false)
+
+  // 예산 요약 로드
+  const loadBudgetSummary = async () => {
+    try {
+      const response = await fetch(`/api/travel-plans/${plan.id}/budget`)
+      if (response.ok) {
+        const { summary } = await response.json()
+        setBudgetSummary(summary)
+      }
+    } catch (error) {
+      console.error("Failed to load budget summary:", error)
+    }
+  }
+
+  useEffect(() => {
+    loadBudgetSummary()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan.id])
 
   const handleAddExpense = async () => {
     if (!newExpense.name || !newExpense.amount) {
@@ -178,6 +202,9 @@ export function TravelPlanDetailClient({
           setSettlement(summaries || [])
         }
       }
+
+      // 예산 요약 새로고침
+      loadBudgetSummary()
     } catch (err) {
       setUploadingReceipt(false)
       toast.error(err instanceof Error ? err.message : "지출 기록에 실패했습니다")
@@ -214,6 +241,9 @@ export function TravelPlanDetailClient({
           setSettlement(summaries || [])
         }
       }
+
+      // 예산 요약 새로고침
+      loadBudgetSummary()
     } catch {
       toast.error("지출 삭제에 실패했습니다")
     }
@@ -298,7 +328,12 @@ export function TravelPlanDetailClient({
           {/* 예산 관리 */}
           <div className="mb-6 space-y-4">
             <BudgetPlanner travelPlanId={plan.id} initialBudget={plan.total_budget || 0} />
-            {budgetSummary && <BudgetDashboard summary={budgetSummary} />}
+            {budgetSummary && (
+              <>
+                <BudgetVisualization summary={budgetSummary} travelPlanId={plan.id} />
+                <BudgetDashboard summary={budgetSummary} />
+              </>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

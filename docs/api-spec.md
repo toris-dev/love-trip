@@ -41,6 +41,84 @@ Authorization: Bearer {jwt_token}
 
 ## 📍 엔드포인트
 
+### 장소 (Places)
+
+#### GET /api/places
+
+장소 목록 조회
+
+**인증**: 불필요
+
+**쿼리 파라미터**:
+
+- `limit` (optional): 조회할 장소 수 (기본값: 50)
+- `areaCode` (optional): 지역 코드
+- `contentTypeId` (optional): 콘텐츠 타입 ID
+
+**응답**:
+
+```json
+{
+  "places": [
+    {
+      "id": "uuid",
+      "name": "해운대 해수욕장",
+      "address": "부산광역시 해운대구",
+      "lat": 35.1587,
+      "lng": 129.1604,
+      "type": "VIEW",
+      "rating": 4.5,
+      "price_level": 2
+    }
+  ]
+}
+```
+
+#### GET /api/places/search
+
+장소 검색
+
+**인증**: 불필요
+
+**쿼리 파라미터**:
+
+- `query` (required): 검색어 (최소 2자)
+- `limit` (optional): 조회할 장소 수 (기본값: 20)
+- `preferExternal` (optional): 외부 API 우선 사용 여부 (기본값: true)
+
+**응답**:
+
+```json
+{
+  "places": [...]
+}
+```
+
+#### POST /api/places/find-or-create
+
+장소 검색 및 조회 (하이브리드 방식)
+
+**인증**: 불필요
+
+**요청 본문**:
+
+```json
+{
+  "query": "강남 카페",
+  "placeId": "uuid",
+  "limit": 20
+}
+```
+
+**응답**:
+
+```json
+{
+  "place": {...},
+  "places": [...]
+}
+```
+
 ### 여행 계획 (Travel Plans)
 
 #### GET /api/travel-plans

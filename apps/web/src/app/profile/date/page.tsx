@@ -1,36 +1,11 @@
 import { createClient } from "@lovetrip/api/supabase/server"
 import { ProfileCoursesPageClient } from "@/components/features/profile/profile-courses-page-client"
-import type { Database } from "@lovetrip/shared/types/database"
+import type { DateCourse, TravelCourseWithPlaces, Place } from "@lovetrip/shared/types/course"
 
 const ITEMS_PER_PAGE = 10
 
-type Place = Database["public"]["Tables"]["places"]["Row"] & {
-  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
-}
-
-type DateCourse = {
-  id: string
-  title: string
-  region: string
-  description?: string
-  image_url?: string | null
-  place_count: number
-  places: Place[]
-  duration: string
-  total_distance_km?: number | null
-  max_distance_km?: number | null
-}
-
-type TravelCourse = {
-  id: string
-  title: string
-  region: string
-  description?: string
-  image_url?: string | null
-  place_count: number
-  places: Place[]
-  duration: string
-}
+// TravelCourse는 TravelCourseWithPlaces의 별칭으로 사용
+type TravelCourse = TravelCourseWithPlaces
 
 async function getUserDateCourses(userId: string): Promise<{
   courses: DateCourse[]
@@ -81,18 +56,11 @@ async function getUserDateCourses(userId: string): Promise<{
       }
 
       // place_id가 있는 장소들만 places 테이블에서 조회
+      // places 테이블이 삭제되었으므로 빈 배열로 설정
       const placeIds = placesData.filter(p => p.place_id).map(p => p.place_id!)
       let placesFromDb: Place[] = []
-      if (placeIds.length > 0) {
-        const { data: places, error: placesDetailError } = await supabase
-          .from("places")
-          .select("*")
-          .in("id", placeIds)
-
-        if (!placesDetailError && places) {
-          placesFromDb = places
-        }
-      }
+      // TODO: places 테이블이 삭제되었으므로 조회하지 않음
+      // 저장된 정보만 사용
 
       // 하이브리드 방식: place_id가 있으면 places 테이블에서, 없으면 저장된 정보 사용
       const sortedPlaces =
@@ -220,18 +188,11 @@ async function getUserTravelCourses(userId: string): Promise<{
       }
 
       // place_id가 있는 장소들만 places 테이블에서 조회
+      // places 테이블이 삭제되었으므로 빈 배열로 설정
       const placeIds = placesData.filter(p => p.place_id).map(p => p.place_id!)
       let placesFromDb: Place[] = []
-      if (placeIds.length > 0) {
-        const { data: places, error: placesDetailError } = await supabase
-          .from("places")
-          .select("*")
-          .in("id", placeIds)
-
-        if (!placesDetailError && places) {
-          placesFromDb = places
-        }
-      }
+      // TODO: places 테이블이 삭제되었으므로 조회하지 않음
+      // 저장된 정보만 사용
 
       // 하이브리드 방식: place_id가 있으면 places 테이블에서, 없으면 저장된 정보 사용
       const sortedPlaces =
@@ -309,6 +270,25 @@ async function getUserTravelCourses(userId: string): Promise<{
     courses: validCourses,
     hasMore,
     totalCount,
+  }
+}
+
+import type { Metadata } from "next"
+
+export async function generateMetadata({ searchParams }: ProfileDatePageProps): Promise<Metadata> {
+  const params = await searchParams
+  const courseType = params.type === "travel" ? "travel" : "date"
+  const isTravel = courseType === "travel"
+
+  return {
+    title: isTravel ? "내 여행 코스" : "내 데이트 코스",
+    description: isTravel
+      ? "내가 만든 여행 코스를 확인하고 관리하세요."
+      : "내가 만든 데이트 코스를 확인하고 관리하세요.",
+    robots: {
+      index: false,
+      follow: false,
+    },
   }
 }
 

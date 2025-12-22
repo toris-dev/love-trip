@@ -7,6 +7,8 @@ import {
   deleteBudgetItem,
   getBudgetSummary,
 } from "@lovetrip/expense/services"
+import { createBudgetItemSchema, updateBudgetItemSchema } from "@lovetrip/shared/schemas"
+import { validateRequest } from "@/lib/validation/validate-request"
 import type { Database } from "@lovetrip/shared/types/database"
 
 type BudgetItemInsert = Database["public"]["Tables"]["budget_items"]["Insert"]
@@ -90,20 +92,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: "여행 계획을 찾을 수 없습니다" }, { status: 404 })
     }
 
-    const body = await request.json()
-    const { category, name, planned_amount, travel_day_id } = body
-
-    if (!category || !name || planned_amount === undefined) {
-      return NextResponse.json(
-        { error: "카테고리, 항목명, 예산 금액은 필수입니다" },
-        { status: 400 }
-      )
+    // 입력 검증
+    const validation = await validateRequest(request, createBudgetItemSchema)
+    if (!validation.success) {
+      return validation.error
     }
+
+    const { category, name, planned_amount, travel_day_id } = validation.data
 
     const itemData: Omit<BudgetItemInsert, "travel_plan_id"> = {
       category,
       name,
-      planned_amount: Number(planned_amount),
+      planned_amount,
       travel_day_id: travel_day_id || null,
     }
 

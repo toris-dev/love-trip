@@ -16,7 +16,9 @@ import {
   Sparkles,
   Star,
   Crown,
+  Wallet,
 } from "lucide-react"
+import { formatPriceRange } from "@/lib/format-price"
 import { ShareButton } from "@/components/shared/share-button"
 import Image from "next/image"
 import { toast } from "sonner"
@@ -233,6 +235,17 @@ export function CourseDetailClient({ course, userId }: CourseDetailClientProps) 
                         >
                           <Clock className="h-4 w-4 text-blue-500" />
                           <span className="font-semibold">{course.duration}</span>
+                        </motion.div>
+                      )}
+                      {formatPriceRange(course.min_price, course.max_price) && (
+                        <motion.div
+                          className="flex items-center gap-2 px-3 py-2 rounded-full bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span className="font-semibold text-green-700 dark:text-green-300">
+                            {formatPriceRange(course.min_price, course.max_price)}
+                          </span>
                         </motion.div>
                       )}
                     </div>

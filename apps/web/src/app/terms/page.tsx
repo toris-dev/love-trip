@@ -1,6 +1,22 @@
+import type { Metadata } from "next"
 import { FileText, CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
 import dynamic from "next/dynamic"
+
+export const metadata: Metadata = {
+  title: "이용약관",
+  description: "LOVETRIP 서비스 이용약관입니다. 서비스 이용 전 반드시 확인해주세요.",
+  keywords: ["이용약관", "서비스약관", "약관", "LOVETRIP"],
+  openGraph: {
+    title: "이용약관 | LOVETRIP",
+    description: "LOVETRIP 서비스 이용약관입니다.",
+    url: "https://lovetrip.vercel.app/terms",
+    type: "website",
+  },
+  alternates: {
+    canonical: "/terms",
+  },
+}
 
 const sections = [
   {

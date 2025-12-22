@@ -78,18 +78,18 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 shadow-sm">
-      <div className="container mx-auto px-2 sm:px-3 md:px-4 py-3">
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto px-3 sm:px-4 md:px-6 py-2.5 sm:py-3">
+        <div className="flex items-center justify-between gap-2">
           <InteractiveLogo />
-          <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
+          <div className="flex items-center space-x-1.5 sm:space-x-2 md:space-x-3 lg:space-x-4">
             {/* 게이미피케이션 미리보기 */}
             {user && gamificationData && (
-              <div className="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-primary/5 border border-primary/20">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white">
+              <div className="hidden lg:flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs sm:text-sm font-bold text-white">
                     {gamificationData.level}
                   </div>
-                  <div className="text-xs">
+                  <div className="text-[10px] sm:text-xs">
                     <div className="font-semibold">Lv.{gamificationData.level}</div>
                     <div className="text-muted-foreground">
                       {gamificationData.points.toLocaleString()}P
@@ -100,14 +100,23 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
             )}
             {/* 사용자 정보 */}
             {user ? (
-              <Link href="/profile">
-                <Button variant="outline" size="sm">
-                  {user.email}
+              <Link href="/profile" className="hidden sm:block">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
+                >
+                  <span className="hidden md:inline">{user.email}</span>
+                  <span className="md:hidden">프로필</span>
                 </Button>
               </Link>
             ) : (
-              <Link href="/login">
-                <Button variant="outline" size="sm">
+              <Link href="/login" className="hidden sm:block">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
+                >
                   로그인
                 </Button>
               </Link>
@@ -115,9 +124,13 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
             {/* 데스크톱 네비게이션 메뉴 */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="hidden md:flex">
-                  <Menu className="h-4 w-4 mr-2" />
-                  메뉴
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hidden lg:flex text-xs sm:text-sm px-2 sm:px-3 h-8 sm:h-9"
+                >
+                  <Menu className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+                  <span className="hidden xl:inline">메뉴</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
@@ -218,12 +231,16 @@ export function HeaderClient({ initialUser, gamificationData }: HeaderClientProp
             {/* 모바일 메뉴 */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="md:hidden">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 p-0 touch-manipulation"
+                >
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">메뉴 열기</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] sm:w-[320px]">
+              <SheetContent side="right" className="w-[280px] sm:w-[320px] p-4 sm:p-6">
                 <SheetHeader>
                   <SheetTitle className="text-left">메뉴</SheetTitle>
                 </SheetHeader>

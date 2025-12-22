@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Plus } from "lucide-react"
 import { Button } from "@lovetrip/ui/components/button"
 import Link from "next/link"
@@ -22,6 +23,16 @@ type Trip = {
 
 // 사용자별 데이터이므로 동적 렌더링
 export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "내 여행",
+  description:
+    "계획한 여행들을 한눈에 확인하고 관리하세요. 여행 일정, 예산, 장소를 체계적으로 관리할 수 있습니다.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 async function getTravelPlans(): Promise<Trip[]> {
   const supabase = await createClient()

@@ -1,6 +1,16 @@
+import type { Metadata } from "next"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { ProfilePageClient } from "@/components/features/profile/profile-page-client"
 import { getOrCreateUserGamification } from "@lovetrip/gamification"
+
+export const metadata: Metadata = {
+  title: "프로필",
+  description: "내 프로필, 통계, 업적, 배지를 확인하고 관리하세요.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 async function getProfileStats(userId: string) {
   const supabase = await createClient()
@@ -25,19 +35,31 @@ async function getProfileStats(userId: string) {
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("status", "completed"),
-      // 방문한 장소 수 (travel_day_places를 통해)
-      supabase
-        .from("travel_plans")
-        .select(
-          `
-          id,
-          travel_days (
-            id,
-            travel_day_places (place_id)
-          )
-        `
-        )
-        .eq("user_id", userId),
+      // 방문한 장소 수 (최적화: 직접 조회)
+      (async () => {
+        const { data: plans } = await supabase
+          .from("travel_plans")
+          .select("id")
+          .eq("user_id", userId)
+
+        if (!plans || plans.length === 0) return { data: [], error: null }
+
+        const planIds = plans.map(p => p.id)
+        const { data: days } = await supabase
+          .from("travel_days")
+          .select("id")
+          .in("travel_plan_id", planIds)
+
+        if (!days || days.length === 0) return { data: [], error: null }
+
+        const dayIds = days.map(d => d.id)
+        const { data: places, error: placesError } = await supabase
+          .from("travel_day_places")
+          .select("place_id")
+          .in("travel_day_id", dayIds)
+
+        return { data: places, error: placesError }
+      })(),
       // 배지 수
       supabase
         .from("user_badges")
@@ -49,15 +71,11 @@ async function getProfileStats(userId: string) {
 
   // 방문한 장소 수 계산 (중복 제거)
   const visitedPlaceIds = new Set<string>()
-  if (placesResult.data) {
-    placesResult.data.forEach(plan => {
-      plan.travel_days?.forEach((day: any) => {
-        day.travel_day_places?.forEach((place: any) => {
-          if (place.place_id) {
-            visitedPlaceIds.add(place.place_id)
-          }
-        })
-      })
+  if (placesResult.data && Array.isArray(placesResult.data)) {
+    placesResult.data.forEach((place: { place_id?: string }) => {
+      if (place.place_id) {
+        visitedPlaceIds.add(place.place_id)
+      }
     })
   }
 

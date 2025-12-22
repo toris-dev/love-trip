@@ -1,106 +1,39 @@
 import { createClient } from "@lovetrip/api/supabase/client"
 import { createClient as createServerClient } from "@lovetrip/api/supabase/server"
 import type { Database } from "@lovetrip/shared/types/database"
+import { placeService } from "./place-service"
+import type { Place } from "@lovetrip/shared/types/course"
 
-type Place = Database["public"]["Tables"]["places"]["Row"]
 type TravelPlan = Database["public"]["Tables"]["travel_plans"]["Row"]
 type BudgetItem = Database["public"]["Tables"]["budget_items"]["Row"]
-
-const FALLBACK_PLACES = [
-  {
-    id: "fallback-1",
-    name: "서울타워",
-    description: "서울의 대표적인 랜드마크로 아름다운 야경을 감상할 수 있습니다.",
-    address: "서울특별시 용산구 남산공원길 105",
-    latitude: 37.5512,
-    longitude: 126.9882,
-    category: "attraction",
-    rating: 4.5,
-    price_range: "medium",
-    image_url: "/seoul-tower-romantic-night-view.png",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "fallback-2",
-    name: "홍대 카페거리",
-    description: "연인과 함께 즐길 수 있는 다양한 카페들이 모여있는 거리입니다.",
-    address: "서울특별시 마포구 홍익로",
-    latitude: 37.5563,
-    longitude: 126.9236,
-    category: "cafe",
-    rating: 4.3,
-    price_range: "medium",
-    image_url: "/hongdae-cafe-street-couples.png",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: "fallback-3",
-    name: "한강공원",
-    description: "피크닉과 산책을 즐길 수 있는 로맨틱한 공간입니다.",
-    address: "서울특별시 영등포구 여의도동",
-    latitude: 37.5219,
-    longitude: 126.9316,
-    category: "park",
-    rating: 4.7,
-    price_range: "free",
-    image_url: "/han-river-park-picnic-couples.png",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-] as const
 
 // Client-side functions
 export const travelService = {
   // Places
-  async getPlaces(): Promise<Place[]> {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from("places")
-        .select("*")
-        .order("rating", { ascending: false })
-
-      if (error) {
-        console.log("[v0] Database error, using fallback data:", error.message)
-        return FALLBACK_PLACES as unknown as Place[]
-      }
-      return data || (FALLBACK_PLACES as unknown as Place[])
-    } catch (error) {
-      console.log("[v0] Service error, using fallback data:", error)
-      return FALLBACK_PLACES as unknown as Place[]
-    }
+  /**
+   * 장소 목록 조회 (하이브리드 방식)
+   * 외부 API와 저장된 정보를 결합하여 반환
+   */
+  async getPlaces(options?: {
+    limit?: number
+    areaCode?: string
+    contentTypeId?: string
+  }): Promise<Place[]> {
+    return placeService.getPlaces(options)
   },
 
-  async searchPlaces(query: string): Promise<Place[]> {
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from("places")
-        .select("*")
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%,address.ilike.%${query}%`)
-        .order("rating", { ascending: false })
-
-      if (error) {
-        console.log("[v0] Database search error, using fallback search:", error.message)
-        return (FALLBACK_PLACES as unknown as Place[]).filter(
-          place =>
-            place.name.toLowerCase().includes(query.toLowerCase()) ||
-            (place.description && place.description.toLowerCase().includes(query.toLowerCase())) ||
-            (place.address && place.address.toLowerCase().includes(query.toLowerCase()))
-        )
-      }
-      return data || []
-    } catch (error) {
-      console.log("[v0] Search service error, using fallback search:", error)
-      return (FALLBACK_PLACES as unknown as Place[]).filter(
-        place =>
-          place.name.toLowerCase().includes(query.toLowerCase()) ||
-          (place.description && place.description.toLowerCase().includes(query.toLowerCase())) ||
-          (place.address && place.address.toLowerCase().includes(query.toLowerCase()))
-      )
+  /**
+   * 장소 검색 (하이브리드 방식)
+   * 외부 API 우선, 없으면 저장된 정보 활용
+   */
+  async searchPlaces(
+    query: string,
+    options?: {
+      limit?: number
+      preferExternal?: boolean
     }
+  ): Promise<Place[]> {
+    return placeService.searchPlaces(query, options)
   },
 
   // Travel Plans
@@ -202,12 +135,12 @@ export const travelService = {
 
     type TravelDay = { id: string; day_number: number }
     const dayIds = (days as TravelDay[]).map(d => d.id)
+    // places 테이블이 삭제되었으므로 조인 제거
     const { data, error } = await supabase
       .from("travel_day_places")
       .select(
         `
         *,
-        places (*),
         travel_days!inner(day_number)
       `
       )
@@ -321,6 +254,7 @@ export const travelService = {
         ? orderIndex
         : await this.getNextOrderIndex(travelDayId)
 
+    // places 테이블이 삭제되었으므로 조인 제거
     const { data, error } = await supabase
       .from("travel_day_places")
       .insert({
@@ -330,12 +264,7 @@ export const travelService = {
         visit_time: visitTime || null,
         notes: notes || null,
       })
-      .select(
-        `
-        *,
-        places (*)
-      `
-      )
+      .select("*")
       .single()
 
     if (error) {
@@ -374,16 +303,12 @@ export const travelService = {
     }
 
     const supabase = createClient()
+    // places 테이블이 삭제되었으므로 조인 제거
     const { data, error } = await supabase
       .from("travel_day_places")
       .update({ order_index: newOrderIndex })
       .eq("id", travelDayPlaceId)
-      .select(
-        `
-        *,
-        places (*)
-      `
-      )
+      .select("*")
       .single()
 
     if (error) {
@@ -396,15 +321,15 @@ export const travelService = {
 
 // Server-side functions
 export const serverTravelService = {
-  async getPlaces(): Promise<Place[]> {
-    const supabase = await createServerClient()
-    const { data, error } = await supabase
-      .from("places")
-      .select("*")
-      .order("rating", { ascending: false })
-
-    if (error) throw error
-    return data || []
+  /**
+   * 장소 목록 조회 (서버 사이드)
+   */
+  async getPlaces(options?: {
+    limit?: number
+    areaCode?: string
+    contentTypeId?: string
+  }): Promise<Place[]> {
+    return placeService.getPlaces(options)
   },
 
   async getTravelPlansForUser(userId: string): Promise<TravelPlan[]> {

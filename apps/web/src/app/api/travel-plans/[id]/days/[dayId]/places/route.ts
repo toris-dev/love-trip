@@ -57,15 +57,10 @@ export async function POST(
       return NextResponse.json({ error: "장소 ID는 필수입니다" }, { status: 400 })
     }
 
-    // 장소 존재 확인
-    const { data: place, error: placeError } = await supabase
-      .from("places")
-      .select("id")
-      .eq("id", place_id)
-      .single()
-
-    if (placeError || !place) {
-      return NextResponse.json({ error: "장소를 찾을 수 없습니다" }, { status: 404 })
+    // places 테이블이 삭제되어 장소 존재 확인 불가
+    // place_id는 유효한 UUID 형식인지만 확인
+    if (!place_id || typeof place_id !== "string") {
+      return NextResponse.json({ error: "유효한 장소 ID가 필요합니다" }, { status: 400 })
     }
 
     // order_index가 제공되지 않으면 현재 최대값 + 1로 설정
@@ -90,15 +85,11 @@ export async function POST(
       notes: notes || null,
     }
 
+    // places 테이블이 삭제되어 조인 제거
     const { data, error } = await supabase
       .from("travel_day_places")
       .insert(insertData)
-      .select(
-        `
-        *,
-        places (*)
-      `
-      )
+      .select("*")
       .single()
 
     if (error) {
@@ -163,14 +154,10 @@ export async function GET(
       return NextResponse.json({ error: "일차를 찾을 수 없습니다" }, { status: 404 })
     }
 
+    // places 테이블이 삭제되어 조인 제거
     const { data, error } = await supabase
       .from("travel_day_places")
-      .select(
-        `
-        *,
-        places (*)
-      `
-      )
+      .select("*")
       .eq("travel_day_id", travelDayId)
       .order("order_index", { ascending: true })
 

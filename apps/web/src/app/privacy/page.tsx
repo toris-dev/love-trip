@@ -1,6 +1,23 @@
+import type { Metadata } from "next"
 import { Shield, Lock, Eye, FileCheck, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
 import dynamic from "next/dynamic"
+
+export const metadata: Metadata = {
+  title: "개인정보 처리방침",
+  description:
+    "LOVETRIP의 개인정보 처리방침입니다. 회원의 개인정보 보호를 위해 최선을 다하고 있습니다.",
+  keywords: ["개인정보처리방침", "개인정보보호", "프라이버시", "LOVETRIP"],
+  openGraph: {
+    title: "개인정보 처리방침 | LOVETRIP",
+    description: "LOVETRIP의 개인정보 처리방침입니다.",
+    url: "https://lovetrip.vercel.app/privacy",
+    type: "website",
+  },
+  alternates: {
+    canonical: "/privacy",
+  },
+}
 
 const sections = [
   {

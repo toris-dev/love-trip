@@ -1,36 +1,16 @@
+import type { Metadata } from "next"
 import { createClient } from "@lovetrip/api/supabase/server"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { CoursesPageClient } from "@/components/features/courses/courses-page-client"
 import type { Database } from "@lovetrip/shared/types/database"
+import type { DateCourse, TravelCourseWithPlaces, Place } from "@lovetrip/shared/types/course"
 
 const ITEMS_PER_PAGE = 10
 
-type Place = Database["public"]["Tables"]["places"]["Row"] & {
-  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
-}
+// TravelCourse는 TravelCourseWithPlaces의 별칭으로 사용
+type TravelCourse = TravelCourseWithPlaces
 
-type DateCourse = {
-  id: string
-  title: string
-  region: string
-  description?: string
-  image_url?: string | null
-  place_count: number
-  places: Place[]
-  duration: string
-  total_distance_km?: number | null
-  max_distance_km?: number | null
-}
-
-type TravelCourse = {
-  id: string
-  title: string
-  region: string
-  description?: string
-  image_url?: string | null
-  place_count: number
-  places: Place[]
-  duration: string
-}
+type SupabaseClientType = Awaited<ReturnType<typeof createClient>>
 
 type CourseWithPlaces = Database["public"]["Tables"]["travel_courses"]["Row"] & {
   travel_course_places: Array<{
@@ -44,7 +24,7 @@ type CourseWithPlaces = Database["public"]["Tables"]["travel_courses"]["Row"] & 
  * user_courses에서 공개된 코스를 DateCourse 형식으로 변환
  */
 async function getUserDateCourses(
-  supabase: any,
+  supabase: SupabaseClientType,
   limit: number = ITEMS_PER_PAGE
 ): Promise<DateCourse[]> {
   const { data: userCoursesData, error } = await supabase
@@ -75,33 +55,11 @@ async function getUserDateCourses(
         return null
       }
 
-      // place_id가 있는 장소들만 places 테이블에서 조회
-      const placeIds = placesData.filter(p => p.place_id).map(p => p.place_id!)
-      let placesFromDb: Place[] = []
-      if (placeIds.length > 0) {
-        const { data: places, error: placesDetailError } = await supabase
-          .from("places")
-          .select("*")
-          .in("id", placeIds)
-
-        if (!placesDetailError && places) {
-          placesFromDb = places
-        }
-      }
-
-      // 하이브리드 방식: place_id가 있으면 places 테이블에서, 없으면 저장된 정보 사용
+      // places 테이블이 삭제되었으므로 저장된 정보만 사용
       const sortedPlaces =
         placesData
           ?.map(cp => {
-            // place_id가 있고 places 테이블에서 조회된 경우
-            if (cp.place_id) {
-              const place = placesFromDb.find(p => p.id === cp.place_id)
-              if (place) {
-                return { ...place, order_index: cp.order_index }
-              }
-            }
-
-            // place_id가 없고 저장된 정보가 있는 경우
+            // 저장된 정보가 있는 경우
             if (cp.place_name && cp.place_lat && cp.place_lng) {
               const place: Place = {
                 id: `stored-${cp.order_index}`,
@@ -109,37 +67,23 @@ async function getUserDateCourses(
                 lat: Number(cp.place_lat),
                 lng: Number(cp.place_lng),
                 type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
-                rating: cp.place_rating ? Number(cp.place_rating) : 0,
-                price_level: cp.place_price_level ? Number(cp.place_price_level) : 0,
-                description: cp.place_description || "",
+                rating: cp.place_rating ? Number(cp.place_rating) : null,
+                price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
+                description: cp.place_description || null,
                 image_url: cp.place_image_url || null,
                 address: cp.place_address || null,
-                tour_content_id: null,
-                tour_content_type_id: null,
-                area_code: null,
-                sigungu_code: null,
-                category1: null,
-                category2: null,
-                category3: null,
-                homepage: null,
-                phone: null,
-                opening_hours: null,
-                zipcode: null,
-                overview: null,
-                created_time: null,
-                modified_time: null,
-                map_level: null,
-                course_type: null,
-                created_at: null,
-                updated_at: null,
               }
-              return { ...place, order_index: cp.order_index }
+              return place
             }
 
             return null
           })
-          .filter((p): p is Place & { order_index: number } => p !== null)
-          .sort((a, b) => a.order_index - b.order_index) || []
+          .filter((p): p is Place => p !== null)
+          .sort((a, b) => {
+            const aIndex = placesData.findIndex(p => p.place_name === a.name)
+            const bIndex = placesData.findIndex(p => p.place_name === b.name)
+            return (placesData[aIndex]?.order_index || 0) - (placesData[bIndex]?.order_index || 0)
+          }) || []
 
       return {
         id: course.id,
@@ -152,6 +96,8 @@ async function getUserDateCourses(
         duration: course.duration || "당일 코스",
         total_distance_km: null,
         max_distance_km: null,
+        min_price: null,
+        max_price: null,
       } as DateCourse
     })
   )
@@ -163,7 +109,7 @@ async function getUserDateCourses(
  * user_courses에서 공개된 여행 코스를 TravelCourse 형식으로 변환
  */
 async function getUserTravelCourses(
-  supabase: any,
+  supabase: SupabaseClientType,
   limit: number = ITEMS_PER_PAGE
 ): Promise<TravelCourse[]> {
   const { data: userCoursesData, error } = await supabase
@@ -194,32 +140,13 @@ async function getUserTravelCourses(
         return null
       }
 
-      // place_id가 있는 장소들만 places 테이블에서 조회
-      const placeIds = placesData.filter(p => p.place_id).map(p => p.place_id!)
-      let placesFromDb: Place[] = []
-      if (placeIds.length > 0) {
-        const { data: places, error: placesDetailError } = await supabase
-          .from("places")
-          .select("*")
-          .in("id", placeIds)
-
-        if (!placesDetailError && places) {
-          placesFromDb = places
-        }
-      }
+      // places 테이블이 삭제되었으므로 저장된 정보만 사용
 
       // 하이브리드 방식: place_id가 있으면 places 테이블에서, 없으면 저장된 정보 사용
+      // places 테이블이 삭제되었으므로 저장된 정보만 사용
       const sortedPlaces = placesData
         ?.map(cp => {
-          // place_id가 있고 places 테이블에서 조회된 경우
-          if (cp.place_id) {
-            const place = placesFromDb.find(p => p.id === cp.place_id)
-            if (place) {
-              return place
-            }
-          }
-
-          // place_id가 없고 저장된 정보가 있는 경우
+          // 저장된 정보가 있는 경우
           if (cp.place_name && cp.place_lat && cp.place_lng) {
             const place: Place = {
               id: `stored-${cp.order_index}`,
@@ -227,29 +154,11 @@ async function getUserTravelCourses(
               lat: Number(cp.place_lat),
               lng: Number(cp.place_lng),
               type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
-              rating: cp.place_rating ? Number(cp.place_rating) : 0,
-              price_level: cp.place_price_level ? Number(cp.place_price_level) : 0,
-              description: cp.place_description || "",
+              rating: cp.place_rating ? Number(cp.place_rating) : null,
+              price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
+              description: cp.place_description || null,
               image_url: cp.place_image_url || null,
               address: cp.place_address || null,
-              tour_content_id: null,
-              tour_content_type_id: null,
-              area_code: null,
-              sigungu_code: null,
-              category1: null,
-              category2: null,
-              category3: null,
-              homepage: null,
-              phone: null,
-              opening_hours: null,
-              zipcode: null,
-              overview: null,
-              created_time: null,
-              modified_time: null,
-              map_level: null,
-              course_type: null,
-              created_at: null,
-              updated_at: null,
             }
             return place
           }
@@ -257,6 +166,11 @@ async function getUserTravelCourses(
           return null
         })
         .filter((p): p is Place => p !== null)
+        .sort((a, b) => {
+          const aIndex = placesData.findIndex(p => p.place_name === a.name)
+          const bIndex = placesData.findIndex(p => p.place_name === b.name)
+          return (placesData[aIndex]?.order_index || 0) - (placesData[bIndex]?.order_index || 0)
+        })
 
       return {
         id: course.id,
@@ -267,6 +181,8 @@ async function getUserTravelCourses(
         place_count: course.place_count || sortedPlaces.length,
         places: sortedPlaces,
         duration: course.duration || "1박2일",
+        min_price: null,
+        max_price: null,
       } as TravelCourse
     })
   )
@@ -320,32 +236,10 @@ async function getInitialDateCourses(): Promise<{
             return null
           }
 
-          // place_id가 있는 장소들만 places 테이블에서 조회
-          const placeIds = placesData.filter(p => p.place_id).map(p => p.place_id!)
-          let placesFromDb: Place[] = []
-          if (placeIds.length > 0) {
-            const { data: places, error: placesDetailError } = await supabase
-              .from("places")
-              .select("*")
-              .in("id", placeIds)
-
-            if (!placesDetailError && places) {
-              placesFromDb = places
-            }
-          }
-
-          // 하이브리드 방식: place_id가 있으면 places 테이블에서, 없으면 저장된 정보 사용
+          // places 테이블이 삭제되었으므로 저장된 정보만 사용
           const sortedPlaces =
             placesData
               ?.map(cp => {
-                // place_id가 있고 places 테이블에서 조회된 경우
-                if (cp.place_id) {
-                  const place = placesFromDb.find(p => p.id === cp.place_id)
-                  if (place) {
-                    return { ...place, order_index: cp.order_index }
-                  }
-                }
-
                 // place_id가 없고 저장된 정보가 있는 경우
                 if (cp.place_name && cp.place_lat && cp.place_lng) {
                   const place: Place = {
@@ -354,37 +248,25 @@ async function getInitialDateCourses(): Promise<{
                     lat: Number(cp.place_lat),
                     lng: Number(cp.place_lng),
                     type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
-                    rating: cp.place_rating ? Number(cp.place_rating) : 0,
-                    price_level: cp.place_price_level ? Number(cp.place_price_level) : 0,
-                    description: cp.place_description || "",
+                    rating: cp.place_rating ? Number(cp.place_rating) : null,
+                    price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
+                    description: cp.place_description || null,
                     image_url: cp.place_image_url || null,
                     address: cp.place_address || null,
-                    tour_content_id: null,
-                    tour_content_type_id: null,
-                    area_code: null,
-                    sigungu_code: null,
-                    category1: null,
-                    category2: null,
-                    category3: null,
-                    homepage: null,
-                    phone: null,
-                    opening_hours: null,
-                    zipcode: null,
-                    overview: null,
-                    created_time: null,
-                    modified_time: null,
-                    map_level: null,
-                    course_type: null,
-                    created_at: null,
-                    updated_at: null,
                   }
-                  return { ...place, order_index: cp.order_index }
+                  return place
                 }
 
                 return null
               })
-              .filter((p): p is Place & { order_index: number } => p !== null)
-              .sort((a, b) => a.order_index - b.order_index) || []
+              .filter((p): p is Place => p !== null)
+              .sort((a, b) => {
+                const aIndex = placesData.findIndex(p => p.place_name === a.name)
+                const bIndex = placesData.findIndex(p => p.place_name === b.name)
+                return (
+                  (placesData[aIndex]?.order_index || 0) - (placesData[bIndex]?.order_index || 0)
+                )
+              }) || []
 
           return {
             id: course.id,
@@ -397,6 +279,8 @@ async function getInitialDateCourses(): Promise<{
             duration: course.duration,
             total_distance_km: course.total_distance_km,
             max_distance_km: course.max_distance_km,
+            min_price: course.min_price ?? null,
+            max_price: course.max_price ?? null,
           } as DateCourse
         })
       )
@@ -476,8 +360,7 @@ async function getInitialTravelCourses(): Promise<{
             place_rating,
             place_price_level,
             place_image_url,
-            place_description,
-            places (*)
+            place_description
           )
         `,
           { count: "exact" }
@@ -503,13 +386,8 @@ async function getInitialTravelCourses(): Promise<{
               return a.order_index - b.order_index
             })
             .map((tcp: any) => {
-              // place_id가 있고 places 테이블에서 조회된 경우
-              if (tcp.place_id && tcp.places) {
-                return tcp.places
-              }
-
-              // place_id가 없고 저장된 정보가 있는 경우
-              if (!tcp.place_id && tcp.place_name && tcp.place_lat && tcp.place_lng) {
+              // places 테이블이 삭제되었으므로 저장된 정보만 사용
+              if (tcp.place_name && tcp.place_lat && tcp.place_lng) {
                 const place: Place = {
                   id: `stored-${tcp.order_index}`,
                   name: tcp.place_name,
@@ -556,6 +434,8 @@ async function getInitialTravelCourses(): Promise<{
             place_count: course.place_count,
             places: sortedPlaces,
             duration: course.duration,
+            min_price: course.min_price ?? null,
+            max_price: course.max_price ?? null,
           }
         })
 
@@ -599,6 +479,33 @@ interface DatePageProps {
 
 // 동적 렌더링 강제: 항상 최신 데이터를 가져오도록 설정
 export const dynamic = "force-dynamic"
+
+export async function generateMetadata({ searchParams }: DatePageProps): Promise<Metadata> {
+  const params = await searchParams
+  const courseType = params.type === "travel" ? "travel" : "date"
+  const isTravel = courseType === "travel"
+
+  return {
+    title: isTravel ? "여행 코스" : "데이트 코스",
+    description: isTravel
+      ? "커플을 위한 여행 코스를 탐색하세요. 다양한 지역의 여행 코스를 확인하고 특별한 여행을 계획해보세요."
+      : "커플을 위한 데이트 코스를 탐색하세요. 로맨틱한 데이트 장소와 코스를 찾아 특별한 하루를 만들어보세요.",
+    keywords: isTravel
+      ? ["여행코스", "커플여행", "여행계획", "여행추천", "국내여행"]
+      : ["데이트코스", "커플데이트", "로맨틱데이트", "데이트장소", "데이트추천"],
+    openGraph: {
+      title: isTravel ? "여행 코스 | LOVETRIP" : "데이트 코스 | LOVETRIP",
+      description: isTravel
+        ? "커플을 위한 여행 코스를 탐색하고 특별한 여행을 계획해보세요."
+        : "커플을 위한 데이트 코스를 탐색하고 특별한 하루를 만들어보세요.",
+      url: `https://lovetrip.vercel.app/date${isTravel ? "?type=travel" : ""}`,
+      type: "website",
+    },
+    alternates: {
+      canonical: isTravel ? "/date?type=travel" : "/date",
+    },
+  }
+}
 
 export default async function DatePage({ searchParams }: DatePageProps) {
   const supabase = await createClient()

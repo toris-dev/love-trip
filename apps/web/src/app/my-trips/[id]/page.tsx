@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { getExpenses } from "@lovetrip/expense/services"
@@ -12,6 +13,37 @@ export const dynamic = "force-dynamic"
 
 interface TravelPlanDetailPageProps {
   params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({ params }: TravelPlanDetailPageProps): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return {
+      title: "여행 계획",
+    }
+  }
+
+  const plan = await getTravelPlan(id, user.id)
+
+  if (!plan) {
+    return {
+      title: "여행 계획을 찾을 수 없습니다",
+    }
+  }
+
+  return {
+    title: plan.title,
+    description: `여행 계획: ${plan.destination} (${plan.start_date} ~ ${plan.end_date})`,
+    robots: {
+      index: false,
+      follow: false,
+    },
+  }
 }
 
 async function getTravelPlan(planId: string, userId: string): Promise<TravelPlan | null> {

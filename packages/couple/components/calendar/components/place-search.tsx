@@ -35,20 +35,8 @@ export function PlaceSearch({
       return
     }
 
-    try {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from("places")
-        .select("*")
-        .ilike("name", `%${searchQuery}%`)
-        .limit(10)
-
-      if (error) throw error
-      setSearchResults((data || []) as Place[])
-    } catch (error) {
-      console.error("Error searching places:", error)
-      toast.error("장소 검색에 실패했습니다")
-    }
+    // places 테이블이 삭제되어 빈 배열 반환
+    setSearchResults([])
   }
 
   useEffect(() => {
@@ -73,11 +61,7 @@ export function PlaceSearch({
           }}
           onFocus={() => onShowResultsChange(true)}
         />
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => onShowResultsChange(!showResults)}
-        >
+        <Button type="button" variant="outline" onClick={() => onShowResultsChange(!showResults)}>
           <Search className="h-4 w-4" />
         </Button>
       </div>
@@ -103,9 +87,7 @@ export function PlaceSearch({
                 {place.rating && (
                   <div className="flex items-center gap-1 mt-1">
                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    <span className="text-xs text-muted-foreground">
-                      {place.rating.toFixed(1)}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{place.rating.toFixed(1)}</span>
                   </div>
                 )}
               </div>
@@ -116,4 +98,3 @@ export function PlaceSearch({
     </div>
   )
 }
-

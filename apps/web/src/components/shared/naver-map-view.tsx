@@ -643,14 +643,19 @@ function MapContent({
           " 
           onmouseover="this.style.transform='scale(1.15)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.35)'" 
           onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.25)'"
-          onclick="window.naverMarkerClick && window.naverMarkerClick('${place.id}')">
+          onclick="window.naverMarkerClick && window.naverMarkerClick('${place.id || index}')">
             ${showNumbers ? orderNumber : ""}
           </div>
         `
 
+            // 고유한 key 생성: place.id가 있으면 사용하고, 없으면 index와 좌표를 조합
+            const uniqueKey = place.id
+              ? `${place.id}-${index}-${showNumbers ? "with-number" : "no-number"}`
+              : `place-${index}-${place.lat}-${place.lng}-${showNumbers ? "with-number" : "no-number"}`
+
             return (
               <Marker
-                key={`${place.id}-${showNumbers ? "with-number" : "no-number"}`}
+                key={uniqueKey}
                 position={{ lat: place.lat, lng: place.lng }}
                 title={`${orderNumber}. ${place.name}`}
                 onClick={() => onPlaceClick?.(place)}

@@ -162,8 +162,14 @@ packages/{domain}/
 **예시**:
 
 - `packages/planner/`: 여행 계획 로직
+  - `place-service.ts`: 장소 서비스 (하이브리드 데이터 모델)
+  - `travel-service.ts`: 여행 계획 서비스
+  - `user-course-service.ts`: 사용자 코스 서비스
 - `packages/expense/`: 경비 관리 로직
 - `packages/recommendation/`: 추천 알고리즘
+- `packages/api/`: API 클라이언트
+  - `clients/`: 외부 API 클라이언트 (네이버, Tour API)
+  - `supabase/`: Supabase 클라이언트 및 트랜잭션 관리
 
 ## 🔄 데이터 흐름
 
@@ -227,7 +233,13 @@ UI Update
 ### External APIs
 
 - **Tour API**: 한국관광공사 관광 정보
+  - 클라이언트: `packages/api/clients/tour-api-client.ts`
+  - 지역별 관광 정보 조회
+  - 키워드 검색
 - **네이버 지도 API**: 지도 및 장소 검색
+  - 클라이언트: `packages/api/clients/naver-api-client.ts`
+  - Places API: 장소 검색
+  - Geocoding API: 주소 검색
 
 ### 개발 도구
 

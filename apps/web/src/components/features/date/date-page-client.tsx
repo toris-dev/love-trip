@@ -34,28 +34,11 @@ import { getCoupleRecommendations } from "@lovetrip/recommendation/services"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import dynamic from "next/dynamic"
-import type { Database } from "@lovetrip/shared/types/database"
+import type { DateCourse, Place } from "@lovetrip/shared/types/course"
 
 const NaverMapView = dynamic(() => import("@/components/shared/naver-map-view"), { ssr: false })
 
 const ITEMS_PER_PAGE = 10
-
-type Place = Database["public"]["Tables"]["places"]["Row"] & {
-  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
-}
-
-type DateCourse = {
-  id: string
-  title: string
-  region: string
-  description?: string
-  image_url?: string | null
-  place_count: number
-  places: Place[]
-  duration: string
-  total_distance_km?: number | null
-  max_distance_km?: number | null
-}
 
 interface DatePageClientProps {
   initialCourses: DateCourse[]
@@ -322,43 +305,11 @@ export function DatePageClient({
               return null
             }
 
-            // place_id가 있는 장소들만 places 테이블에서 조회
-            const placeIds = placesData.filter(p => p.place_id).map(p => p.place_id!)
-            let placesFromDb: Place[] = []
-            if (placeIds.length > 0) {
-              const { data: places, error: placesDetailError } = await supabase
-                .from("places")
-                .select("*")
-                .in("id", placeIds)
-
-              if (placesDetailError) {
-                const errorInfo = {
-                  message: placesDetailError?.message || "Unknown error",
-                  details: placesDetailError?.details || "No details",
-                  hint: placesDetailError?.hint || "No hint",
-                  code: placesDetailError?.code || "No code",
-                  courseId: course.id,
-                  placeIds: placeIds,
-                }
-                console.error("장소 상세 정보 가져오기 실패:", JSON.stringify(errorInfo, null, 2))
-              } else if (places) {
-                placesFromDb = places
-              }
-            }
-
-            // 하이브리드 방식: place_id가 있으면 places 테이블에서, 없으면 저장된 정보 사용
+            // places 테이블이 삭제되었으므로 저장된 정보만 사용
             const sortedPlaces =
               placesData
                 ?.map(cp => {
-                  // place_id가 있고 places 테이블에서 조회된 경우
-                  if (cp.place_id) {
-                    const place = placesFromDb.find(p => p.id === cp.place_id)
-                    if (place) {
-                      return { ...place, order_index: cp.order_index }
-                    }
-                  }
-
-                  // place_id가 없고 저장된 정보가 있는 경우
+                  // 저장된 정보가 있는 경우
                   if (cp.place_name && cp.place_lat && cp.place_lng) {
                     const place: Place = {
                       id: `stored-${cp.order_index}`,
@@ -366,37 +317,25 @@ export function DatePageClient({
                       lat: Number(cp.place_lat),
                       lng: Number(cp.place_lng),
                       type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
-                      rating: cp.place_rating ? Number(cp.place_rating) : 0,
-                      price_level: cp.place_price_level ? Number(cp.place_price_level) : 0,
-                      description: cp.place_description || "",
+                      rating: cp.place_rating ? Number(cp.place_rating) : null,
+                      price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
+                      description: cp.place_description || null,
                       image_url: cp.place_image_url || null,
                       address: cp.place_address || null,
-                      tour_content_id: null,
-                      tour_content_type_id: null,
-                      area_code: null,
-                      sigungu_code: null,
-                      category1: null,
-                      category2: null,
-                      category3: null,
-                      homepage: null,
-                      phone: null,
-                      opening_hours: null,
-                      zipcode: null,
-                      overview: null,
-                      created_time: null,
-                      modified_time: null,
-                      map_level: null,
-                      course_type: null,
-                      created_at: null,
-                      updated_at: null,
                     }
-                    return { ...place, order_index: cp.order_index }
+                    return place
                   }
 
                   return null
                 })
-                .filter((p): p is Place & { order_index: number } => p !== null)
-                .sort((a, b) => a.order_index - b.order_index) || []
+                .filter((p): p is Place => p !== null)
+                .sort((a, b) => {
+                  const aIndex = placesData.findIndex(p => p.place_name === a.name)
+                  const bIndex = placesData.findIndex(p => p.place_name === b.name)
+                  return (
+                    (placesData[aIndex]?.order_index || 0) - (placesData[bIndex]?.order_index || 0)
+                  )
+                }) || []
 
             return {
               id: course.id,
@@ -435,33 +374,11 @@ export function DatePageClient({
               return null
             }
 
-            // place_id가 있는 장소들만 places 테이블에서 조회
-            const placeIds = placesData.filter(p => p.place_id).map(p => p.place_id!)
-            let placesFromDb: Place[] = []
-            if (placeIds.length > 0) {
-              const { data: places, error: placesDetailError } = await supabase
-                .from("places")
-                .select("*")
-                .in("id", placeIds)
-
-              if (!placesDetailError && places) {
-                placesFromDb = places
-              }
-            }
-
-            // 하이브리드 방식: place_id가 있으면 places 테이블에서, 없으면 저장된 정보 사용
+            // places 테이블이 삭제되었으므로 저장된 정보만 사용
             const sortedPlaces =
               placesData
                 ?.map(cp => {
-                  // place_id가 있고 places 테이블에서 조회된 경우
-                  if (cp.place_id) {
-                    const place = placesFromDb.find(p => p.id === cp.place_id)
-                    if (place) {
-                      return { ...place, order_index: cp.order_index }
-                    }
-                  }
-
-                  // place_id가 없고 저장된 정보가 있는 경우
+                  // 저장된 정보가 있는 경우
                   if (cp.place_name && cp.place_lat && cp.place_lng) {
                     const place: Place = {
                       id: `stored-${cp.order_index}`,
@@ -469,37 +386,25 @@ export function DatePageClient({
                       lat: Number(cp.place_lat),
                       lng: Number(cp.place_lng),
                       type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
-                      rating: cp.place_rating ? Number(cp.place_rating) : 0,
-                      price_level: cp.place_price_level ? Number(cp.place_price_level) : 0,
-                      description: cp.place_description || "",
+                      rating: cp.place_rating ? Number(cp.place_rating) : null,
+                      price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
+                      description: cp.place_description || null,
                       image_url: cp.place_image_url || null,
                       address: cp.place_address || null,
-                      tour_content_id: null,
-                      tour_content_type_id: null,
-                      area_code: null,
-                      sigungu_code: null,
-                      category1: null,
-                      category2: null,
-                      category3: null,
-                      homepage: null,
-                      phone: null,
-                      opening_hours: null,
-                      zipcode: null,
-                      overview: null,
-                      created_time: null,
-                      modified_time: null,
-                      map_level: null,
-                      course_type: null,
-                      created_at: null,
-                      updated_at: null,
                     }
-                    return { ...place, order_index: cp.order_index }
+                    return place
                   }
 
                   return null
                 })
-                .filter((p): p is Place & { order_index: number } => p !== null)
-                .sort((a, b) => a.order_index - b.order_index) || []
+                .filter((p): p is Place => p !== null)
+                .sort((a, b) => {
+                  const aIndex = placesData.findIndex(p => p.place_name === a.name)
+                  const bIndex = placesData.findIndex(p => p.place_name === b.name)
+                  return (
+                    (placesData[aIndex]?.order_index || 0) - (placesData[bIndex]?.order_index || 0)
+                  )
+                }) || []
 
             return {
               id: course.id,
@@ -580,12 +485,17 @@ export function DatePageClient({
           course.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
           course.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
+      // 검색어가 있을 때는 필터링된 결과만 표시
+      setFilteredCourses(filtered)
+      setDisplayedCourses(filtered.slice(0, ITEMS_PER_PAGE))
+      setHasMore(false) // 검색 시 무한스크롤 비활성화
+      setPage(0)
+    } else {
+      // 검색어가 없을 때는 필터링만 하고 displayedCourses는 리셋하지 않음 (무한스크롤 유지)
+      setFilteredCourses(filtered)
+      // displayedCourses는 loadCourses에서 관리하므로 여기서 리셋하지 않음
+      // hasMore와 page도 유지
     }
-
-    setFilteredCourses(filtered)
-    setDisplayedCourses(filtered.slice(0, ITEMS_PER_PAGE))
-    setHasMore(filtered.length > ITEMS_PER_PAGE)
-    setPage(0)
   }, [courses, searchQuery])
 
   useEffect(() => {
@@ -593,8 +503,14 @@ export function DatePageClient({
   }, [loadRecommendedPlaces])
 
   useEffect(() => {
-    filterCourses()
-  }, [filterCourses])
+    // 검색어가 변경될 때만 필터링 실행
+    if (searchQuery.trim()) {
+      filterCourses()
+    } else {
+      // 검색어가 없을 때는 filteredCourses만 업데이트하고 displayedCourses는 유지
+      setFilteredCourses(courses)
+    }
+  }, [searchQuery, courses, filterCourses])
 
   useEffect(() => {
     const observer = new IntersectionObserver(

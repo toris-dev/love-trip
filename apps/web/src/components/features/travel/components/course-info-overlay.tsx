@@ -42,7 +42,7 @@ export function CourseInfoOverlay({ course, onClose }: CourseInfoOverlayProps) {
               placeWithOrder.order_index !== undefined ? placeWithOrder.order_index + 1 : index + 1
             return (
               <div
-                key={place.id || index}
+                key={place.id ? `${place.id}-${index}` : `place-${index}-${place.lat}-${place.lng}`}
                 className="flex items-start gap-2 p-2 rounded-lg bg-background/50 hover:bg-background/80 transition-colors"
               >
                 <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">

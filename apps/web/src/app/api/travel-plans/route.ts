@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { createUserCourseFromTravelPlan } from "@lovetrip/planner/services"
+import {
+  withTransaction,
+  transactionInsert,
+  transactionInsertMany,
+  createTravelPlanWithTransaction,
+} from "@lovetrip/api/supabase/transaction-manager"
+import { createTravelPlanSchema } from "@lovetrip/shared/schemas"
+import { validateRequest } from "@/lib/validation/validate-request"
+import type { Database } from "@lovetrip/shared/types/database"
+
+type TravelPlan = Database["public"]["Tables"]["travel_plans"]["Row"]
+type TravelDay = Database["public"]["Tables"]["travel_days"]["Row"]
 
 /**
  * POST /api/travel-plans
- * 여행 계획 생성
+ * 여행 계획 생성 (트랜잭션 적용, 입력 검증)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +29,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
     }
 
-    const body = await request.json()
+    // 입력 검증
+    const validation = await validateRequest(request, createTravelPlanSchema)
+    if (!validation.success) {
+      return validation.error
+    }
+
     const {
       title,
       destination,
@@ -25,153 +42,161 @@ export async function POST(request: NextRequest) {
       end_date,
       total_budget,
       description,
-      course_type = "travel",
+      course_type,
       places,
       budget_items,
-    } = body
+    } = validation.data as {
+      title: string
+      destination: string
+      start_date: string
+      end_date: string
+      total_budget?: number
+      description?: string
+      course_type: string
+      places?: Array<{
+        place_id: string
+        day_number: number
+        order_index?: number
+      }>
+      budget_items?: Array<{
+        category: string
+        name: string
+        planned_amount: number
+      }>
+    }
 
-    // 1. travel_plan 생성
-    const { data: plan, error: planError } = await supabase
-      .from("travel_plans")
-      .insert({
+    // PostgreSQL 함수를 통한 트랜잭션으로 여행 계획 생성
+    // 더 강력한 트랜잭션 보장을 위해 PostgreSQL 함수 사용
+    let planId: string
+    try {
+      planId = await createTravelPlanWithTransaction(supabase, {
         user_id: user.id,
         title,
         destination,
         start_date,
         end_date,
         total_budget: total_budget || 0,
-        description,
-        course_type,
-        status: "planning",
+        description: description || undefined,
+        course_type: course_type || "travel",
+        places: places?.map(p => ({
+          place_id: p.place_id,
+          day_number: p.day_number,
+          order_index: p.order_index ?? 0,
+        })),
+        budget_items: budget_items?.map(item => ({
+          category: item.category,
+          name: item.name,
+          planned_amount: item.planned_amount,
+        })),
       })
-      .select()
+    } catch (error) {
+      // PostgreSQL 함수 실패 시 JavaScript 레벨 트랜잭션으로 폴백
+      console.warn("PostgreSQL 함수 실패, JavaScript 트랜잭션으로 폴백:", error)
+      const plan = await withTransaction(async (txSupabase, context) => {
+        // 1. travel_plan 생성
+        const plan = await transactionInsert<TravelPlan>(txSupabase, context, "travel_plans", {
+          user_id: user.id,
+          title,
+          destination,
+          start_date,
+          end_date,
+          total_budget: total_budget || 0,
+          description,
+          course_type,
+          status: "planning",
+        })
+
+        // 2. travel_days 생성
+        const start = new Date(start_date)
+        const end = new Date(end_date)
+        const diffTime = Math.abs(end.getTime() - start.getTime())
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
+
+        const daysToInsert = []
+        for (let i = 0; i < diffDays; i++) {
+          const dayDate = new Date(start)
+          dayDate.setDate(start.getDate() + i)
+
+          daysToInsert.push({
+            travel_plan_id: plan.id,
+            day_number: i + 1,
+            date: dayDate.toISOString().split("T")[0],
+            title: `${i + 1}일차`,
+          })
+        }
+
+        const days = await transactionInsertMany<TravelDay>(
+          txSupabase,
+          context,
+          "travel_days",
+          daysToInsert
+        )
+
+        // 3. travel_day_places 생성
+        if (places && places.length > 0) {
+          const isValidUUID = (str: string): boolean => {
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+            return uuidRegex.test(str)
+          }
+
+          const placesToInsert = places
+            .map(p => {
+              if (!p.place_id || !isValidUUID(p.place_id)) {
+                return null
+              }
+
+              const day = days.find(d => d.day_number === p.day_number)
+              if (!day) {
+                return null
+              }
+
+              return {
+                travel_day_id: day.id,
+                place_id: p.place_id,
+                order_index: p.order_index ?? 0,
+              }
+            })
+            .filter((item): item is NonNullable<typeof item> => item !== null)
+
+          if (placesToInsert.length > 0) {
+            await transactionInsertMany(txSupabase, context, "travel_day_places", placesToInsert)
+          }
+        }
+
+        // 4. budget_items 생성
+        if (budget_items && budget_items.length > 0) {
+          const firstDay = days[0]
+          const budgetItemsToInsert = budget_items.map(
+            (item: { category: string; name: string; planned_amount: number }) => ({
+              travel_plan_id: plan.id,
+              travel_day_id: firstDay?.id || null,
+              category: item.category,
+              name: item.name,
+              planned_amount: item.planned_amount,
+            })
+          )
+
+          await transactionInsertMany(txSupabase, context, "budget_items", budgetItemsToInsert)
+        }
+
+        return plan
+      })
+      planId = plan.id
+    }
+
+    // 생성된 여행 계획 조회
+    const { data: plan, error: planError } = await supabase
+      .from("travel_plans")
+      .select("*")
+      .eq("id", planId)
       .single()
 
     if (planError || !plan) {
-      throw planError || new Error("여행 계획 생성에 실패했습니다")
+      throw new Error("여행 계획을 조회하는데 실패했습니다")
     }
 
-    // 2. travel_days 생성
-    const start = new Date(start_date)
-    const end = new Date(end_date)
-    const diffTime = Math.abs(end.getTime() - start.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-
-    const days: Array<{ id: string; day_number: number }> = []
-    for (let i = 0; i < diffDays; i++) {
-      const dayDate = new Date(start)
-      dayDate.setDate(start.getDate() + i)
-
-      const { data: day, error: dayError } = await supabase
-        .from("travel_days")
-        .insert({
-          travel_plan_id: plan.id,
-          day_number: i + 1,
-          date: dayDate.toISOString().split("T")[0],
-          title: `${i + 1}일차`,
-        })
-        .select()
-        .single()
-
-      if (dayError) throw dayError
-      if (day) days.push(day)
-    }
-
-    // 3. travel_day_places 생성
-    if (places && places.length > 0) {
-      // UUID 형식 검증 함수
-      const isValidUUID = (str: string): boolean => {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-        return uuidRegex.test(str)
-      }
-
-      // place_id 유효성 검증 (UUID 형식만 필터링)
-      const validPlaceIds: string[] = places
-        .map((p: { place_id: string }) => p.place_id)
-        .filter((id: string | undefined): id is string => typeof id === "string" && isValidUUID(id))
-
-      if (validPlaceIds.length > 0) {
-        const { data: existingPlaces, error: checkError } = await supabase
-          .from("places")
-          .select("id")
-          .in("id", validPlaceIds)
-
-        if (checkError) {
-          console.error("Error checking places:", checkError)
-          throw new Error(`장소 확인 중 오류가 발생했습니다: ${checkError.message}`)
-        }
-
-        const existingPlaceIds = new Set(existingPlaces?.map(p => p.id) || [])
-
-        const placesToInsert = places
-          .map((p: { place_id: string; day_number: number; order_index: number }) => {
-            // UUID 형식 검증
-            if (!p.place_id || !isValidUUID(p.place_id)) {
-              console.warn(`Invalid UUID format for place_id: ${p.place_id}`)
-              return null
-            }
-
-            // places 테이블에 존재하는지 확인
-            if (!existingPlaceIds.has(p.place_id)) {
-              console.warn(`Place not found in database: ${p.place_id}`)
-              return null
-            }
-
-            const day = days.find(d => d.day_number === p.day_number)
-            if (!day) {
-              console.warn(`Day not found for day_number: ${p.day_number}`)
-              return null
-            }
-
-            return {
-              travel_day_id: day.id,
-              place_id: p.place_id,
-              order_index: p.order_index ?? 0,
-            }
-          })
-          .filter(Boolean)
-
-        if (placesToInsert.length > 0) {
-          const { error: placesError } = await supabase
-            .from("travel_day_places")
-            .insert(placesToInsert)
-
-          if (placesError) {
-            console.error("Error inserting travel_day_places:", placesError)
-            throw new Error(`장소 추가 중 오류가 발생했습니다: ${placesError.message}`)
-          }
-        } else {
-          console.warn("No valid places to insert after validation")
-        }
-      } else {
-        console.warn("No valid UUID place_ids found in places array")
-      }
-    }
-
-    // 4. budget_items 생성
-    if (budget_items && budget_items.length > 0) {
-      const budgetItemsToInsert = budget_items.map(
-        (item: { category: string; name: string; planned_amount: number }) => {
-          // 첫 번째 일차에 연결 (또는 전체 계획에)
-          const firstDay = days[0]
-          return {
-            travel_plan_id: plan.id,
-            travel_day_id: firstDay?.id || null,
-            category: item.category,
-            name: item.name,
-            planned_amount: item.planned_amount,
-          }
-        }
-      )
-
-      const { error: budgetError } = await supabase.from("budget_items").insert(budgetItemsToInsert)
-
-      if (budgetError) throw budgetError
-    }
-
-    // 5. 캘린더에 자동으로 일정 추가
+    // 5. 캘린더에 자동으로 일정 추가 (트랜잭션 외부 - 실패해도 무시)
     try {
-      // 커플 정보 가져오기
       const { data: couple } = await supabase
         .from("couples")
         .select("id")
@@ -179,7 +204,6 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (couple) {
-        // 공유 캘린더 가져오기 (없으면 생성)
         let { data: calendar } = await supabase
           .from("shared_calendars")
           .select("*")
@@ -188,8 +212,7 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (!calendar) {
-          // 기본 캘린더 생성
-          const { data: newCalendar, error: calendarError } = await supabase
+          const { data: newCalendar } = await supabase
             .from("shared_calendars")
             .insert({
               couple_id: couple.id,
@@ -200,18 +223,17 @@ export async function POST(request: NextRequest) {
             .select()
             .single()
 
-          if (!calendarError && newCalendar) {
+          if (newCalendar) {
             calendar = newCalendar
           }
         }
 
         if (calendar) {
-          // 캘린더 이벤트 생성
           const startDateTime = new Date(start_date)
-          startDateTime.setHours(9, 0, 0, 0) // 오전 9시로 설정
+          startDateTime.setHours(9, 0, 0, 0)
 
           const endDateTime = new Date(end_date)
-          endDateTime.setHours(23, 59, 59, 999) // 오후 11시 59분으로 설정
+          endDateTime.setHours(23, 59, 59, 999)
 
           await supabase.from("calendar_events").insert({
             calendar_id: calendar.id,
@@ -225,38 +247,35 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch (calendarError) {
-      // 캘린더 추가 실패해도 여행 계획 생성은 성공으로 처리
-      console.error("Failed to add to calendar:", calendarError)
+      // 캘린더 추가 실패는 로그만 남기고 계속 진행
+      console.error("Failed to add to calendar (non-critical):", calendarError)
     }
 
-    // 6. 코스인 경우 user_courses에도 자동 저장 (프로필에서 보이도록)
+    // 6. 코스인 경우 user_courses에도 자동 저장 (트랜잭션 외부 - 실패해도 무시)
     if (course_type === "date" || course_type === "travel") {
       try {
         await createUserCourseFromTravelPlan(plan.id, user.id, {
-          isPublic: false, // 기본적으로 비공개
+          isPublic: false,
           title: title,
           description: description,
         })
-        console.log(`[TravelPlans] User course created from travel plan: ${plan.id}`)
       } catch (courseError) {
-        // user_course 생성 실패해도 travel_plan 생성은 성공으로 처리
-        console.error("Failed to create user course from travel plan:", courseError)
+        // user_course 생성 실패는 로그만 남기고 계속 진행
+        console.error("Failed to create user course (non-critical):", courseError)
       }
     }
 
     return NextResponse.json({ plan })
   } catch (error) {
-    console.error("Error creating travel plan:", error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "여행 계획 생성 중 오류가 발생했습니다" },
-      { status: 500 }
-    )
+    const { handleError, logError } = await import("@/lib/errors/error-handler")
+    logError(error, "TravelPlan POST")
+    return handleError(error)
   }
 }
 
 /**
  * GET /api/travel-plans
- * 내 여행 계획 목록 조회
+ * 내 여행 계획 목록 조회 (캐싱 적용)
  */
 export async function GET(_request: NextRequest) {
   try {
@@ -269,6 +288,16 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 })
     }
 
+    // 캐시 키 생성
+    const cacheKey = `travel-plans:${user.id}`
+    const { queryCache } = await import("@lovetrip/planner/services/query-cache")
+
+    // 캐시 확인
+    const cached = queryCache.get<Array<unknown>>(cacheKey)
+    if (cached) {
+      return NextResponse.json({ plans: cached })
+    }
+
     const { data: plans, error } = await supabase
       .from("travel_plans")
       .select("*")
@@ -277,15 +306,15 @@ export async function GET(_request: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.json({ plans: plans || [] })
+    const plansData = plans || []
+
+    // 캐시 저장 (3분)
+    queryCache.set(cacheKey, plansData, 3 * 60 * 1000)
+
+    return NextResponse.json({ plans: plansData })
   } catch (error) {
-    console.error("Error fetching travel plans:", error)
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "여행 계획을 불러오는 중 오류가 발생했습니다",
-      },
-      { status: 500 }
-    )
+    const { handleError, logError } = await import("@/lib/errors/error-handler")
+    logError(error, "TravelPlan GET")
+    return handleError(error)
   }
 }

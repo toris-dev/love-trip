@@ -42,19 +42,40 @@ export async function GET(request: NextRequest) {
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("status", "completed"),
-      // 방문한 장소 수 (travel_day_places를 통해)
-      supabase
-        .from("travel_plans")
-        .select(
-          `
-            id,
-            travel_days (
-              id,
-              travel_day_places (place_id)
-            )
-          `
-        )
-        .eq("user_id", user.id),
+      // 방문한 장소 수 (최적화: 직접 조회)
+      (async () => {
+        // 1. 사용자의 travel_plan_ids 조회
+        const { data: plans } = await supabase
+          .from("travel_plans")
+          .select("id")
+          .eq("user_id", user.id)
+
+        if (!plans || plans.length === 0) {
+          return { data: [], error: null }
+        }
+
+        const planIds = plans.map(p => p.id)
+
+        // 2. travel_day_ids 조회
+        const { data: days } = await supabase
+          .from("travel_days")
+          .select("id")
+          .in("travel_plan_id", planIds)
+
+        if (!days || days.length === 0) {
+          return { data: [], error: null }
+        }
+
+        const dayIds = days.map(d => d.id)
+
+        // 3. travel_day_places에서 고유한 place_id 조회
+        const { data: places, error: placesError } = await supabase
+          .from("travel_day_places")
+          .select("place_id")
+          .in("travel_day_id", dayIds)
+
+        return { data: places, error: placesError }
+      })(),
       // 배지 수
       supabase
         .from("user_badges")
@@ -66,15 +87,11 @@ export async function GET(request: NextRequest) {
 
     // 방문한 장소 수 계산 (중복 제거)
     const visitedPlaceIds = new Set<string>()
-    if (placesResult.data) {
-      placesResult.data.forEach(plan => {
-        plan.travel_days?.forEach((day: any) => {
-          day.travel_day_places?.forEach((place: any) => {
-            if (place.place_id) {
-              visitedPlaceIds.add(place.place_id)
-            }
-          })
-        })
+    if (placesResult.data && Array.isArray(placesResult.data)) {
+      placesResult.data.forEach((place: { place_id?: string }) => {
+        if (place.place_id) {
+          visitedPlaceIds.add(place.place_id)
+        }
       })
     }
 

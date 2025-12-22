@@ -166,15 +166,13 @@ export async function createUserCourseFromTravelPlan(
   }
 
   // 2. travel_days 및 places 가져오기
+  // places 테이블이 삭제되었으므로 travel_day_places만 조회
   const { data: travelDays } = await supabase
     .from("travel_days")
     .select(
       `
       *,
-      travel_day_places (
-        *,
-        place:places (*)
-      )
+      travel_day_places (*)
     `
     )
     .eq("travel_plan_id", travelPlanId)
@@ -406,15 +404,10 @@ export async function getUserCourseWithPlaces(
   }
 
   // 장소 정보 조회 (하이브리드 방식)
-  // place_id가 있으면 places 테이블과 조인, 없으면 저장된 정보 사용
+  // places 테이블이 삭제되었으므로 저장된 정보만 사용
   const { data: coursePlaces, error: placesError } = await supabase
     .from("user_course_places")
-    .select(
-      `
-      *,
-      place:places (*)
-    `
-    )
+    .select("*")
     .eq("user_course_id", courseId)
     .order("day_number", { ascending: true })
     .order("order_index", { ascending: true })
@@ -422,43 +415,21 @@ export async function getUserCourseWithPlaces(
   if (placesError) throw placesError
 
   // 하이브리드 방식: place_id가 없으면 저장된 정보로 Place 객체 생성
+  // places 테이블이 삭제되었으므로 저장된 정보만 사용
   const placesWithFallback = (coursePlaces || []).map(cp => {
-    // place_id가 있고 places 테이블에서 조회된 경우
-    if (cp.place_id && cp.place) {
-      return { ...cp, place: cp.place }
-    }
-
-    // place_id가 없고 저장된 정보가 있는 경우
-    if (!cp.place_id && cp.place_name && cp.place_lat && cp.place_lng) {
+    // 저장된 정보가 있는 경우
+    if (cp.place_name && cp.place_lat && cp.place_lng) {
       const placeFromStored: Place = {
-        id: `stored-${cp.id}`, // 임시 ID
+        id: `stored-${cp.id}`,
         name: cp.place_name,
         lat: Number(cp.place_lat),
         lng: Number(cp.place_lng),
         type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
-        rating: cp.place_rating ? Number(cp.place_rating) : 0,
-        price_level: cp.place_price_level ? Number(cp.place_price_level) : 0,
-        description: cp.place_description || "",
+        rating: cp.place_rating ? Number(cp.place_rating) : null,
+        price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
+        description: cp.place_description || null,
         image_url: cp.place_image_url || null,
         address: cp.place_address || null,
-        tour_content_id: null,
-        tour_content_type_id: null,
-        area_code: null,
-        sigungu_code: null,
-        category1: null,
-        category2: null,
-        category3: null,
-        homepage: null,
-        phone: null,
-        opening_hours: null,
-        zipcode: null,
-        overview: null,
-        created_time: null,
-        modified_time: null,
-        map_level: null,
-        course_type: null,
-        created_at: null,
-        updated_at: null,
       }
       return { ...cp, place: placeFromStored }
     }

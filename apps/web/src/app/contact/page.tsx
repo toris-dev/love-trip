@@ -1,6 +1,23 @@
+import type { Metadata } from "next"
 import { Mail, MessageSquare } from "lucide-react"
 import { Card, CardContent } from "@lovetrip/ui/components/card"
 import { ContactForm } from "@/components/features/contact/contact-form"
+
+export const metadata: Metadata = {
+  title: "문의하기",
+  description:
+    "LOVETRIP에 대한 궁금한 점이나 문의사항이 있으시면 언제든지 연락주세요. 빠르게 답변드리겠습니다.",
+  keywords: ["문의", "고객지원", "연락처", "FAQ", "LOVETRIP 문의"],
+  openGraph: {
+    title: "문의하기 | LOVETRIP",
+    description: "궁금한 점이나 문의사항이 있으시면 언제든지 연락주세요.",
+    url: "https://lovetrip.vercel.app/contact",
+    type: "website",
+  },
+  alternates: {
+    canonical: "/contact",
+  },
+}
 
 const contactInfo = [
   {

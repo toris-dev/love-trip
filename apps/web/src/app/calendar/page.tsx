@@ -1,8 +1,18 @@
+import type { Metadata } from "next"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { CalendarPageClient } from "@/components/features/calendar/calendar-page-client"
 import { calendarService } from "@lovetrip/couple/services"
 import type { Couple, SharedCalendar } from "@lovetrip/couple/services"
 import type { PartnerInfo, CurrentUserInfo } from "@/components/features/calendar/types"
+
+export const metadata: Metadata = {
+  title: "캘린더",
+  description: "커플과 함께 공유하는 캘린더로 일정을 관리하고 특별한 날을 기억하세요.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 async function getCalendarData(userId: string) {
   const supabase = await createClient()
@@ -86,8 +96,8 @@ export default async function CalendarPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-      return null
-    }
+    return null
+  }
 
   const { couple, calendars, partnerInfo, currentUserInfo } = await getCalendarData(user.id)
 
@@ -98,6 +108,6 @@ export default async function CalendarPage() {
       initialPartnerInfo={partnerInfo}
       initialCurrentUserInfo={currentUserInfo}
       user={user ? { id: user.id, email: user.email } : null}
-      />
+    />
   )
 }

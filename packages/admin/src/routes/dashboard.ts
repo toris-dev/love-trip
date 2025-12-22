@@ -6,30 +6,9 @@ const router = Router()
 // 대시보드 데이터 조회
 router.get("/stats", async (req: Request, res: Response) => {
   try {
-    // 전체 장소 수
-    let totalPlaces = 0
-    try {
-      const { count, error } = await supabase
-        .from("places")
-        .select("*", { count: "exact", head: true })
-      if (!error) totalPlaces = count || 0
-    } catch (error) {
-      console.error("Failed to get total places:", error)
-    }
-
-    // 최근 24시간 내 추가된 장소 수
-    let recentPlaces = 0
-    try {
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      const { count, error } = await supabase
-        .from("places")
-        .select("*", { count: "exact", head: true })
-        .gte("created_at", yesterday.toISOString())
-      if (!error) recentPlaces = count || 0
-    } catch (error) {
-      console.error("Failed to get recent places:", error)
-    }
+    // places 테이블이 삭제되어 통계를 제공할 수 없음
+    const totalPlaces = 0
+    const recentPlaces = 0
 
     res.json({
       success: true,

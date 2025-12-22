@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Heart, Sparkles, Users, MapPin, Target, Zap, Shield, Globe, Wallet } from "lucide-react"
 import {
   Card,
@@ -8,6 +9,22 @@ import {
 } from "@lovetrip/ui/components/card"
 import { Button } from "@lovetrip/ui/components/button"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: "소개",
+  description:
+    "LOVETRIP은 커플을 위한 완벽한 여행 계획 서비스입니다. AI 기반 맞춤 추천, 실시간 지도 연동, 스마트 예산 관리 등 다양한 기능을 제공합니다.",
+  keywords: ["LOVETRIP", "커플여행", "여행계획", "데이트코스", "여행앱", "커플앱", "여행서비스"],
+  openGraph: {
+    title: "소개 | LOVETRIP",
+    description: "커플을 위한 완벽한 여행 계획 서비스로, 특별한 순간을 함께 만들어가세요.",
+    url: "https://lovetrip.vercel.app/about",
+    type: "website",
+  },
+  alternates: {
+    canonical: "/about",
+  },
+}
 
 const features = [
   {

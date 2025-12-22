@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { updateBudgetItem, deleteBudgetItem } from "@lovetrip/expense/services"
+import { updateBudgetItemSchema } from "@lovetrip/shared/schemas"
+import { validateRequest } from "@/lib/validation/validate-request"
 import type { Database } from "@lovetrip/shared/types/database"
 
 type BudgetItemUpdate = Database["public"]["Tables"]["budget_items"]["Update"]
@@ -49,21 +51,13 @@ export async function PUT(
       return NextResponse.json({ error: "예산 항목을 찾을 수 없습니다" }, { status: 404 })
     }
 
-    const body = await request.json()
-    const updates: BudgetItemUpdate = {}
+    // 입력 검증
+    const validation = await validateRequest(request, updateBudgetItemSchema)
+    if (!validation.success) {
+      return validation.error
+    }
 
-    if (body.category !== undefined) {
-      updates.category = body.category
-    }
-    if (body.name !== undefined) {
-      updates.name = body.name
-    }
-    if (body.planned_amount !== undefined) {
-      updates.planned_amount = Number(body.planned_amount)
-    }
-    if (body.travel_day_id !== undefined) {
-      updates.travel_day_id = body.travel_day_id || null
-    }
+    const updates: BudgetItemUpdate = validation.data
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: "수정할 데이터가 없습니다" }, { status: 400 })

@@ -13,5 +13,6 @@ export interface TravelCourse {
   place_count: number
   places: Place[]
   duration: string // "1박2일", "2박3일" 등
+  min_price?: number | null
+  max_price?: number | null
 }
-

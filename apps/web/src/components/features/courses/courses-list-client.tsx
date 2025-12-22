@@ -14,6 +14,8 @@ import { ShareButton } from "@/components/shared/share-button"
 import type { UserCourseWithAuthor } from "@lovetrip/shared/types"
 import { motion, AnimatePresence } from "framer-motion"
 import { Sparkles } from "lucide-react"
+import { formatPriceRange } from "@/lib/format-price"
+import { Wallet } from "lucide-react"
 
 interface CoursesListClientProps {
   initialCourses: UserCourseWithAuthor[]
@@ -431,7 +433,7 @@ export function CoursesListClient({
                       </CardHeader>
                       <CardContent className="p-5 pt-2 space-y-4 relative z-10">
                         <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-primary/10 text-primary font-medium">
                               <MapPin className="h-3.5 w-3.5" />
                               <span>{course.region}</span>
@@ -444,6 +446,12 @@ export function CoursesListClient({
                                 <Crown className="h-3 w-3" />
                                 프리미엄
                               </Badge>
+                            )}
+                            {formatPriceRange(course.min_price, course.max_price) && (
+                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 font-medium border border-green-200 dark:border-green-900/30">
+                                <Wallet className="h-3.5 w-3.5" />
+                                <span>{formatPriceRange(course.min_price, course.max_price)}</span>
+                              </div>
                             )}
                           </div>
                           <div className="flex items-center gap-3">

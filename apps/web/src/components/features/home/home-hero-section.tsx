@@ -9,23 +9,23 @@ export function HomeHeroSection() {
   return (
     <div className="relative text-center mb-24 pt-10">
       {/* Background Elements */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/20 blur-[100px] rounded-full -z-10 opacity-50 animate-pulse" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[200px] sm:w-[500px] sm:h-[300px] md:w-[600px] md:h-[400px] lg:w-[800px] lg:h-[500px] bg-primary/20 blur-[50px] sm:blur-[70px] md:blur-[90px] lg:blur-[100px] rounded-full -z-10 opacity-50 animate-pulse" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-white/50 dark:bg-black/50 backdrop-blur-sm border border-primary/20 text-primary mb-8 shadow-sm"
+        className="inline-flex items-center gap-2 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full bg-white/50 dark:bg-black/50 backdrop-blur-sm border border-primary/20 text-primary mb-6 sm:mb-8 shadow-sm"
       >
-        <Sparkles className="h-4 w-4 animate-spin-slow" />
-        <span className="text-sm font-medium">커플을 위한 AI 여행 플래너</span>
+        <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin-slow" />
+        <span className="text-xs sm:text-sm font-medium">커플을 위한 AI 여행 플래너</span>
       </motion.div>
 
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="text-5xl md:text-7xl font-extrabold mb-8 tracking-tight"
+        className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold mb-6 sm:mb-8 tracking-tight px-4"
       >
         <span className="bg-gradient-to-r from-primary via-indigo-600 to-blue-600 bg-clip-text text-transparent">
           우리만의 특별한
@@ -38,10 +38,10 @@ export function HomeHeroSection() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed"
+        className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-4"
       >
         복잡한 계획은 AI에게 맡기고,
-        <br className="hidden md:block" />
+        <br className="hidden sm:block" />
         오직 서로에게 집중하는 시간을 선물하세요.
       </motion.p>
 
@@ -49,18 +49,22 @@ export function HomeHeroSection() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
-        className="flex flex-col sm:flex-row items-center justify-center gap-4"
+        className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4"
       >
-        <Link href="/date?type=date">
-          <Button size="lg" variant="glow" className="rounded-full px-8 h-12 text-lg">
+        <Link href="/date?type=date" className="w-full sm:w-auto">
+          <Button
+            size="lg"
+            variant="glow"
+            className="rounded-full px-6 sm:px-8 h-11 sm:h-12 text-base sm:text-lg w-full sm:w-auto touch-manipulation"
+          >
             코스 구경하기
           </Button>
         </Link>
-        <Link href="/planner">
+        <Link href="/planner" className="w-full sm:w-auto">
           <Button
             size="lg"
             variant="outline"
-            className="rounded-full px-8 h-12 text-lg border-primary/20 hover:bg-primary/5"
+            className="rounded-full px-6 sm:px-8 h-11 sm:h-12 text-base sm:text-lg border-primary/20 hover:bg-primary/5 w-full sm:w-auto touch-manipulation"
           >
             여행 계획하기
           </Button>

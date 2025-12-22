@@ -18,16 +18,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { id: placeId } = await params
 
-    // 장소 존재 확인
-    const { data: place, error: placeError } = await supabase
-      .from("places")
-      .select("id")
-      .eq("id", placeId)
-      .single()
-
-    if (placeError || !place) {
-      return NextResponse.json({ error: "장소를 찾을 수 없습니다" }, { status: 404 })
-    }
+    // places 테이블이 삭제되어 장소 존재 확인 불가
+    // place_id는 유효한지 확인만 하고, 실제 places 테이블 조회는 하지 않음
 
     // 이미 즐겨찾기에 있는지 확인
     const { data: existing } = await supabase
@@ -42,18 +34,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // 즐겨찾기 추가
+    // places 테이블이 삭제되어 조인 제거
     const { data, error } = await supabase
       .from("place_favorites")
       .insert({
         user_id: user.id,
         place_id: placeId,
       })
-      .select(
-        `
-        *,
-        places (*)
-      `
-      )
+      .select("*")
       .single()
 
     if (error) {

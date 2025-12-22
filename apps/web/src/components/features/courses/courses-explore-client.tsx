@@ -295,6 +295,15 @@ export function CoursesExploreClient({
                             <MapPin className="h-3 w-3 mr-1" />
                             {course.region}
                           </Badge>
+                          {formatPriceRange(course.min_price, course.max_price) && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900/30"
+                            >
+                              <Wallet className="h-3 w-3 mr-1" />
+                              {formatPriceRange(course.min_price, course.max_price)}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
