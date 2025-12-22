@@ -30,45 +30,32 @@ import {
   AlertCircle,
   ChevronRight,
   Loader2,
+  Wallet,
 } from "lucide-react"
+import { formatPriceRange } from "@/lib/format-price"
 import { createClient } from "@lovetrip/api/supabase/client"
 import { getCoupleRecommendations } from "@lovetrip/recommendation/services"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import dynamic from "next/dynamic"
-import type { Database } from "@lovetrip/shared/types/database"
-import {
-  TravelSidebar,
-  type Place as TravelPlace,
-  type TravelCourse,
-} from "@lovetrip/planner/components/travel"
+import { TravelSidebar, type Place as TravelPlace } from "@lovetrip/planner/components/travel"
+import type { CourseFilters as CourseFiltersType } from "./course-filters"
+import type {
+  Place,
+  DateCourse,
+  TravelCourseWithPlaces,
+  TravelCoursePlace,
+} from "@lovetrip/shared/types/course"
 
 const NaverMapView = dynamic(() => import("@/components/shared/naver-map-view"), { ssr: false })
 
 const ITEMS_PER_PAGE = 10
 
-type Place = Database["public"]["Tables"]["places"]["Row"] & {
-  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
-}
-
-type DateCourse = {
-  id: string
-  title: string
-  region: string
-  description?: string
-  image_url?: string | null
-  place_count: number
-  places: Place[]
-  duration: string
-  total_distance_km?: number | null
-  max_distance_km?: number | null
-}
-
 interface CoursesPageClientProps {
   initialDateCourses: DateCourse[]
   initialDateHasMore: boolean
   initialDateTotalCount: number
-  initialTravelCourses: TravelCourse[]
+  initialTravelCourses: TravelCourseWithPlaces[]
   initialTravelHasMore: boolean
   initialTravelTotalCount: number
   initialCourseType: "date" | "travel"
@@ -93,25 +80,33 @@ export function CoursesPageClient({
   const isMobile = useIsMobile()
 
   // Date Course 상태
-  const [dateCourses] = useState<DateCourse[]>(initialDateCourses)
-  const [_filteredDateCourses, setFilteredDateCourses] = useState<DateCourse[]>(initialDateCourses)
+  const [dateCourses, setDateCourses] = useState<DateCourse[]>(initialDateCourses)
+  const [, setFilteredDateCourses] = useState<DateCourse[]>(initialDateCourses)
   const [displayedDateCourses, setDisplayedDateCourses] = useState<DateCourse[]>(
     initialDateCourses.slice(0, ITEMS_PER_PAGE)
   )
+
   const [selectedDateCourse, setSelectedDateCourse] = useState<DateCourse | null>(null)
   const [dateSearchQuery, setDateSearchQuery] = useState("")
   const [dateHasMore, setDateHasMore] = useState(initialDateHasMore)
-  const [_datePage, setDatePage] = useState(0)
+  const [datePage, setDatePage] = useState(0)
   const [dateIsLoading] = useState(false)
-  const [dateIsLoadingMore] = useState(false)
+  const [dateIsLoadingMore, setDateIsLoadingMore] = useState(false)
   const [dateError] = useState<string | null>(null)
+  const [dateFilters, _setDateFilters] = useState<CourseFiltersType>({})
 
   // Travel Course 상태
-  const [travelCourses] = useState<TravelCourse[]>(initialTravelCourses)
-  const [selectedTravelCourse, setSelectedTravelCourse] = useState<TravelCourse | null>(null)
+  const [travelCourses, setTravelCourses] = useState<TravelCourseWithPlaces[]>(initialTravelCourses)
+  const [selectedTravelCourse, setSelectedTravelCourse] = useState<TravelCourseWithPlaces | null>(
+    null
+  )
   const [travelSearchQuery, setTravelSearchQuery] = useState("")
   const [travelIsLoading] = useState(false)
-  const [travelError] = useState<string | null>(null)
+  const [travelIsLoadingMore, setTravelIsLoadingMore] = useState(false)
+  const [travelHasMore, setTravelHasMore] = useState(_initialTravelHasMore)
+  const [travelPage, setTravelPage] = useState(0)
+  const [travelError, setTravelError] = useState<string | null>(null)
+  const [_travelFilters, _setTravelFilters] = useState<CourseFiltersType>({})
 
   // 공통 상태
   const [selectedPlace, setSelectedPlace] = useState<Place | TravelPlace | null>(null)
@@ -167,6 +162,8 @@ export function CoursesPageClient({
     image: string
   } | null>(null)
   const observerTarget = useRef<HTMLDivElement>(null)
+  const dateScrollContainerRef = useRef<HTMLDivElement>(null)
+  const [dateScrollPosition, setDateScrollPosition] = useState<number>(0)
 
   // 쿼리 파라미터 변경 시 코스 선택 초기화
   useEffect(() => {
@@ -220,16 +217,139 @@ export function CoursesPageClient({
   }
 
   const handleDateCourseSelect = (course: DateCourse) => {
+    // 현재 스크롤 위치 저장
+    if (dateScrollContainerRef.current) {
+      setDateScrollPosition(dateScrollContainerRef.current.scrollTop)
+    }
     setSelectedDateCourse(course)
     setSelectedTravelCourse(null)
     setSelectedPlace(null)
   }
 
-  const handleTravelCourseSelect = (course: TravelCourse) => {
+  const handleTravelCourseSelect = (course: TravelCourseWithPlaces) => {
     setSelectedTravelCourse(course)
     setSelectedDateCourse(null)
     setSelectedPlace(null)
   }
+
+  const loadMoreTravelCourses = useCallback(async () => {
+    if (travelIsLoadingMore || !travelHasMore) return
+
+    setTravelIsLoadingMore(true)
+    setTravelError(null)
+
+    try {
+      const supabase = createClient()
+      const nextPage = travelPage + 1
+      const from = nextPage * ITEMS_PER_PAGE
+      const to = from + ITEMS_PER_PAGE - 1
+
+      const {
+        data: coursesData,
+        error: coursesError,
+        count,
+      } = await supabase
+        .from("travel_courses")
+        .select(
+          `
+          *,
+          travel_course_places (
+            order_index,
+            day_number,
+            distance_from_previous_km,
+            visit_duration_minutes,
+            place_id,
+            place_name,
+            place_lat,
+            place_lng,
+            place_address,
+            place_type,
+            place_rating,
+            place_price_level,
+            place_image_url,
+            place_description
+          )
+        `,
+          { count: "exact" }
+        )
+        .order("region")
+        .range(from, to)
+
+      if (coursesError) {
+        setTravelError(coursesError.message)
+        return
+      }
+
+      const totalCount = count || 0
+      setTravelHasMore(to < totalCount - 1)
+
+      type TravelCourseData = {
+        id: string
+        title: string
+        region: string
+        description: string | null
+        image_url?: string | null
+        place_count: number
+        duration?: string | null
+        min_price?: number | null
+        max_price?: number | null
+        travel_course_places: TravelCoursePlace[]
+      }
+
+      const newCourses: TravelCourseWithPlaces[] = ((coursesData as TravelCourseData[]) || [])
+        .filter(course => course.place_count > 0)
+        .map(course => {
+          const sortedPlaces = (course.travel_course_places || [])
+            .sort((a: TravelCoursePlace, b: TravelCoursePlace) => {
+              if (a.day_number !== b.day_number) {
+                return (a.day_number || 0) - (b.day_number || 0)
+              }
+              return a.order_index - b.order_index
+            })
+            .map((tcp: TravelCoursePlace) => {
+              if (!tcp.place_id && tcp.place_name && tcp.place_lat && tcp.place_lng) {
+                return {
+                  id: `stored-${tcp.order_index}`,
+                  name: tcp.place_name,
+                  lat: Number(tcp.place_lat),
+                  lng: Number(tcp.place_lng),
+                  type: (tcp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
+                  rating: tcp.place_rating ? Number(tcp.place_rating) : 0,
+                  price_level: tcp.place_price_level ? Number(tcp.place_price_level) : 0,
+                  description: tcp.place_description || "",
+                  image_url: tcp.place_image_url || null,
+                  address: tcp.place_address || null,
+                }
+              }
+              return null
+            })
+            .filter((p): p is TravelPlace => p !== null)
+
+          return {
+            id: course.id,
+            title: course.title,
+            region: course.region,
+            description: course.description || undefined,
+            image_url: course.image_url,
+            place_count: course.place_count,
+            places: sortedPlaces,
+            duration: course.duration || "",
+            min_price: course.min_price ?? null,
+            max_price: course.max_price ?? null,
+          }
+        })
+
+      setTravelCourses(prev => [...prev, ...newCourses])
+      setTravelPage(nextPage)
+    } catch (error) {
+      console.error("Failed to load more travel courses:", error)
+      setTravelError(
+        error instanceof Error ? error.message : "코스를 불러오는 중 오류가 발생했습니다."
+      )
+    } finally {
+      setTravelIsLoadingMore(false)
+    }
+  }, [travelPage, travelHasMore, travelIsLoadingMore])
 
   const handlePlaceClick = async (place: Place | TravelPlace) => {
     setSelectedPlace(place)
@@ -358,9 +478,175 @@ export function CoursesPageClient({
     }
   }
 
+  const loadMoreDateCourses = useCallback(async () => {
+    if (dateIsLoadingMore || !dateHasMore || dateSearchQuery.trim()) return
+
+    setDateIsLoadingMore(true)
+    try {
+      const supabase = createClient()
+      const nextPage = datePage + 1
+      const from = nextPage * ITEMS_PER_PAGE
+      const to = from + ITEMS_PER_PAGE - 1
+
+      // date_courses와 user_courses를 병렬로 조회
+      const [dateCoursesResult, userCoursesResult] = await Promise.all([
+        supabase
+          .from("date_courses")
+          .select("*", { count: "exact" })
+          .order("region", { ascending: true })
+          .order("created_at", { ascending: false })
+          .range(from, to),
+        supabase
+          .from("user_courses")
+          .select("*", { count: "exact" })
+          .eq("course_type", "date")
+          .eq("is_public", true)
+          .eq("status", "published")
+          .order("created_at", { ascending: false })
+          .range(from, to),
+      ])
+
+      if (dateCoursesResult.error) {
+        throw dateCoursesResult.error
+      }
+
+      const dateCoursesData = dateCoursesResult.data || []
+      const userCoursesData = userCoursesResult.data || []
+      const totalCount = (dateCoursesResult.count || 0) + (userCoursesResult.count || 0)
+      setDateHasMore(to < totalCount - 1)
+
+      // date_courses 처리
+      const dateCoursesWithPlaces = await Promise.all(
+        dateCoursesData.map(async course => {
+          const { data: placesData } = await supabase
+            .from("date_course_places")
+            .select(
+              "place_id, place_name, place_lat, place_lng, place_address, place_type, place_rating, place_price_level, place_image_url, place_description, order_index, distance_from_previous_km, visit_duration_minutes"
+            )
+            .eq("date_course_id", course.id)
+            .order("order_index", { ascending: true })
+
+          if (!placesData || placesData.length === 0) return null
+
+          const sortedPlaces =
+            placesData
+              ?.map(cp => {
+                if (cp.place_name && cp.place_lat && cp.place_lng) {
+                  return {
+                    id: `stored-${cp.order_index}`,
+                    name: cp.place_name,
+                    lat: Number(cp.place_lat),
+                    lng: Number(cp.place_lng),
+                    type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
+                    rating: cp.place_rating ? Number(cp.place_rating) : null,
+                    price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
+                    description: cp.place_description || null,
+                    image_url: cp.place_image_url || null,
+                    address: cp.place_address || null,
+                  } as Place
+                }
+                return null
+              })
+              .filter((p): p is Place => p !== null) || []
+
+          return {
+            id: course.id,
+            title: course.title,
+            region: course.region,
+            description: course.description || "",
+            image_url: course.image_url,
+            place_count: course.place_count,
+            places: sortedPlaces,
+            duration: course.duration,
+            total_distance_km: course.total_distance_km,
+            max_distance_km: course.max_distance_km,
+            min_price: course.min_price ?? null,
+            max_price: course.max_price ?? null,
+          } as DateCourse
+        })
+      )
+
+      // user_courses 처리
+      const userCoursesWithPlaces = await Promise.all(
+        userCoursesData.map(async course => {
+          const { data: placesData } = await supabase
+            .from("user_course_places")
+            .select(
+              "place_id, place_name, place_lat, place_lng, place_address, place_type, place_rating, place_price_level, place_image_url, place_description, order_index, visit_duration_minutes"
+            )
+            .eq("user_course_id", course.id)
+            .order("order_index", { ascending: true })
+
+          if (!placesData || placesData.length === 0) return null
+
+          const sortedPlaces =
+            placesData
+              ?.map(cp => {
+                if (cp.place_name && cp.place_lat && cp.place_lng) {
+                  return {
+                    id: `stored-${cp.order_index}`,
+                    name: cp.place_name,
+                    lat: Number(cp.place_lat),
+                    lng: Number(cp.place_lng),
+                    type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
+                    rating: cp.place_rating ? Number(cp.place_rating) : null,
+                    price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
+                    description: cp.place_description || null,
+                    image_url: cp.place_image_url || null,
+                    address: cp.place_address || null,
+                  } as Place
+                }
+                return null
+              })
+              .filter((p): p is Place => p !== null) || []
+
+          return {
+            id: course.id,
+            title: course.title,
+            region: course.region,
+            description: course.description || "",
+            image_url: course.image_url,
+            place_count: course.place_count || sortedPlaces.length,
+            places: sortedPlaces,
+            duration: course.duration || "당일 코스",
+            total_distance_km: null,
+            max_distance_km: null,
+            min_price: course.min_price ?? null,
+            max_price: course.max_price ?? null,
+          } as DateCourse
+        })
+      )
+
+      // 두 소스의 코스를 통합
+      const courseMap = new Map<string, DateCourse>()
+      dateCoursesWithPlaces
+        .filter((c): c is DateCourse => c !== null)
+        .forEach(course => {
+          courseMap.set(course.id, course)
+        })
+      userCoursesWithPlaces
+        .filter((c): c is DateCourse => c !== null)
+        .forEach(course => {
+          if (!courseMap.has(course.id)) {
+            courseMap.set(course.id, course)
+          }
+        })
+
+      const newCourses = Array.from(courseMap.values())
+      setDateCourses(prev => [...prev, ...newCourses])
+      setDisplayedDateCourses(prev => [...prev, ...newCourses])
+      setDatePage(nextPage)
+    } catch (error) {
+      console.error("Failed to load more courses:", error)
+    } finally {
+      setDateIsLoadingMore(false)
+    }
+  }, [datePage, dateHasMore, dateIsLoadingMore, dateSearchQuery])
+
   const filterDateCourses = useCallback(() => {
     let filtered = [...dateCourses]
 
+    // 검색어 필터
     if (dateSearchQuery.trim()) {
       filtered = filtered.filter(
         course =>
@@ -370,15 +656,70 @@ export function CoursesPageClient({
       )
     }
 
+    // 추가 필터 적용
+    filtered = filtered.filter(course => {
+      if (
+        dateFilters.region &&
+        !course.region.toLowerCase().includes(dateFilters.region.toLowerCase())
+      ) {
+        return false
+      }
+      // DateCourse 타입에 rating 속성이 없으므로 필터 제거
+      // if (dateFilters.minRating && (course.rating || 0) < dateFilters.minRating) {
+      //   return false
+      // }
+      if (dateFilters.maxPrice && course.max_price && course.max_price > dateFilters.maxPrice) {
+        return false
+      }
+      if (dateFilters.placeTypes && dateFilters.placeTypes.length > 0) {
+        const coursePlaceTypes = course.places.map(p => p.type)
+        if (
+          !dateFilters.placeTypes.some(type => coursePlaceTypes.includes(type as Place["type"]))
+        ) {
+          return false
+        }
+      }
+      return true
+    })
+
     setFilteredDateCourses(filtered)
-    setDisplayedDateCourses(filtered.slice(0, ITEMS_PER_PAGE))
-    setDateHasMore(filtered.length > ITEMS_PER_PAGE)
-    setDatePage(0)
-  }, [dateCourses, dateSearchQuery])
+    if (dateSearchQuery.trim() || Object.keys(dateFilters).length > 0) {
+      setDisplayedDateCourses(filtered.slice(0, ITEMS_PER_PAGE))
+      setDateHasMore(false)
+      setDatePage(0)
+    }
+  }, [dateCourses, dateSearchQuery, dateFilters])
 
   useEffect(() => {
     filterDateCourses()
-  }, [filterDateCourses])
+  }, [filterDateCourses, dateFilters])
+
+  // IntersectionObserver 설정
+  useEffect(() => {
+    if (!observerTarget.current || !dateHasMore || dateIsLoadingMore || dateSearchQuery.trim())
+      return
+
+    const observer = new IntersectionObserver(
+      entries => {
+        if (
+          entries[0].isIntersecting &&
+          dateHasMore &&
+          !dateIsLoadingMore &&
+          !dateSearchQuery.trim()
+        ) {
+          loadMoreDateCourses()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentTarget = observerTarget.current
+    observer.observe(currentTarget)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [dateHasMore, dateIsLoadingMore, dateSearchQuery, loadMoreDateCourses])
 
   useEffect(() => {
     document.body.style.overflow = "hidden"
@@ -437,8 +778,8 @@ export function CoursesPageClient({
                   lng: location.lng,
                   type: "ETC" as const,
                 }
-                setCreatingCourses(
-                  creatingCourses.map(c =>
+                setCreatingCourses(prev =>
+                  prev.map(c =>
                     c.id === selectedCourseId ? { ...c, places: [...c.places, newPlace] } : c
                   )
                 )
@@ -469,6 +810,17 @@ export function CoursesPageClient({
                       <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       <span>{selectedCourse.place_count}개 장소</span>
                     </div>
+                    {formatPriceRange(selectedCourse.min_price, selectedCourse.max_price) && (
+                      <>
+                        <span>•</span>
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-900/30">
+                          <Wallet className="h-3 w-3" />
+                          <span className="text-xs font-medium">
+                            {formatPriceRange(selectedCourse.min_price, selectedCourse.max_price)}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
                 <Button
@@ -506,7 +858,11 @@ export function CoursesPageClient({
                         : index + 1
                     return (
                       <div
-                        key={place.id || index}
+                        key={
+                          place.id
+                            ? `${place.id}-${index}`
+                            : `place-${index}-${place.lat}-${place.lng}`
+                        }
                         className="flex items-start gap-2 p-2 sm:p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation"
                         onClick={() => handlePlaceClick(place)}
                       >
@@ -614,284 +970,361 @@ export function CoursesPageClient({
             <>
               {courseType === "date" ? (
                 <>
-                  <div className="p-4 sm:p-5 md:p-6 border-b border-border bg-card">
-                    <div className="flex items-center gap-3 sm:gap-4 mb-3">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Heart className="h-5 w-5 sm:h-6 sm:w-6 text-primary fill-primary" />
+                  {/* 선택된 데이트 코스 상세 뷰 */}
+                  {selectedDateCourse ? (
+                    <div className="h-full w-full flex flex-col">
+                      {/* 뒤로가기 헤더 */}
+                      <div className="p-3 sm:p-4 border-b border-border bg-card flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedDateCourse(null)
+                            setSelectedPlace(null)
+                            // 저장된 스크롤 위치로 복원
+                            setTimeout(() => {
+                              if (dateScrollContainerRef.current) {
+                                dateScrollContainerRef.current.scrollTop = dateScrollPosition
+                              }
+                            }, 0)
+                          }}
+                          className="h-9 w-9 sm:h-10 sm:w-10 p-0 flex-shrink-0"
+                        >
+                          <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                        </Button>
+                        <h2 className="text-base sm:text-lg font-semibold text-foreground truncate">
+                          코스 상세
+                        </h2>
                       </div>
-                      <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">
-                          데이트 코스
-                        </h1>
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                          당일로 즐길 수 있는 로맨틱한 데이트 코스
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="p-3 sm:p-4 border-b border-border bg-muted/30">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="지역명으로 검색..."
-                        value={dateSearchQuery}
-                        onChange={e => setDateSearchQuery(e.target.value)}
-                        className="pl-9 sm:pl-10 pr-3 sm:pr-4 h-10 sm:h-11 bg-background"
-                      />
-                    </div>
-                  </div>
-
-                  {dateError && (
-                    <div className="p-4 border-b border-border">
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{dateError}</AlertDescription>
-                      </Alert>
-                    </div>
-                  )}
-
-                  {/* 선택된 데이트 코스 정보 */}
-                  <AnimatePresence>
-                    {selectedDateCourse && (
-                      <motion.div
-                        key={`date-course-${selectedDateCourse.id}`}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                        className="p-3 sm:p-4 border-b border-border bg-card"
+                      {/* 상세 정보 - 전체 영역 스크롤 */}
+                      <div
+                        className="flex-1 overflow-y-auto min-h-0"
+                        style={{ WebkitOverflowScrolling: "touch" }}
                       >
-                        <Card className="border-primary/50 shadow-md">
-                          <CardContent className="p-3 sm:p-4">
-                            <div className="flex items-start justify-between gap-2 sm:gap-3 mb-3">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-base sm:text-lg mb-2 text-foreground line-clamp-2">
-                                  {selectedDateCourse.title}
-                                </h3>
-                                <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground mb-2">
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                                    <span>{selectedDateCourse.duration}</span>
-                                  </div>
-                                  <span>•</span>
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                                    <span>{selectedDateCourse.place_count}개 장소</span>
-                                  </div>
-                                  <span>•</span>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {selectedDateCourse.region}
-                                  </Badge>
-                                </div>
-                                {selectedDateCourse.description && (
-                                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-3">
-                                    {selectedDateCourse.description}
-                                  </p>
-                                )}
+                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 pb-40">
+                          {/* 코스 이미지 */}
+                          {selectedDateCourse.image_url && (
+                            <div className="relative w-full h-48 sm:h-64 rounded-lg overflow-hidden">
+                              <Image
+                                src={selectedDateCourse.image_url}
+                                alt={selectedDateCourse.title}
+                                fill
+                                className="object-cover"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                              <div className="absolute bottom-4 left-4 right-4">
+                                <Badge className="bg-background/90 backdrop-blur-sm text-foreground border-0 text-sm">
+                                  {selectedDateCourse.region}
+                                </Badge>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                type="button"
-                                onClick={e => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  // 현재 선택된 코스를 비우기
-                                  if (courseType === "date") {
-                                    setSelectedDateCourse(null)
-                                  } else {
-                                    setSelectedTravelCourse(null)
-                                  }
-                                  setSelectedPlace(null)
-                                }}
-                                className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex-shrink-0 z-50 relative touch-manipulation"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                            </div>
+                          )}
+
+                          {/* 코스 기본 정보 */}
+                          <div className="space-y-3 sm:space-y-4">
+                            <div>
+                              <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-2 sm:mb-3">
+                                {selectedDateCourse.title}
+                              </h1>
+                              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="h-4 w-4" />
+                                  <span>{selectedDateCourse.duration}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{selectedDateCourse.place_count}개 장소</span>
+                                </div>
+                                {formatPriceRange(
+                                  selectedDateCourse.min_price,
+                                  selectedDateCourse.max_price
+                                ) && (
+                                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-900/30">
+                                    <Wallet className="h-3 w-3" />
+                                    <span className="text-xs font-medium">
+                                      {formatPriceRange(
+                                        selectedDateCourse.min_price,
+                                        selectedDateCourse.max_price
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                                <Badge variant="secondary">{selectedDateCourse.region}</Badge>
+                              </div>
+                              {selectedDateCourse.description && (
+                                <p className="text-sm sm:text-base text-foreground leading-relaxed">
+                                  {selectedDateCourse.description}
+                                </p>
+                              )}
                             </div>
 
                             {/* 장소 목록 */}
                             {selectedDateCourse.places && selectedDateCourse.places.length > 0 && (
-                              <div
-                                className="mt-3 space-y-2 border-t border-border/50 pt-3 max-h-48 sm:max-h-64 overflow-y-auto"
-                                style={{ WebkitOverflowScrolling: "touch" }}
-                              >
-                                <div className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                                  방문 순서
+                              <div className="space-y-3 sm:space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <h2 className="text-lg sm:text-xl font-semibold text-foreground">
+                                    방문 장소
+                                  </h2>
+                                  <Badge variant="outline" className="text-xs sm:text-sm">
+                                    총 {selectedDateCourse.places.length}개
+                                  </Badge>
                                 </div>
-                                {selectedDateCourse.places.map((place, index) => {
-                                  const placeWithOrder = place as Place & { order_index?: number }
-                                  const placeNumber =
-                                    placeWithOrder.order_index !== undefined
-                                      ? placeWithOrder.order_index + 1
-                                      : index + 1
-                                  return (
-                                    <div
-                                      key={place.id || index}
-                                      className="flex items-start gap-2 p-2 sm:p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer touch-manipulation"
-                                      onClick={() => handlePlaceClick(place)}
-                                    >
-                                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-                                        {placeNumber}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-medium text-xs sm:text-sm text-foreground truncate">
-                                          {place.name}
-                                        </div>
-                                        {place.address && (
-                                          <div className="text-[10px] sm:text-xs text-muted-foreground truncate mt-0.5">
-                                            {place.address}
+                                <div className="space-y-2 sm:space-y-3">
+                                  {selectedDateCourse.places.map((place, index) => {
+                                    const placeWithOrder = place as Place & { order_index?: number }
+                                    const placeNumber =
+                                      placeWithOrder.order_index !== undefined
+                                        ? placeWithOrder.order_index + 1
+                                        : index + 1
+                                    return (
+                                      <Card
+                                        key={
+                                          place.id
+                                            ? `${place.id}-${index}`
+                                            : `place-${index}-${place.lat}-${place.lng}`
+                                        }
+                                        className="border-border hover:border-primary/50 transition-colors cursor-pointer"
+                                        onClick={() => handlePlaceClick(place)}
+                                      >
+                                        <CardContent className="p-3 sm:p-4">
+                                          <div className="flex items-start gap-3">
+                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                                              {placeNumber}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <h3 className="font-semibold text-sm sm:text-base text-foreground mb-1">
+                                                {place.name}
+                                              </h3>
+                                              {place.address && (
+                                                <p className="text-xs sm:text-sm text-muted-foreground">
+                                                  {place.address}
+                                                </p>
+                                              )}
+                                            </div>
                                           </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )
-                                })}
+                                        </CardContent>
+                                      </Card>
+                                    )
+                                  })}
+                                </div>
                               </div>
                             )}
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <div
-                    className="flex-1 overflow-y-auto min-h-0"
-                    style={{ WebkitOverflowScrolling: "touch" }}
-                  >
-                    <div className="p-3 sm:p-4 pb-16">
-                      {dateIsLoading ? (
-                        <div className="flex items-center justify-center h-full min-h-[400px]">
-                          <div className="text-center">
-                            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary mx-auto mb-3" />
-                            <p className="text-xs sm:text-sm text-muted-foreground">
-                              데이트 코스를 불러오는 중...
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="p-4 sm:p-5 md:p-6 border-b border-border bg-card">
+                        <div className="flex items-center gap-3 sm:gap-4 mb-3">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Heart className="h-5 w-5 sm:h-6 sm:w-6 text-primary fill-primary" />
+                          </div>
+                          <div>
+                            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+                              데이트 코스
+                            </h1>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                              당일로 즐길 수 있는 로맨틱한 데이트 코스
                             </p>
                           </div>
                         </div>
-                      ) : displayedDateCourses.length === 0 ? (
-                        <div className="text-center py-12 sm:py-16">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                            <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
-                          </div>
-                          <p className="text-sm sm:text-base font-semibold text-foreground mb-1">
-                            검색 결과가 없습니다
-                          </p>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            다른 키워드로 검색해보세요
-                          </p>
+                      </div>
+
+                      <div className="p-3 sm:p-4 border-b border-border bg-muted/30">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="지역명으로 검색..."
+                            value={dateSearchQuery}
+                            onChange={e => setDateSearchQuery(e.target.value)}
+                            className="pl-9 sm:pl-10 pr-3 sm:pr-4 h-10 sm:h-11 bg-background"
+                          />
                         </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <AnimatePresence>
-                            {displayedDateCourses.map(course => (
-                              <motion.div
-                                key={course.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.2 }}
-                              >
-                                <Card
-                                  className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 touch-manipulation ${
-                                    selectedDateCourse?.id === course.id
-                                      ? "ring-2 ring-primary border-primary"
-                                      : "border-border hover:border-primary/30"
-                                  }`}
-                                  onClick={() => handleDateCourseSelect(course)}
-                                >
-                                  <CardContent className="p-3 sm:p-4">
-                                    {course.image_url && (
-                                      <div className="relative w-full h-32 sm:h-36 md:h-40 mb-3 rounded-lg overflow-hidden group">
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-10" />
-                                        <Image
-                                          src={course.image_url}
-                                          alt={course.title}
-                                          fill
-                                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                        />
-                                        <div className="absolute bottom-2 left-2 right-2 z-20">
-                                          <Badge className="bg-background/80 backdrop-blur-sm text-foreground border-0 text-[10px] sm:text-xs">
-                                            {course.region}
-                                          </Badge>
-                                        </div>
-                                      </div>
-                                    )}
-                                    <div className="space-y-1.5 sm:space-y-2">
-                                      <div className="flex items-center gap-1.5 sm:gap-2">
-                                        <h3 className="font-semibold text-sm sm:text-base line-clamp-1 text-foreground">
-                                          {course.title}
-                                        </h3>
-                                      </div>
-                                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                          <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                                          <span>{course.duration}</span>
-                                        </div>
-                                        <span>•</span>
-                                        <div className="flex items-center gap-1">
-                                          <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                                          <span>{course.place_count}개 장소</span>
-                                        </div>
-                                      </div>
-                                      {course.description && (
-                                        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                                          {course.description}
-                                        </p>
-                                      )}
-                                      <div className="flex items-center justify-between pt-2 border-t border-border">
-                                        <Badge
-                                          variant="secondary"
-                                          className="text-[10px] sm:text-xs"
-                                        >
-                                          {course.region}
-                                        </Badge>
-                                        <div className="flex items-center gap-1 text-primary">
-                                          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-2">
-                                        {course.places.slice(0, 3).map(place => {
-                                          const Icon = getTypeIcon(place.type)
-                                          return (
-                                            <Badge
-                                              key={place.id}
-                                              variant="outline"
-                                              className="text-[10px] sm:text-xs"
-                                            >
-                                              <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
-                                              {place.type}
-                                            </Badge>
-                                          )
-                                        })}
-                                        {course.places.length > 3 && (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-[10px] sm:text-xs"
-                                          >
-                                            +{course.places.length - 3}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </motion.div>
-                            ))}
-                          </AnimatePresence>
-                          {!dateSearchQuery.trim() && dateHasMore && (
-                            <div ref={observerTarget} className="h-4" />
-                          )}
-                          {dateIsLoadingMore && (
-                            <div className="flex items-center justify-center py-4">
-                              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+
+                      {dateError && (
+                        <div className="p-4 border-b border-border">
+                          <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{dateError}</AlertDescription>
+                          </Alert>
+                        </div>
+                      )}
+
+                      <div
+                        ref={dateScrollContainerRef}
+                        className="flex-1 overflow-y-auto min-h-0"
+                        style={{ WebkitOverflowScrolling: "touch" }}
+                      >
+                        <div className="px-3 pt-3 sm:px-4 sm:pt-4 pb-40">
+                          {dateIsLoading ? (
+                            <div className="flex items-center justify-center h-full min-h-[400px]">
+                              <div className="text-center">
+                                <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary mx-auto mb-3" />
+                                <p className="text-xs sm:text-sm text-muted-foreground">
+                                  데이트 코스를 불러오는 중...
+                                </p>
+                              </div>
+                            </div>
+                          ) : displayedDateCourses.length === 0 ? (
+                            <div className="text-center py-12 sm:py-16">
+                              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                                <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
+                              </div>
+                              <p className="text-sm sm:text-base font-semibold text-foreground mb-1">
+                                검색 결과가 없습니다
+                              </p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">
+                                다른 키워드로 검색해보세요
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <AnimatePresence>
+                                {displayedDateCourses.map(course => {
+                                  const typedCourse = course as DateCourse
+                                  const courseId = typedCourse.id
+                                  const currentSelectedId: string | undefined = selectedDateCourse
+                                    ? (selectedDateCourse as DateCourse).id
+                                    : undefined
+                                  const isSelected = currentSelectedId === courseId
+                                  return (
+                                    <motion.div
+                                      key={typedCourse.id}
+                                      initial={{ opacity: 0, y: 20 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{ opacity: 0, y: -20 }}
+                                      transition={{ duration: 0.2 }}
+                                    >
+                                      <Card
+                                        className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50 touch-manipulation ${
+                                          isSelected
+                                            ? "ring-2 ring-primary border-primary"
+                                            : "border-border hover:border-primary/30"
+                                        }`}
+                                        onClick={() => handleDateCourseSelect(course)}
+                                      >
+                                        <CardContent className="p-3 sm:p-4">
+                                          {course.image_url && (
+                                            <div className="relative w-full h-32 sm:h-36 md:h-40 mb-3 rounded-lg overflow-hidden group">
+                                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-10" />
+                                              <Image
+                                                src={course.image_url}
+                                                alt={course.title}
+                                                fill
+                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                              />
+                                              <div className="absolute bottom-2 left-2 right-2 z-20">
+                                                <Badge className="bg-background/80 backdrop-blur-sm text-foreground border-0 text-[10px] sm:text-xs">
+                                                  {course.region}
+                                                </Badge>
+                                              </div>
+                                            </div>
+                                          )}
+                                          <div className="space-y-1.5 sm:space-y-2">
+                                            <div className="flex items-center gap-1.5 sm:gap-2">
+                                              <h3 className="font-semibold text-sm sm:text-base line-clamp-1 text-foreground">
+                                                {course.title}
+                                              </h3>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                                              <div className="flex items-center gap-1 flex-shrink-0">
+                                                <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                                                <span className="whitespace-nowrap">
+                                                  {course.duration}
+                                                </span>
+                                              </div>
+                                              <span className="flex-shrink-0">•</span>
+                                              <div className="flex items-center gap-1 flex-shrink-0">
+                                                <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                                                <span className="whitespace-nowrap">
+                                                  {course.place_count}개 장소
+                                                </span>
+                                              </div>
+                                              {formatPriceRange(
+                                                course.min_price,
+                                                course.max_price
+                                              ) && (
+                                                <>
+                                                  <span className="flex-shrink-0">•</span>
+                                                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-900/30 flex-shrink-0">
+                                                    <Wallet className="h-3 w-3 flex-shrink-0" />
+                                                    <span className="text-xs font-medium whitespace-nowrap">
+                                                      {formatPriceRange(
+                                                        course.min_price,
+                                                        course.max_price
+                                                      )}
+                                                    </span>
+                                                  </div>
+                                                </>
+                                              )}
+                                            </div>
+                                            {course.description && (
+                                              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                                                {course.description}
+                                              </p>
+                                            )}
+                                            <div className="flex items-center justify-between pt-2 border-t border-border">
+                                              <Badge
+                                                variant="secondary"
+                                                className="text-[10px] sm:text-xs"
+                                              >
+                                                {course.region}
+                                              </Badge>
+                                              <div className="flex items-center gap-1 text-primary">
+                                                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-2">
+                                              {course.places.slice(0, 3).map((place, index) => {
+                                                const Icon = getTypeIcon(place.type)
+                                                return (
+                                                  <Badge
+                                                    key={
+                                                      place.id
+                                                        ? `${place.id}-${index}`
+                                                        : `place-${index}-${place.lat}-${place.lng}`
+                                                    }
+                                                    variant="outline"
+                                                    className="text-[10px] sm:text-xs"
+                                                  >
+                                                    <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-1" />
+                                                    {place.type}
+                                                  </Badge>
+                                                )
+                                              })}
+                                              {course.places.length > 3 && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="text-[10px] sm:text-xs"
+                                                >
+                                                  +{course.places.length - 3}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </CardContent>
+                                      </Card>
+                                    </motion.div>
+                                  )
+                                })}
+                              </AnimatePresence>
+                              {!dateSearchQuery.trim() && dateHasMore && (
+                                <div ref={observerTarget} className="h-4" />
+                              )}
+                              {dateIsLoadingMore && (
+                                <div className="flex items-center justify-center py-4">
+                                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <TravelSidebar
@@ -905,7 +1338,10 @@ export function CoursesPageClient({
                     setSelectedPlace(null)
                   }}
                   isLoading={travelIsLoading}
+                  isLoadingMore={travelIsLoadingMore}
                   error={travelError}
+                  hasMore={travelHasMore}
+                  onLoadMore={loadMoreTravelCourses}
                 />
               )}
             </>
@@ -1198,7 +1634,11 @@ export function CoursesPageClient({
                                       : index + 1
                                   return (
                                     <div
-                                      key={place.id}
+                                      key={
+                                        place.id
+                                          ? `${place.id}-${index}`
+                                          : `place-${index}-${place.lat}-${place.lng}`
+                                      }
                                       className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
                                     >
                                       <div className="flex items-center gap-2">
