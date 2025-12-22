@@ -9,12 +9,15 @@
     ".": "./index.ts",
     "./types": "./types/index.ts",
     "./types/database": "./types/database.ts",
-    "./api": "./api/index.ts"
+    "./api": "./api/index.ts",
+    "./schemas": "./schemas/index.ts"
   },
   "scripts": {
     "lint": "eslint .",
     "type-check": "tsc --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "zod": "^3.25.67"
+  },
   "devDependencies": {}
 }
