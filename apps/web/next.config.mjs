@@ -30,6 +30,8 @@ const nextConfig = {
   // 서버 컴포넌트에서 외부 패키지 의존성을 제대로 해석하도록 설정
   // Next.js 16에서는 serverExternalPackages로 이름이 변경되고 stable feature가 됨
   serverExternalPackages: ["@supabase/ssr", "@supabase/supabase-js"],
+  // Vercel 빌드 환경에서 모듈 해석 문제 해결
+  serverComponentsExternalPackages: ["@supabase/ssr", "@supabase/supabase-js"],
   typescript: {
     // node_modules의 타입 에러는 무시 (skipLibCheck가 작동하지 않는 경우)
     ignoreBuildErrors: true,
