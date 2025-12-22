@@ -5,3 +5,4 @@
  */
 
 export * from "./notification-service"
+export * from "./naver-api-client"
