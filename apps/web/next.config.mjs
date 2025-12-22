@@ -30,7 +30,8 @@ const nextConfig = {
   // 서버 컴포넌트에서 외부 패키지 의존성을 제대로 해석하도록 설정
   // Next.js 16에서는 serverExternalPackages로 이름이 변경되고 stable feature가 됨
   // Turbopack과 webpack 모두에서 작동
-  serverExternalPackages: ["@supabase/ssr", "@supabase/supabase-js"],
+  // @supabase/supabase-js는 번들링하도록 제거 (Turbopack에서 external 로드 시 ESM/CommonJS 호환성 문제)
+  serverExternalPackages: ["@supabase/ssr"],
   // Turbopack 설정 (Next.js 16에서 top-level 설정)
   turbopack: {
     // 파일시스템 캐싱 활성화 (빌드 성능 개선)

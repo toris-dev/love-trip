@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
-// Edge Runtime - 간단한 체크만 수행하므로 Edge에서 실행 가능
-export const runtime = "edge"
+// Edge Runtime 제거: Turbopack에서 모듈 로드 문제 해결
+export const dynamic = "force-dynamic"
 
 export async function GET() {
   return NextResponse.json({
