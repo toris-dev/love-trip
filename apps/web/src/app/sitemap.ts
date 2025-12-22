@@ -9,6 +9,14 @@ const BASE_URL = "https://lovetrip.vercel.app"
  */
 async function getPublicCourseIds(): Promise<Array<{ id: string; updated_at: string | null }>> {
   try {
+    // 환경 변수 확인
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn(
+        "Supabase environment variables not set, skipping dynamic course pages in sitemap"
+      )
+      return []
+    }
+
     // 서비스 역할 키를 사용하여 cookies 없이 데이터 조회
     const supabase = createServiceClient()
     const { data: courses, error } = await supabase
@@ -17,15 +25,21 @@ async function getPublicCourseIds(): Promise<Array<{ id: string; updated_at: str
       .eq("is_public", true)
       .eq("status", "published")
       .order("updated_at", { ascending: false })
+      .limit(1000) // 최대 1000개로 제한
 
-    if (error || !courses) {
+    if (error) {
       console.error("Failed to fetch public courses for sitemap:", error)
+      return []
+    }
+
+    if (!courses) {
       return []
     }
 
     return courses
   } catch (error) {
-    console.error("Error fetching public courses:", error)
+    // 빌드 타임 에러를 방지하기 위해 에러를 무시하고 빈 배열 반환
+    console.warn("Error fetching public courses for sitemap:", error)
     return []
   }
 }
