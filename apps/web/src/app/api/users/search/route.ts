@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
+import type { Database } from "@lovetrip/shared/types/database"
 
-// Edge Runtime 설정 - 빠른 응답을 위해 Edge에서 실행
-export const runtime = "edge"
+// Service Role Key를 사용하므로 쿠키가 필요 없음
+// Edge Runtime 제거: @supabase/supabase-js가 Edge Runtime에서 제대로 작동하지 않을 수 있음
 export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {
@@ -15,17 +15,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "닉네임이 필요합니다" }, { status: 400 })
     }
 
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
+    // Service Role Key를 사용하는 클라이언트 생성 (쿠키 불필요)
+    const supabase = createClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
     // 닉네임으로 프로필 찾기
@@ -41,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     // 사용자 이메일 가져오기 (auth.users에서)
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(profile.id)
-    
+
     if (userError || !userData) {
       return NextResponse.json({ error: "사용자 정보를 가져올 수 없습니다" }, { status: 500 })
     }
@@ -58,4 +51,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "서버 오류" }, { status: 500 })
   }
 }
-
