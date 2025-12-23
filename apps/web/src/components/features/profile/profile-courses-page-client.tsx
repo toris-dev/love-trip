@@ -6,31 +6,16 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@lovetrip/ui/components/button"
 import { ArrowLeft, X, Heart, Plane } from "lucide-react"
 import { toast } from "sonner"
-import {
-  Card,
-  CardContent,
-} from "@lovetrip/ui/components/card"
+import { Card, CardContent } from "@lovetrip/ui/components/card"
 import { Input } from "@lovetrip/ui/components/input"
 import { Badge } from "@lovetrip/ui/components/badge"
-import { Alert, AlertDescription } from "@lovetrip/ui/components/alert"
 import { Switch } from "@lovetrip/ui/components/switch"
 import { Label } from "@lovetrip/ui/components/label"
-import {
-  Search,
-  MapPin,
-  Clock,
-  AlertCircle,
-  ChevronRight,
-  Loader2,
-  Coffee,
-  Utensils,
-  Camera,
-} from "lucide-react"
+import { Search, MapPin, Clock, ChevronRight, Coffee, Utensils, Camera } from "lucide-react"
 import { createClient } from "@lovetrip/api/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import dynamic from "next/dynamic"
-import type { Database } from "@lovetrip/shared/types/database"
 import {
   TravelSidebar,
   CourseInfoOverlay,
@@ -61,27 +46,23 @@ type DateCourse = {
 interface ProfileCoursesPageClientProps {
   initialDateCourses: DateCourse[]
   initialDateHasMore: boolean
-  initialDateTotalCount: number
   initialTravelCourses: TravelCourse[]
   initialTravelHasMore: boolean
-  initialTravelTotalCount: number
-  initialCourseType: "date" | "travel"
   user: { id: string; email?: string } | null
 }
 
 export function ProfileCoursesPageClient({
   initialDateCourses,
   initialDateHasMore,
-  initialDateTotalCount,
   initialTravelCourses,
-  initialTravelHasMore,
-  initialTravelTotalCount,
-  initialCourseType,
+  initialTravelHasMore: _initialTravelHasMore,
   user: initialUser,
 }: ProfileCoursesPageClientProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const courseType = (searchParams.get("type") === "travel" ? "travel" : "date") as "date" | "travel"
+  const courseType = (searchParams.get("type") === "travel" ? "travel" : "date") as
+    | "date"
+    | "travel"
   const isMobile = useIsMobile()
 
   // Date Course 상태
@@ -93,21 +74,14 @@ export function ProfileCoursesPageClient({
   const [selectedDateCourse, setSelectedDateCourse] = useState<DateCourse | null>(null)
   const [dateSearchQuery, setDateSearchQuery] = useState("")
   const [dateHasMore, setDateHasMore] = useState(initialDateHasMore)
-  const [datePage, setDatePage] = useState(0)
-  const [dateIsLoading, setDateIsLoading] = useState(false)
-  const [dateIsLoadingMore, setDateIsLoadingMore] = useState(false)
-  const [dateError, setDateError] = useState<string | null>(null)
 
   // Travel Course 상태
-  const [travelCourses, setTravelCourses] = useState<TravelCourse[]>(initialTravelCourses)
+  const [travelCourses] = useState<TravelCourse[]>(initialTravelCourses)
   const [selectedTravelCourse, setSelectedTravelCourse] = useState<TravelCourse | null>(null)
   const [travelSearchQuery, setTravelSearchQuery] = useState("")
-  const [travelHasMore, setTravelHasMore] = useState(initialTravelHasMore)
-  const [travelIsLoading, setTravelIsLoading] = useState(false)
-  const [travelError, setTravelError] = useState<string | null>(null)
 
   // 공통 상태
-  const [selectedPlace, setSelectedPlace] = useState<Place | TravelPlace | null>(null)
+  const [, setSelectedPlace] = useState<Place | TravelPlace | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [user, setUser] = useState<{ id: string; email?: string } | null>(initialUser)
   const observerTarget = useRef<HTMLDivElement>(null)
@@ -233,7 +207,6 @@ export function ProfileCoursesPageClient({
     setFilteredDateCourses(filtered)
     setDisplayedDateCourses(filtered.slice(0, ITEMS_PER_PAGE))
     setDateHasMore(filtered.length > ITEMS_PER_PAGE)
-    setDatePage(0)
   }, [dateCourses, dateSearchQuery])
 
   useEffect(() => {
@@ -248,11 +221,6 @@ export function ProfileCoursesPageClient({
   }, [])
 
   const selectedCourse = courseType === "date" ? selectedDateCourse : selectedTravelCourse
-  const currentCourses = courseType === "date" ? filteredDateCourses : travelCourses
-  const currentSearchQuery = courseType === "date" ? dateSearchQuery : travelSearchQuery
-  const setCurrentSearchQuery = courseType === "date" ? setDateSearchQuery : setTravelSearchQuery
-  const currentError = courseType === "date" ? dateError : travelError
-  const currentIsLoading = courseType === "date" ? dateIsLoading : travelIsLoading
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
@@ -349,9 +317,7 @@ export function ProfileCoursesPageClient({
           size={isMobile ? "sm" : "lg"}
           variant={courseType === "date" ? "default" : "outline"}
           className={`shadow-2xl border-0 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 ${
-            isMobile
-              ? "px-3 py-2.5 text-xs"
-              : "px-6 py-6 h-auto text-base"
+            isMobile ? "px-3 py-2.5 text-xs" : "px-6 py-6 h-auto text-base"
           } ${
             courseType === "date"
               ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/30 hover:shadow-primary/40"
@@ -368,9 +334,7 @@ export function ProfileCoursesPageClient({
           size={isMobile ? "sm" : "lg"}
           variant={courseType === "travel" ? "default" : "outline"}
           className={`shadow-2xl border-0 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 ${
-            isMobile
-              ? "px-3 py-2.5 text-xs"
-              : "px-6 py-6 h-auto text-base"
+            isMobile ? "px-3 py-2.5 text-xs" : "px-6 py-6 h-auto text-base"
           } ${
             courseType === "travel"
               ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/30 hover:shadow-primary/40"
@@ -415,9 +379,7 @@ export function ProfileCoursesPageClient({
                   </div>
                   <div>
                     <h1 className="text-2xl font-bold text-foreground">내 데이트 코스</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      내가 등록한 데이트 코스
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">내가 등록한 데이트 코스</p>
                   </div>
                 </div>
               </div>
@@ -434,27 +396,9 @@ export function ProfileCoursesPageClient({
                 </div>
               </div>
 
-              {dateError && (
-                <div className="p-4 border-b border-border">
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{dateError}</AlertDescription>
-                  </Alert>
-                </div>
-              )}
-
               <div className="flex-1 overflow-y-auto min-h-0">
                 <div className="p-4 pb-16">
-                  {dateIsLoading ? (
-                    <div className="flex items-center justify-center h-full min-h-[400px]">
-                      <div className="text-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
-                        <p className="text-sm text-muted-foreground">
-                          데이트 코스를 불러오는 중...
-                        </p>
-                      </div>
-                    </div>
-                  ) : displayedDateCourses.length === 0 ? (
+                  {displayedDateCourses.length === 0 ? (
                     <div className="text-center py-16">
                       <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
                         <Heart className="h-8 w-8 text-muted-foreground" />
@@ -564,7 +508,9 @@ export function ProfileCoursesPageClient({
                                             // 상태 업데이트
                                             setDateCourses(
                                               dateCourses.map(c =>
-                                                c.id === course.id ? { ...c, is_public: checked } : c
+                                                c.id === course.id
+                                                  ? { ...c, is_public: checked }
+                                                  : c
                                               )
                                             )
                                             setFilteredDateCourses(
@@ -590,7 +536,9 @@ export function ProfileCoursesPageClient({
                                             }
 
                                             toast.success(
-                                              checked ? "코스가 공개되었습니다!" : "코스가 비공개되었습니다!"
+                                              checked
+                                                ? "코스가 공개되었습니다!"
+                                                : "코스가 비공개되었습니다!"
                                             )
                                           } catch (error) {
                                             toast.error(
@@ -628,11 +576,6 @@ export function ProfileCoursesPageClient({
                       {!dateSearchQuery.trim() && dateHasMore && (
                         <div ref={observerTarget} className="h-4" />
                       )}
-                      {dateIsLoadingMore && (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -645,8 +588,8 @@ export function ProfileCoursesPageClient({
               onSearchChange={setTravelSearchQuery}
               selectedCourse={selectedTravelCourse}
               onCourseSelect={handleTravelCourseSelect}
-              isLoading={travelIsLoading}
-              error={travelError}
+              isLoading={false}
+              error={null}
             />
           )}
         </div>
@@ -654,4 +597,3 @@ export function ProfileCoursesPageClient({
     </div>
   )
 }
-
