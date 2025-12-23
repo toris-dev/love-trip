@@ -43,7 +43,9 @@ import { TravelDayPlaces } from "@/components/features/travel/components/travel-
 import { BudgetPlanner } from "@/components/features/expense/budget-planner"
 import { BudgetDashboard } from "@/components/features/expense/budget-dashboard"
 import { BudgetVisualization } from "@/components/features/expense/budget-visualization"
+import { BudgetOptimization } from "@/components/features/expense/budget-optimization"
 import { SettlementView } from "@/components/features/expense/settlement-view"
+import type { BudgetOptimizationSuggestion } from "@lovetrip/expense/services"
 
 type TravelPlan = Database["public"]["Tables"]["travel_plans"]["Row"]
 type TravelDay = Database["public"]["Tables"]["travel_days"]["Row"]
@@ -332,6 +334,52 @@ export function TravelPlanDetailClient({
               <>
                 <BudgetVisualization summary={budgetSummary} travelPlanId={plan.id} />
                 <BudgetDashboard summary={budgetSummary} />
+                <BudgetOptimization
+                  travelPlanId={plan.id}
+                  onOptimize={async (suggestions: BudgetOptimizationSuggestion[]) => {
+                    // 예산 최적화 제안 적용
+                    for (const suggestion of suggestions) {
+                      try {
+                        // 해당 카테고리의 예산 항목 찾기
+                        const response = await fetch(`/api/travel-plans/${plan.id}/budget`)
+                        if (!response.ok) throw new Error("예산 정보를 불러오는데 실패했습니다")
+
+                        const { items } = await response.json()
+                        const categoryItems = items.filter(
+                          (item: { category: string }) => item.category === suggestion.category
+                        )
+
+                        // 각 항목에 비례하여 예산 조정
+                        const totalCategoryPlanned = categoryItems.reduce(
+                          (sum: number, item: { planned_amount: number }) =>
+                            sum + (item.planned_amount || 0),
+                          0
+                        )
+
+                        if (totalCategoryPlanned > 0) {
+                          const ratio = suggestion.suggestedPlanned / totalCategoryPlanned
+
+                          for (const item of categoryItems) {
+                            const newAmount = Math.round((item.planned_amount || 0) * ratio)
+                            await fetch(`/api/travel-plans/${plan.id}/budget/${item.id}`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                planned_amount: newAmount,
+                              }),
+                            })
+                          }
+                        }
+                      } catch (error) {
+                        console.error(`Failed to apply optimization for ${suggestion.category}:`, error)
+                        throw error
+                      }
+                    }
+
+                    // 예산 요약 다시 로드
+                    await loadBudgetSummary()
+                  }}
+                />
               </>
             )}
           </div>

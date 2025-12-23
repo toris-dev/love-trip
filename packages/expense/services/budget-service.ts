@@ -235,3 +235,231 @@ export async function estimateBudgetFromPlace(
 
   return categoryPrices[validPriceLevel] ?? categoryPrices[2] ?? 0
 }
+
+/**
+ * 예산 최적화 제안
+ */
+export interface BudgetOptimizationSuggestion {
+  category: ExpenseCategory
+  currentPlanned: number
+  suggestedPlanned: number
+  reduction: number
+  reason: string
+}
+
+export interface BudgetOptimizationResult {
+  isOverBudget: boolean
+  overAmount: number
+  suggestions: BudgetOptimizationSuggestion[]
+  optimizedDistribution: Record<ExpenseCategory, number>
+}
+
+/**
+ * 예산 최적화 알고리즘
+ *
+ * 예산 초과 시 최적화 제안을 생성합니다.
+ *
+ * @param travelPlanId - 여행 계획 ID
+ * @param options - 최적화 옵션
+ * @param options.targetBudget - 목표 예산 (선택사항)
+ * @returns 예산 최적화 제안
+ *
+ * @example
+ * ```typescript
+ * const optimization = await optimizeBudget("plan-1", { targetBudget: 500000 })
+ * if (optimization.isOverBudget) {
+ *   console.log(`예산 초과: ${optimization.overAmount}원`)
+ *   console.log("제안:", optimization.suggestions)
+ * }
+ * ```
+ */
+export async function optimizeBudget(
+  travelPlanId: string,
+  options: { targetBudget?: number } = {}
+): Promise<BudgetOptimizationResult> {
+  const summary = await getBudgetSummary(travelPlanId)
+  const { totalPlanned, totalActual, remaining, byCategory } = summary
+
+  const isOverBudget = remaining < 0
+  const overAmount = isOverBudget ? Math.abs(remaining) : 0
+  const targetBudget = options.targetBudget ?? totalPlanned
+
+  const suggestions: BudgetOptimizationSuggestion[] = []
+  const optimizedDistribution: Record<ExpenseCategory, number> = {
+    교통비: 0,
+    숙박비: 0,
+    식비: 0,
+    액티비티: 0,
+    쇼핑: 0,
+    기타: 0,
+  }
+
+  // 예산 초과가 아닌 경우 현재 분배 반환
+  if (!isOverBudget && !options.targetBudget) {
+    Object.entries(byCategory).forEach(([category, data]) => {
+      optimizedDistribution[category as ExpenseCategory] = data.planned
+    })
+    return {
+      isOverBudget: false,
+      overAmount: 0,
+      suggestions: [],
+      optimizedDistribution,
+    }
+  }
+
+  // 목표 예산이 현재 예산보다 작은 경우 최적화 필요
+  const needsOptimization = targetBudget < totalPlanned || isOverBudget
+  const reductionNeeded = needsOptimization ? totalPlanned - targetBudget : 0
+
+  if (needsOptimization && reductionNeeded > 0) {
+    // 카테고리별 초과분 계산
+    const categoryOverages: Array<{
+      category: ExpenseCategory
+      overAmount: number
+      planned: number
+      actual: number
+      usageRate: number
+    }> = []
+
+    Object.entries(byCategory).forEach(([category, data]) => {
+      const categoryData = data as { planned: number; actual: number }
+      const categoryOver = categoryData.actual - categoryData.planned
+      const usageRate = categoryData.planned > 0 ? categoryData.actual / categoryData.planned : 0
+
+      if (categoryOver > 0 || usageRate > 1) {
+        categoryOverages.push({
+          category: category as ExpenseCategory,
+          overAmount: categoryOver,
+          planned: categoryData.planned,
+          actual: categoryData.actual,
+          usageRate,
+        })
+      }
+    })
+
+    // 초과분이 큰 순서대로 정렬
+    categoryOverages.sort((a, b) => b.overAmount - a.overAmount)
+
+    // 절감 가능한 카테고리 찾기 (실제 지출이 계획보다 적은 카테고리)
+    const categoriesWithSavings: Array<{
+      category: ExpenseCategory
+      planned: number
+      actual: number
+      savings: number
+      savingsRate: number
+    }> = []
+
+    Object.entries(byCategory).forEach(([category, data]) => {
+      const categoryData = data as { planned: number; actual: number }
+      const savings = categoryData.planned - categoryData.actual
+      const savingsRate = categoryData.planned > 0 ? savings / categoryData.planned : 0
+
+      if (savings > 0 && categoryData.planned > 0) {
+        categoriesWithSavings.push({
+          category: category as ExpenseCategory,
+          planned: categoryData.planned,
+          actual: categoryData.actual,
+          savings,
+          savingsRate,
+        })
+      }
+    })
+
+    // 절감 가능한 카테고리를 절감률이 높은 순서대로 정렬
+    categoriesWithSavings.sort((a, b) => b.savingsRate - a.savingsRate)
+
+    // 최적화 제안 생성
+    let remainingReduction = reductionNeeded
+
+    // 1. 초과한 카테고리에서 절감 제안
+    for (const overage of categoryOverages) {
+      if (remainingReduction <= 0) break
+
+      const reduction = Math.min(overage.overAmount, remainingReduction)
+      const suggestedPlanned = overage.planned - reduction
+
+      if (suggestedPlanned >= 0) {
+        suggestions.push({
+          category: overage.category,
+          currentPlanned: overage.planned,
+          suggestedPlanned,
+          reduction,
+          reason: `현재 ${overage.overAmount.toLocaleString()}원 초과 중입니다. ${reduction.toLocaleString()}원 절감 제안`,
+        })
+        remainingReduction -= reduction
+      }
+    }
+
+    // 2. 절감 가능한 카테고리에서 추가 절감 제안
+    for (const saving of categoriesWithSavings) {
+      if (remainingReduction <= 0) break
+
+      // 절감 가능한 금액의 일부만 제안 (너무 많이 줄이지 않도록)
+      const maxReduction = Math.min(saving.savings * 0.3, saving.planned * 0.2) // 절감 가능액의 30% 또는 계획의 20% 중 작은 값
+      const reduction = Math.min(maxReduction, remainingReduction)
+      const suggestedPlanned = saving.planned - reduction
+
+      if (suggestedPlanned >= 0 && reduction > 0) {
+        suggestions.push({
+          category: saving.category,
+          currentPlanned: saving.planned,
+          suggestedPlanned,
+          reduction,
+          reason: `현재 ${saving.savings.toLocaleString()}원 절감 여유가 있습니다. ${reduction.toLocaleString()}원 추가 절감 제안`,
+        })
+        remainingReduction -= reduction
+      }
+    }
+
+    // 3. 나머지 절감이 필요한 경우 모든 카테고리에 비례 분배
+    if (remainingReduction > 0) {
+      const totalPlannedForDistribution = Object.values(byCategory).reduce(
+        (sum, data) => sum + (data as { planned: number }).planned,
+        0
+      )
+
+      if (totalPlannedForDistribution > 0) {
+        Object.entries(byCategory).forEach(([category, data]) => {
+          const categoryData = data as { planned: number }
+          const proportion = categoryData.planned / totalPlannedForDistribution
+          const additionalReduction = remainingReduction * proportion
+          const currentSuggestion = suggestions.find(s => s.category === category)
+
+          if (currentSuggestion) {
+            currentSuggestion.reduction += additionalReduction
+            currentSuggestion.suggestedPlanned -= additionalReduction
+          } else if (categoryData.planned > 0) {
+            suggestions.push({
+              category: category as ExpenseCategory,
+              currentPlanned: categoryData.planned,
+              suggestedPlanned: Math.max(0, categoryData.planned - additionalReduction),
+              reduction: additionalReduction,
+              reason: `비례 분배로 ${additionalReduction.toLocaleString()}원 절감 제안`,
+            })
+          }
+        })
+      }
+    }
+
+    // 최적화된 분배 계산
+    Object.entries(byCategory).forEach(([category, data]) => {
+      const categoryData = data as { planned: number }
+      const suggestion = suggestions.find(s => s.category === category)
+      optimizedDistribution[category as ExpenseCategory] = suggestion
+        ? suggestion.suggestedPlanned
+        : categoryData.planned
+    })
+  } else {
+    // 최적화가 필요 없는 경우 현재 분배 반환
+    Object.entries(byCategory).forEach(([category, data]) => {
+      optimizedDistribution[category as ExpenseCategory] = (data as { planned: number }).planned
+    })
+  }
+
+  return {
+    isOverBudget,
+    overAmount,
+    suggestions,
+    optimizedDistribution,
+  }
+}

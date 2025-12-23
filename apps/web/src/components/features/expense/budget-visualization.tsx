@@ -11,6 +11,7 @@ import { Progress } from "@lovetrip/ui/components/progress"
 import { Alert, AlertDescription } from "@lovetrip/ui/components/alert"
 import { AlertCircle, TrendingUp, TrendingDown, Wallet } from "lucide-react"
 import type { BudgetSummary } from "@lovetrip/expense/services"
+import { BudgetCharts } from "./budget-charts"
 
 interface BudgetVisualizationProps {
   summary: BudgetSummary
@@ -146,6 +147,9 @@ export function BudgetVisualization({ summary }: BudgetVisualizationProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* 차트 시각화 */}
+      <BudgetCharts summary={summary} />
     </div>
   )
 }
