@@ -24,9 +24,5 @@ export default defineConfig({
     specPattern: "cypress/component/**/*.cy.{js,jsx,ts,tsx}",
     supportFile: "cypress/support/component.ts",
   },
-  // TypeScript 설정 명시
-  typescript: {
-    configFile: "cypress/tsconfig.json",
-  },
 })
 
