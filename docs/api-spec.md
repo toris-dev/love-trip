@@ -162,24 +162,122 @@ Authorization: Bearer {jwt_token}
 ```json
 {
   "title": "부산 여행",
+  "destination": "부산",
   "start_date": "2024-01-01",
   "end_date": "2024-01-03",
-  "budget": 500000,
-  "destination": "부산"
+  "total_budget": 500000,
+  "description": "2박 3일 부산 여행",
+  "course_type": "travel",
+  "places": [
+    {
+      "place_id": "550e8400-e29b-41d4-a716-446655440000",
+      "day_number": 1,
+      "order_index": 0
+    }
+  ],
+  "budget_items": [
+    {
+      "category": "교통비",
+      "name": "KTX",
+      "planned_amount": 150000
+    },
+    {
+      "category": "숙박비",
+      "name": "호텔",
+      "planned_amount": 200000
+    }
+  ]
 }
 ```
+
+**요청 필드**:
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `title` | string | ✅ | 여행 계획 제목 (1-100자) |
+| `destination` | string | ✅ | 목적지 (1-200자) |
+| `start_date` | string | ✅ | 시작일 (YYYY-MM-DD 형식) |
+| `end_date` | string | ✅ | 종료일 (YYYY-MM-DD 형식, 시작일 이후) |
+| `total_budget` | number | ❌ | 총 예산 (0 이상) |
+| `description` | string | ❌ | 설명 (최대 1000자) |
+| `course_type` | "date" \| "travel" | ❌ | 코스 타입 (기본값: "travel") |
+| `places` | array | ❌ | 장소 배열 |
+| `places[].place_id` | string (UUID) | ✅ | 장소 ID (places 배열 내) |
+| `places[].day_number` | number | ✅ | 일차 (1 이상) |
+| `places[].order_index` | number | ❌ | 순서 (0 이상, 기본값: 0) |
+| `budget_items` | array | ❌ | 예산 항목 배열 |
+| `budget_items[].category` | string | ✅ | 카테고리 (1자 이상) |
+| `budget_items[].name` | string | ✅ | 항목명 (1자 이상) |
+| `budget_items[].planned_amount` | number | ✅ | 예산 금액 (0 이상) |
 
 **응답**:
 
+성공 시 (200 OK):
+
 ```json
 {
-  "data": {
-    "id": "uuid",
+  "plan": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "user_id": "550e8400-e29b-41d4-a716-446655440001",
     "title": "부산 여행",
-    ...
+    "destination": "부산",
+    "start_date": "2024-01-01",
+    "end_date": "2024-01-03",
+    "total_budget": 500000,
+    "description": "2박 3일 부산 여행",
+    "course_type": "travel",
+    "status": "planning",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
   }
 }
 ```
+
+**에러 응답**:
+
+검증 실패 (400 Bad Request):
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "title: 제목은 필수입니다",
+    "details": [
+      {
+        "path": ["title"],
+        "message": "제목은 필수입니다"
+      }
+    ]
+  }
+}
+```
+
+인증 실패 (401 Unauthorized):
+
+```json
+{
+  "error": "로그인이 필요합니다"
+}
+```
+
+서버 오류 (500 Internal Server Error):
+
+```json
+{
+  "error": {
+    "code": "INTERNAL_ERROR",
+    "message": "서버 오류가 발생했습니다"
+  }
+}
+```
+
+**참고사항**:
+
+- 여행 계획 생성 시 자동으로 `travel_days`가 생성됩니다 (시작일부터 종료일까지)
+- `places` 배열의 장소들은 해당 일차에 자동으로 연결됩니다
+- `budget_items`는 첫 번째 일차에 연결됩니다
+- `course_type`이 "date" 또는 "travel"인 경우, 자동으로 `user_courses`에도 저장됩니다 (비공개)
+- 커플이 연결되어 있는 경우, 공동 캘린더에 자동으로 일정이 추가됩니다
 
 #### GET /api/travel-plans/[id]
 

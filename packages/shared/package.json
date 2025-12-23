@@ -9,6 +9,7 @@
     ".": "./index.ts",
     "./types": "./types/index.ts",
     "./types/database": "./types/database.ts",
+    "./types/errors": "./types/errors.ts",
     "./api": "./api/index.ts",
     "./schemas": "./schemas/index.ts"
   },

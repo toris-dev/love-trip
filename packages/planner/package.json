@@ -8,6 +8,7 @@
   "exports": {
     ".": "./index.ts",
     "./services": "./services/index.ts",
+    "./services/query-cache": "./services/query-cache.ts",
     "./types": "./types/index.ts"
   },
   "scripts": {
