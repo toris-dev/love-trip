@@ -1,7 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@lovetrip/ui/components/card"
 import { Button } from "@lovetrip/ui/components/button"
 import { Input } from "@lovetrip/ui/components/input"
 import { Label } from "@lovetrip/ui/components/label"
@@ -29,7 +35,11 @@ export function CoupleConnection() {
   const [pendingRequests, setPendingRequests] = useState<Couple[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [user, setUser] = useState<{ id: string; email: string } | null>(null)
-  const [partnerInfo, setPartnerInfo] = useState<{ nickname?: string; display_name?: string; email: string } | null>(null)
+  const [partnerInfo, setPartnerInfo] = useState<{
+    nickname?: string
+    display_name?: string
+    email: string
+  } | null>(null)
   const [inviteLink, setInviteLink] = useState<string | null>(null)
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false)
 
@@ -51,7 +61,8 @@ export function CoupleConnection() {
 
       if (coupleData && user) {
         // 파트너 정보 가져오기
-        const partnerId = coupleData.user1_id === user.id ? coupleData.user2_id : coupleData.user1_id
+        const partnerId =
+          coupleData.user1_id === user.id ? coupleData.user2_id : coupleData.user1_id
         const response = await fetch(`/api/users/find?id=${partnerId}`).catch(() => null)
         if (response && response.ok) {
           const partner = await response.json()
@@ -61,7 +72,7 @@ export function CoupleConnection() {
             .select("nickname, display_name")
             .eq("id", partnerId)
             .single()
-          
+
           if (profileResponse.data) {
             setPartnerInfo({
               email: partner.email,
@@ -99,8 +110,10 @@ export function CoupleConnection() {
 
     setIsSearching(true)
     try {
-      const response = await fetch(`/api/users/search?nickname=${encodeURIComponent(searchNickname.trim())}`)
-      
+      const response = await fetch(
+        `/api/users/search?nickname=${encodeURIComponent(searchNickname.trim())}`
+      )
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         toast.error(errorData.error || "사용자를 찾을 수 없습니다")
@@ -251,8 +264,8 @@ export function CoupleConnection() {
               type="text"
               placeholder="닉네임을 입력하세요"
               value={searchNickname}
-              onChange={(e) => setSearchNickname(e.target.value)}
-              onKeyPress={(e) => {
+              onChange={e => setSearchNickname(e.target.value)}
+              onKeyPress={e => {
                 if (e.key === "Enter") {
                   handleSearch()
                 }
@@ -349,7 +362,7 @@ export function CoupleConnection() {
         {pendingRequests.length > 0 && (
           <div className="space-y-2">
             <Label>대기 중인 요청</Label>
-            {pendingRequests.map((request) => {
+            {pendingRequests.map(request => {
               const isIncoming = request.user2_id === user?.id
               return (
                 <motion.div
@@ -359,9 +372,7 @@ export function CoupleConnection() {
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <div>
-                    <div className="font-medium">
-                      {isIncoming ? "받은 요청" : "보낸 요청"}
-                    </div>
+                    <div className="font-medium">{isIncoming ? "받은 요청" : "보낸 요청"}</div>
                     <div className="text-sm text-muted-foreground">
                       {new Date(request.created_at).toLocaleDateString("ko-KR")}
                     </div>
@@ -375,17 +386,12 @@ export function CoupleConnection() {
                       >
                         <X className="h-4 w-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleRespondToRequest(request.id, true)}
-                      >
+                      <Button size="sm" onClick={() => handleRespondToRequest(request.id, true)}>
                         <Check className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
-                  {!isIncoming && (
-                    <Badge variant="secondary">대기 중</Badge>
-                  )}
+                  {!isIncoming && <Badge variant="secondary">대기 중</Badge>}
                 </motion.div>
               )
             })}
@@ -395,4 +401,3 @@ export function CoupleConnection() {
     </Card>
   )
 }
-

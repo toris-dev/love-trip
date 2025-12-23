@@ -40,10 +40,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingCouple) {
-      return NextResponse.json(
-        { error: "이미 커플로 연결되어 있습니다" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "이미 커플로 연결되어 있습니다" }, { status: 400 })
     }
 
     // 기존 pending 요청이 있는지 확인
@@ -68,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     // 초대 정보 저장 (couples 테이블에 임시로 저장하거나 별도 테이블 사용)
     // 여기서는 간단하게 couples 테이블의 status를 "invite_pending"으로 사용
-    // 실제로는 couple_invites 테이블을 만드는 것이 좋지만, 
+    // 실제로는 couple_invites 테이블을 만드는 것이 좋지만,
     // 현재 스키마를 변경하지 않고 구현하기 위해 couples 테이블 활용
     const { data: invite, error: inviteError } = await supabase
       .from("couples")
@@ -82,10 +79,7 @@ export async function POST(request: NextRequest) {
 
     if (inviteError || !invite) {
       console.error("Error creating invite:", inviteError)
-      return NextResponse.json(
-        { error: "초대 링크 생성에 실패했습니다" },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "초대 링크 생성에 실패했습니다" }, { status: 500 })
     }
 
     // 초대 링크 생성
@@ -101,10 +95,7 @@ export async function POST(request: NextRequest) {
     console.error("Error in POST /api/couples/invite:", error)
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "초대 링크 생성 중 오류가 발생했습니다",
+        error: error instanceof Error ? error.message : "초대 링크 생성 중 오류가 발생했습니다",
       },
       { status: 500 }
     )

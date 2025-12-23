@@ -2,7 +2,13 @@
 
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@lovetrip/ui/components/card"
 import { Button } from "@lovetrip/ui/components/button"
 import { Heart, Loader2 } from "lucide-react"
 import { toast } from "sonner"

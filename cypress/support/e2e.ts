@@ -35,6 +35,32 @@ declare global {
        * @example cy.waitForPageLoad()
        */
       waitForPageLoad(): Chainable<void>
+
+      /**
+       * Create a travel plan via API
+       * @example cy.createTravelPlan({ title: '부산 여행', destination: '부산', start_date: '2024-01-01', end_date: '2024-01-03' })
+       */
+      createTravelPlan(planData: {
+        title: string
+        destination: string
+        start_date: string
+        end_date: string
+        total_budget?: number
+        description?: string
+        course_type?: "date" | "travel"
+      }): Chainable<Cypress.Response<any>>
+
+      /**
+       * Generate couple invite link
+       * @example cy.generateCoupleInvite()
+       */
+      generateCoupleInvite(): Chainable<Cypress.Response<any>>
+
+      /**
+       * Get budget optimization suggestions
+       * @example cy.getBudgetOptimization('plan-id')
+       */
+      getBudgetOptimization(travelPlanId: string): Chainable<Cypress.Response<any>>
     }
   }
 }

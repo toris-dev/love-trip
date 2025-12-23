@@ -20,10 +20,7 @@ export async function POST(request: NextRequest) {
     const { token } = body
 
     if (!token || typeof token !== "string") {
-      return NextResponse.json(
-        { error: "초대 토큰이 필요합니다" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "초대 토큰이 필요합니다" }, { status: 400 })
     }
 
     // 초대 토큰으로 pending 요청 찾기
@@ -34,10 +31,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (inviteError || !inviteCouple) {
-      return NextResponse.json(
-        { error: "유효하지 않거나 만료된 초대 링크입니다" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "유효하지 않거나 만료된 초대 링크입니다" }, { status: 404 })
     }
 
     // 자기 자신에게 보낸 초대는 수락할 수 없음
@@ -59,10 +53,7 @@ export async function POST(request: NextRequest) {
     if (existingCouple) {
       // 기존 초대 삭제
       await supabase.from("couples").delete().eq("id", inviteCouple.id)
-      return NextResponse.json(
-        { error: "이미 커플로 연결되어 있습니다" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "이미 커플로 연결되어 있습니다" }, { status: 400 })
     }
 
     // 커플 연결 업데이트
@@ -79,10 +70,7 @@ export async function POST(request: NextRequest) {
 
     if (updateError || !updatedCouple) {
       console.error("Error updating couple:", updateError)
-      return NextResponse.json(
-        { error: "커플 연결에 실패했습니다" },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: "커플 연결에 실패했습니다" }, { status: 500 })
     }
 
     // 기본 캘린더 생성
@@ -115,10 +103,7 @@ export async function POST(request: NextRequest) {
     console.error("Error in POST /api/couples/accept-invite:", error)
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "초대 수락 중 오류가 발생했습니다",
+        error: error instanceof Error ? error.message : "초대 수락 중 오류가 발생했습니다",
       },
       { status: 500 }
     )

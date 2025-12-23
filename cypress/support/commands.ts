@@ -30,3 +30,59 @@ Cypress.Commands.add("waitForPageLoad", () => {
   cy.window().its("__NEXT_DATA__").should("exist")
 })
 
+/**
+ * API 요청을 통한 여행 계획 생성
+ */
+Cypress.Commands.add("createTravelPlan", (planData: {
+  title: string
+  destination: string
+  start_date: string
+  end_date: string
+  total_budget?: number
+  description?: string
+  course_type?: "date" | "travel"
+}) => {
+  cy.request({
+    method: "POST",
+    url: "/api/travel-plans",
+    body: {
+      title: planData.title,
+      destination: planData.destination,
+      start_date: planData.start_date,
+      end_date: planData.end_date,
+      total_budget: planData.total_budget || 0,
+      description: planData.description,
+      course_type: planData.course_type || "travel",
+    },
+    failOnStatusCode: false,
+  }).then(response => {
+    return response
+  })
+})
+
+/**
+ * 커플 초대 링크 생성
+ */
+Cypress.Commands.add("generateCoupleInvite", () => {
+  cy.request({
+    method: "POST",
+    url: "/api/couples/invite",
+    failOnStatusCode: false,
+  }).then(response => {
+    return response
+  })
+})
+
+/**
+ * 예산 최적화 제안 조회
+ */
+Cypress.Commands.add("getBudgetOptimization", (travelPlanId: string) => {
+  cy.request({
+    method: "GET",
+    url: `/api/travel-plans/${travelPlanId}/budget/optimize`,
+    failOnStatusCode: false,
+  }).then(response => {
+    return response
+  })
+})
+
