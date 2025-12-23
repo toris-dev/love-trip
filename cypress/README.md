@@ -10,9 +10,9 @@ Cypress를 실행하기 위해 다음 시스템 라이브러리가 필요합니�
 sudo apt-get update
 sudo apt-get install -y \
   libnss3 \
-  libatk1.0-0 \
-  libatk-bridge2.0-0 \
-  libcups2 \
+  libatk1.0-0t64 \
+  libatk-bridge2.0-0t64 \
+  libcups2t64 \
   libdrm2 \
   libxkbcommon0 \
   libxcomposite1 \
@@ -20,12 +20,14 @@ sudo apt-get install -y \
   libxfixes3 \
   libxrandr2 \
   libgbm1 \
-  libasound2 \
+  libasound2t64 \
   libpangocairo-1.0-0 \
   libcairo-gobject2 \
-  libgtk-3-0 \
+  libgtk-3-0t64 \
   libgdk-pixbuf2.0-0
 ```
+
+**참고**: Ubuntu 24.04에서는 일부 패키지 이름이 `t64` 접미사로 변경되었습니다. 위 명령어는 Ubuntu 24.04에 맞게 업데이트되었습니다.
 
 ### macOS 환경
 
