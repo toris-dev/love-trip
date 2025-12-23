@@ -13,8 +13,7 @@ interface UseTravelDayPlacesOptions {
 }
 
 import type { Database } from "@lovetrip/shared/types/database"
-
-type Place = Database["public"]["Tables"]["places"]["Row"]
+import type { Place } from "@lovetrip/shared/types/course"
 type TravelDayPlace = Database["public"]["Tables"]["travel_day_places"]["Row"] & {
   places: Place | null
 }

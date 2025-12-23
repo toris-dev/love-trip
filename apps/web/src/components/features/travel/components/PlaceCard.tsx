@@ -7,9 +7,7 @@ import { Card, CardContent } from "@lovetrip/ui/components/card"
 import { Badge } from "@lovetrip/ui/components/badge"
 import { MapPin, Clock } from "lucide-react"
 import Image from "next/image"
-import type { Database } from "@lovetrip/shared/types/database"
-
-type Place = Database["public"]["Tables"]["places"]["Row"]
+import type { Place } from "@lovetrip/shared/types/course"
 
 interface PlaceCardProps {
   place: Place

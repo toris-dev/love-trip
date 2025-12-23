@@ -42,9 +42,7 @@ const NaverMapView = dynamic(() => import("@/components/shared/naver-map-view"),
 
 const ITEMS_PER_PAGE = 10
 
-type Place = Database["public"]["Tables"]["places"]["Row"] & {
-  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
-}
+import type { Place } from "@lovetrip/shared/types/course"
 
 type DateCourse = {
   id: string

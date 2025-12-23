@@ -2,9 +2,7 @@
  * 장소 검색 관련 유틸리티 함수
  */
 
-import type { Database } from "@lovetrip/shared/types/database"
-
-type Place = Database["public"]["Tables"]["places"]["Row"]
+import type { Place } from "@lovetrip/shared/types/course"
 
 /**
  * 검색 쿼리 최적화

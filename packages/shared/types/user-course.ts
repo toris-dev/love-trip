@@ -5,6 +5,7 @@
  */
 
 import type { Database } from "./database"
+import type { Place } from "./course"
 
 /**
  * User Course 타입 별칭
@@ -19,11 +20,6 @@ export type UserCourseUpdate = Database["public"]["Tables"]["user_courses"]["Upd
 export type UserCoursePlace = Database["public"]["Tables"]["user_course_places"]["Row"]
 export type UserCoursePlaceInsert = Database["public"]["Tables"]["user_course_places"]["Insert"]
 export type UserCoursePlaceUpdate = Database["public"]["Tables"]["user_course_places"]["Update"]
-
-/**
- * Place 타입
- */
-export type Place = Database["public"]["Tables"]["places"]["Row"]
 
 /**
  * User Course Author

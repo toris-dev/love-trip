@@ -18,8 +18,7 @@ import { useTravelDayPlaces } from "./hooks/use-travel-day-places"
 import { searchPlaces } from "./utils/place-search-utils"
 import { PlaceCard } from "./PlaceCard"
 import type { Database } from "@lovetrip/shared/types/database"
-
-type Place = Database["public"]["Tables"]["places"]["Row"]
+import type { Place } from "@lovetrip/shared/types/course"
 type TravelDay = Database["public"]["Tables"]["travel_days"]["Row"]
 type TravelDayPlace = Database["public"]["Tables"]["travel_day_places"]["Row"] & {
   places: Place | null

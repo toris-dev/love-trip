@@ -1,8 +1,6 @@
-import type { Database } from "@lovetrip/shared/types/database"
+import type { Place as SharedPlace } from "@lovetrip/shared/types/course"
 
-export type Place = Database["public"]["Tables"]["places"]["Row"] & {
-  type: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
-}
+export type Place = SharedPlace
 
 export interface TravelCourse {
   id: string

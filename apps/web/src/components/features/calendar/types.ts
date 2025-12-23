@@ -1,7 +1,7 @@
 import type { CalendarEvent } from "@lovetrip/couple/services"
-import type { Database } from "@lovetrip/shared/types/database"
+import type { Place as SharedPlace } from "@lovetrip/shared/types/course"
 
-export type Place = Database["public"]["Tables"]["places"]["Row"]
+export type Place = SharedPlace
 export type CalendarEventWithPlace = CalendarEvent & { place?: Place }
 
 export interface NewEventForm {
