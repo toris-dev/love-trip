@@ -371,7 +371,10 @@ export function TravelPlanDetailClient({
                           }
                         }
                       } catch (error) {
-                        console.error(`Failed to apply optimization for ${suggestion.category}:`, error)
+                        console.error(
+                          `Failed to apply optimization for ${suggestion.category}:`,
+                          error
+                        )
                         throw error
                       }
                     }

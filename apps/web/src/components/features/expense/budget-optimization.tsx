@@ -22,10 +22,7 @@ interface BudgetOptimizationProps {
   onOptimize?: (suggestions: BudgetOptimizationSuggestion[]) => Promise<void>
 }
 
-export function BudgetOptimization({
-  travelPlanId,
-  onOptimize,
-}: BudgetOptimizationProps) {
+export function BudgetOptimization({ travelPlanId, onOptimize }: BudgetOptimizationProps) {
   const [optimization, setOptimization] = useState<BudgetOptimizationResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set())
@@ -70,9 +67,7 @@ export function BudgetOptimization({
       // 최적화 후 다시 로드
       await loadOptimization()
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "예산 최적화 적용에 실패했습니다"
-      )
+      toast.error(error instanceof Error ? error.message : "예산 최적화 적용에 실패했습니다")
     }
   }
 
@@ -89,9 +84,7 @@ export function BudgetOptimization({
       // 최적화 후 다시 로드
       await loadOptimization()
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "예산 최적화 적용에 실패했습니다"
-      )
+      toast.error(error instanceof Error ? error.message : "예산 최적화 적용에 실패했습니다")
     }
   }
 
@@ -134,8 +127,8 @@ export function BudgetOptimization({
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              예산을 {optimization.overAmount.toLocaleString()}원 초과했습니다. 아래 제안을
-              참고하여 예산을 조정해주세요.
+              예산을 {optimization.overAmount.toLocaleString()}원 초과했습니다. 아래 제안을 참고하여
+              예산을 조정해주세요.
             </AlertDescription>
           </Alert>
         )}
@@ -164,13 +157,9 @@ export function BudgetOptimization({
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-semibold">{suggestion.category}</span>
-                          {isApplied && (
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          )}
+                          {isApplied && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                         </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {suggestion.reason}
-                        </p>
+                        <p className="text-sm text-muted-foreground mb-2">{suggestion.reason}</p>
                         <div className="flex items-center gap-4 text-sm">
                           <div>
                             <span className="text-muted-foreground">현재: </span>

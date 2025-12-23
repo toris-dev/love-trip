@@ -6,10 +6,7 @@ import { optimizeBudget } from "@lovetrip/expense/services"
  * GET /api/travel-plans/[id]/budget/optimize
  * 예산 최적화 제안 조회
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
     const {
@@ -40,10 +37,7 @@ export async function GET(
     const targetBudget = targetBudgetParam ? Number(targetBudgetParam) : undefined
 
     if (targetBudget !== undefined && (isNaN(targetBudget) || targetBudget < 0)) {
-      return NextResponse.json(
-        { error: "목표 예산은 0 이상의 숫자여야 합니다" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "목표 예산은 0 이상의 숫자여야 합니다" }, { status: 400 })
     }
 
     // 예산 최적화 제안 생성

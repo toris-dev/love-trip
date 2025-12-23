@@ -49,18 +49,42 @@ export async function generateMetadata({ params }: TravelPlanDetailPageProps): P
 async function getTravelPlan(planId: string, userId: string): Promise<TravelPlan | null> {
   const supabase = await createClient()
 
-  const { data: plan, error } = await supabase
+  // 먼저 내 여행 계획인지 확인
+  const { data: myPlan, error: myPlanError } = await supabase
     .from("travel_plans")
     .select("*")
     .eq("id", planId)
     .eq("user_id", userId)
     .single()
 
-  if (error || !plan) {
-    return null
+  if (!myPlanError && myPlan) {
+    return myPlan
   }
 
-  return plan
+  // 커플이 연결되어 있으면 파트너의 여행 계획도 확인
+  const { data: couple } = await supabase
+    .from("couples")
+    .select("user1_id, user2_id")
+    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+    .eq("status", "accepted")
+    .single()
+
+  if (couple) {
+    const partnerId = couple.user1_id === userId ? couple.user2_id : couple.user1_id
+
+    const { data: partnerPlan, error: partnerPlanError } = await supabase
+      .from("travel_plans")
+      .select("*")
+      .eq("id", planId)
+      .eq("user_id", partnerId)
+      .single()
+
+    if (!partnerPlanError && partnerPlan) {
+      return partnerPlan
+    }
+  }
+
+  return null
 }
 
 async function getCoupleInfo(userId: string) {

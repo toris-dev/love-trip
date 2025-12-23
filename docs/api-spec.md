@@ -192,23 +192,23 @@ Authorization: Bearer {jwt_token}
 
 **요청 필드**:
 
-| 필드 | 타입 | 필수 | 설명 |
-|------|------|------|------|
-| `title` | string | ✅ | 여행 계획 제목 (1-100자) |
-| `destination` | string | ✅ | 목적지 (1-200자) |
-| `start_date` | string | ✅ | 시작일 (YYYY-MM-DD 형식) |
-| `end_date` | string | ✅ | 종료일 (YYYY-MM-DD 형식, 시작일 이후) |
-| `total_budget` | number | ❌ | 총 예산 (0 이상) |
-| `description` | string | ❌ | 설명 (최대 1000자) |
-| `course_type` | "date" \| "travel" | ❌ | 코스 타입 (기본값: "travel") |
-| `places` | array | ❌ | 장소 배열 |
-| `places[].place_id` | string (UUID) | ✅ | 장소 ID (places 배열 내) |
-| `places[].day_number` | number | ✅ | 일차 (1 이상) |
-| `places[].order_index` | number | ❌ | 순서 (0 이상, 기본값: 0) |
-| `budget_items` | array | ❌ | 예산 항목 배열 |
-| `budget_items[].category` | string | ✅ | 카테고리 (1자 이상) |
-| `budget_items[].name` | string | ✅ | 항목명 (1자 이상) |
-| `budget_items[].planned_amount` | number | ✅ | 예산 금액 (0 이상) |
+| 필드                            | 타입               | 필수 | 설명                                  |
+| ------------------------------- | ------------------ | ---- | ------------------------------------- |
+| `title`                         | string             | ✅   | 여행 계획 제목 (1-100자)              |
+| `destination`                   | string             | ✅   | 목적지 (1-200자)                      |
+| `start_date`                    | string             | ✅   | 시작일 (YYYY-MM-DD 형식)              |
+| `end_date`                      | string             | ✅   | 종료일 (YYYY-MM-DD 형식, 시작일 이후) |
+| `total_budget`                  | number             | ❌   | 총 예산 (0 이상)                      |
+| `description`                   | string             | ❌   | 설명 (최대 1000자)                    |
+| `course_type`                   | "date" \| "travel" | ❌   | 코스 타입 (기본값: "travel")          |
+| `places`                        | array              | ❌   | 장소 배열                             |
+| `places[].place_id`             | string (UUID)      | ✅   | 장소 ID (places 배열 내)              |
+| `places[].day_number`           | number             | ✅   | 일차 (1 이상)                         |
+| `places[].order_index`          | number             | ❌   | 순서 (0 이상, 기본값: 0)              |
+| `budget_items`                  | array              | ❌   | 예산 항목 배열                        |
+| `budget_items[].category`       | string             | ✅   | 카테고리 (1자 이상)                   |
+| `budget_items[].name`           | string             | ✅   | 항목명 (1자 이상)                     |
+| `budget_items[].planned_amount` | number             | ✅   | 예산 금액 (0 이상)                    |
 
 **응답**:
 

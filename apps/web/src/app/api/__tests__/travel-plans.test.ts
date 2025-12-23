@@ -247,9 +247,7 @@ describe("Travel Plans API", () => {
       })
 
       // Mock createTravelPlanWithTransaction - 실패
-      mockCreateTravelPlanWithTransaction.mockRejectedValue(
-        new Error("PostgreSQL 함수 실패")
-      )
+      mockCreateTravelPlanWithTransaction.mockRejectedValue(new Error("PostgreSQL 함수 실패"))
 
       // Mock withTransaction - 성공
       mockWithTransaction.mockResolvedValue({
@@ -503,9 +501,7 @@ describe("Travel Plans API", () => {
       })
 
       // Mock createTravelPlanWithTransaction - 실패
-      mockCreateTravelPlanWithTransaction.mockRejectedValue(
-        new Error("데이터베이스 연결 실패")
-      )
+      mockCreateTravelPlanWithTransaction.mockRejectedValue(new Error("데이터베이스 연결 실패"))
 
       // Mock withTransaction - 실패
       mockWithTransaction.mockRejectedValue(new Error("트랜잭션 실패"))

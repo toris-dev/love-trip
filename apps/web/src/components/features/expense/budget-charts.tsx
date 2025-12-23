@@ -13,7 +13,13 @@ import {
   Pie,
   Cell,
 } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@lovetrip/ui/components/card"
 import type { BudgetSummary, ExpenseCategory } from "@lovetrip/expense/services"
 
 interface BudgetChartsProps {

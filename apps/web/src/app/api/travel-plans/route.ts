@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/travel-plans
- * 내 여행 계획 목록 조회 (캐싱 적용)
+ * 내 여행 계획 목록 조회 (커플 공유 포함, 캐싱 적용)
  */
 export async function GET(_request: NextRequest) {
   try {
@@ -298,15 +298,52 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ plans: cached })
     }
 
-    const { data: plans, error } = await supabase
+    // 커플 정보 확인
+    const { data: couple } = await supabase
+      .from("couples")
+      .select("user1_id, user2_id")
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+      .eq("status", "accepted")
+      .single()
+
+    // 내 여행 계획 조회
+    const { data: myPlans, error: myPlansError } = await supabase
       .from("travel_plans")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
 
-    if (error) throw error
+    if (myPlansError) throw myPlansError
 
-    const plansData = plans || []
+    let plansData = myPlans || []
+
+    // 커플이 연결되어 있으면 파트너의 여행 계획도 포함
+    if (couple) {
+      const partnerId = couple.user1_id === user.id ? couple.user2_id : couple.user1_id
+
+      const { data: partnerPlans, error: partnerPlansError } = await supabase
+        .from("travel_plans")
+        .select("*")
+        .eq("user_id", partnerId)
+        .order("created_at", { ascending: false })
+
+      if (!partnerPlansError && partnerPlans) {
+        // 파트너의 여행 계획을 공유된 것으로 표시
+        const sharedPlans = partnerPlans.map(plan => ({
+          ...plan,
+          is_shared: true,
+          shared_by: partnerId,
+        }))
+        plansData = [...plansData, ...sharedPlans]
+      }
+    }
+
+    // 생성일 기준으로 정렬
+    plansData.sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime()
+      const dateB = new Date(b.created_at || 0).getTime()
+      return dateB - dateA
+    })
 
     // 캐시 저장 (3분)
     queryCache.set(cacheKey, plansData, 3 * 60 * 1000)

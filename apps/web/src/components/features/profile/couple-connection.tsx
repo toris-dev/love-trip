@@ -30,6 +30,8 @@ export function CoupleConnection() {
   const [isLoading, setIsLoading] = useState(true)
   const [user, setUser] = useState<{ id: string; email: string } | null>(null)
   const [partnerInfo, setPartnerInfo] = useState<{ nickname?: string; display_name?: string; email: string } | null>(null)
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
+  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -141,6 +143,39 @@ export function CoupleConnection() {
       loadData()
     } else {
       toast.error(result.error || "처리에 실패했습니다")
+    }
+  }
+
+  const handleGenerateInviteLink = async () => {
+    setIsGeneratingInvite(true)
+    try {
+      const response = await fetch("/api/couples/invite", {
+        method: "POST",
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "초대 링크 생성에 실패했습니다")
+      }
+
+      const { inviteLink: link } = await response.json()
+      setInviteLink(link)
+      toast.success("초대 링크가 생성되었습니다")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "초대 링크 생성에 실패했습니다")
+    } finally {
+      setIsGeneratingInvite(false)
+    }
+  }
+
+  const handleCopyInviteLink = async () => {
+    if (!inviteLink) return
+
+    try {
+      await navigator.clipboard.writeText(inviteLink)
+      toast.success("초대 링크가 클립보드에 복사되었습니다")
+    } catch (error) {
+      toast.error("링크 복사에 실패했습니다")
     }
   }
 
@@ -269,6 +304,46 @@ export function CoupleConnection() {
             </div>
           </motion.div>
         )}
+
+        {/* 초대 링크 생성 */}
+        <div className="space-y-2 pt-4 border-t">
+          <Label>초대 링크로 연결하기</Label>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleGenerateInviteLink}
+              disabled={isGeneratingInvite}
+              variant="outline"
+              className="flex-1"
+            >
+              {isGeneratingInvite ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  초대 링크 생성
+                </>
+              )}
+            </Button>
+          </div>
+          {inviteLink && (
+            <motion.div
+              className="p-3 border rounded-lg bg-muted/50 space-y-2"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="text-sm font-medium">초대 링크</div>
+              <div className="flex gap-2">
+                <Input value={inviteLink} readOnly className="flex-1 text-xs" />
+                <Button size="sm" onClick={handleCopyInviteLink}>
+                  복사
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                이 링크를 파트너에게 공유하세요. 링크는 7일 후 만료됩니다.
+              </p>
+            </motion.div>
+          )}
+        </div>
 
         {/* 대기 중인 요청 */}
         {pendingRequests.length > 0 && (
