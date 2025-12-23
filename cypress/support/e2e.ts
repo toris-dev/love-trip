@@ -29,7 +29,7 @@ declare global {
        * @example cy.login('user@example.com', 'password')
        */
       login(email: string, password: string): Chainable<void>
-      
+
       /**
        * Custom command to wait for page load
        * @example cy.waitForPageLoad()
@@ -64,4 +64,3 @@ declare global {
     }
   }
 }
-

@@ -2,7 +2,7 @@
 
 /**
  * Custom Cypress commands
- * 
+ *
  * 이 파일에 프로젝트 전반에서 사용할 커스텀 명령어를 정의합니다.
  */
 
@@ -33,32 +33,35 @@ Cypress.Commands.add("waitForPageLoad", () => {
 /**
  * API 요청을 통한 여행 계획 생성
  */
-Cypress.Commands.add("createTravelPlan", (planData: {
-  title: string
-  destination: string
-  start_date: string
-  end_date: string
-  total_budget?: number
-  description?: string
-  course_type?: "date" | "travel"
-}) => {
-  cy.request({
-    method: "POST",
-    url: "/api/travel-plans",
-    body: {
-      title: planData.title,
-      destination: planData.destination,
-      start_date: planData.start_date,
-      end_date: planData.end_date,
-      total_budget: planData.total_budget || 0,
-      description: planData.description,
-      course_type: planData.course_type || "travel",
-    },
-    failOnStatusCode: false,
-  }).then(response => {
-    return response
-  })
-})
+Cypress.Commands.add(
+  "createTravelPlan",
+  (planData: {
+    title: string
+    destination: string
+    start_date: string
+    end_date: string
+    total_budget?: number
+    description?: string
+    course_type?: "date" | "travel"
+  }) => {
+    cy.request({
+      method: "POST",
+      url: "/api/travel-plans",
+      body: {
+        title: planData.title,
+        destination: planData.destination,
+        start_date: planData.start_date,
+        end_date: planData.end_date,
+        total_budget: planData.total_budget || 0,
+        description: planData.description,
+        course_type: planData.course_type || "travel",
+      },
+      failOnStatusCode: false,
+    }).then(response => {
+      return response
+    })
+  }
+)
 
 /**
  * 커플 초대 링크 생성
@@ -85,4 +88,3 @@ Cypress.Commands.add("getBudgetOptimization", (travelPlanId: string) => {
     return response
   })
 })
-

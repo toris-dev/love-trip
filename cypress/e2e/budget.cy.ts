@@ -82,7 +82,9 @@ describe("Budget Management", () => {
         // 예산 항목 추가 버튼 클릭
         cy.get("body").then($body => {
           if ($body.find('button:contains("추가"), button:contains("예산")').length > 0) {
-            cy.contains("button", /추가|예산/).first().click()
+            cy.contains("button", /추가|예산/)
+              .first()
+              .click()
 
             // 예산 항목 입력
             cy.get('input[name="name"], input[placeholder*="항목명"]').type("호텔")
