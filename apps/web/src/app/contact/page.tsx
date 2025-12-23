@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "문의하기 | LOVETRIP",
     description: "궁금한 점이나 문의사항이 있으시면 언제든지 연락주세요.",
-    url: "https://lovetrip.vercel.app/contact",
+    url: "https://love2trip.vercel.app/contact",
     type: "website",
   },
   alternates: {

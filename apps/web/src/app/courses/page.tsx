@@ -31,7 +31,7 @@ export async function generateMetadata({ searchParams }: CoursesPageProps): Prom
     openGraph: {
       title: `${title} | LOVETRIP`,
       description: `${region || "전국"} 지역의 ${isTravel ? "여행" : "데이트"} 코스를 탐색하고 특별한 여행을 계획해보세요.`,
-      url: `https://lovetrip.vercel.app/courses${params.type ? `?type=${params.type}` : ""}${region ? `&region=${region}` : ""}`,
+      url: `https://love2trip.vercel.app/courses${params.type ? `?type=${params.type}` : ""}${region ? `&region=${region}` : ""}`,
       type: "website",
     },
     alternates: {

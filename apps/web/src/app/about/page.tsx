@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "소개 | LOVETRIP",
     description: "커플을 위한 완벽한 여행 계획 서비스로, 특별한 순간을 함께 만들어가세요.",
-    url: "https://lovetrip.vercel.app/about",
+    url: "https://love2trip.vercel.app/about",
     type: "website",
   },
   alternates: {

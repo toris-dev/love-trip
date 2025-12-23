@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next"
 import { createServiceClient } from "@lovetrip/api/supabase/server"
 
-const BASE_URL = "https://lovetrip.vercel.app"
+const BASE_URL = "https://love2trip.vercel.app"
 
 /**
  * 공개된 코스 ID 목록 조회

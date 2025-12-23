@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: "LOVETRIP - 커플 여행 계획 서비스",
     description:
       "커플을 위한 맞춤형 여행 계획 서비스. AI 기반 데이트 코스와 여행 코스를 추천받고 특별한 추억을 만들어보세요.",
-    url: "https://lovetrip.vercel.app",
+    url: "https://love2trip.vercel.app",
     type: "website",
   },
   alternates: {

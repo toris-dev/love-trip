@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Host
-Host: https://lovetrip.vercel.app
+Host: https://love2trip.vercel.app
 
 # Sitemaps
-Sitemap: https://lovetrip.vercel.app/sitemap.xml
+Sitemap: https://love2trip.vercel.app/sitemap.xml

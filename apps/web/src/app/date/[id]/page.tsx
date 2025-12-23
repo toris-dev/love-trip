@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: CourseDetailPageProps): Promi
     openGraph: {
       title: `${course.title} | LOVETRIP`,
       description,
-      url: `https://lovetrip.vercel.app/date/${id}`,
+      url: `https://love2trip.vercel.app/date/${id}`,
       type: "website",
       images: course.image_url
         ? [

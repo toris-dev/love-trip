@@ -498,7 +498,7 @@ export async function generateMetadata({ searchParams }: DatePageProps): Promise
       description: isTravel
         ? "커플을 위한 여행 코스를 탐색하고 특별한 여행을 계획해보세요."
         : "커플을 위한 데이트 코스를 탐색하고 특별한 하루를 만들어보세요.",
-      url: `https://lovetrip.vercel.app/date${isTravel ? "?type=travel" : ""}`,
+      url: `https://love2trip.vercel.app/date${isTravel ? "?type=travel" : ""}`,
       type: "website",
     },
     alternates: {

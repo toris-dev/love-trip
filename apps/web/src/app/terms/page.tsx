@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "이용약관 | LOVETRIP",
     description: "LOVETRIP 서비스 이용약관입니다.",
-    url: "https://lovetrip.vercel.app/terms",
+    url: "https://love2trip.vercel.app/terms",
     type: "website",
   },
   alternates: {

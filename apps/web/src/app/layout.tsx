@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://lovetrip.vercel.app"),
+  metadataBase: new URL("https://love2trip.vercel.app"),
   alternates: {
     canonical: "/",
   },
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     title: "LOVETRIP - 커플 여행 계획 서비스",
     description:
       "커플을 위한 맞춤형 여행 계획 서비스. 네이버 지도 기반으로 데이트 코스, 숙박, 교통편을 추천하고 예산을 관리하세요.",
-    url: "https://lovetrip.vercel.app",
+    url: "https://love2trip.vercel.app",
     siteName: "LOVETRIP",
     images: [
       {
@@ -104,7 +104,7 @@ export default function RootLayout({
               "@type": "WebApplication",
               name: "LOVETRIP",
               description: "커플을 위한 맞춤형 여행 계획 서비스",
-              url: "https://lovetrip.vercel.app",
+              url: "https://love2trip.vercel.app",
               applicationCategory: "TravelApplication",
               operatingSystem: "Any",
               offers: {
