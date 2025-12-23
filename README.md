@@ -2,8 +2,9 @@
 
 > 연인과의 여행을 위해 교통편, 숙소, 데이트 장소, 경비를 한 번에 추천해주는 커플 맞춤 여행 서비스
 
-[![Next.js](https://img.shields.io/badge/Next.js-15.2.4-black)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.0.7-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2.1-blue)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-green)](https://supabase.com/)
 
 ## 📋 목차
@@ -388,7 +389,7 @@ pnpm dev
 
 ## 🛠 기술 스택
 
-**Frontend:** Next.js 15.2.4, TypeScript, Tailwind CSS, Radix UI, Framer Motion  
+**Frontend:** Next.js 16.0.7, React 19.2.1, TypeScript 5.6, Tailwind CSS, Radix UI, Framer Motion  
 **Backend:** Supabase (PostgreSQL, 인증, 실시간 구독)  
 **External APIs:** 네이버 지도 API  
 **개발 도구:** pnpm, ESLint, Prettier, Vitest, Cypress
@@ -408,7 +409,22 @@ pnpm lint         # 코드 린트
 
 ## 📄 라이선스
 
-Private - All rights reserved
+이 프로젝트는 **AGPL-3.0 (GNU Affero General Public License v3.0)** 라이선스 하에 배포됩니다.
+
+### 라이선스 요약
+
+- ✅ **개인 사용 및 학습 목적**: 자유롭게 사용, 수정, 배포 가능
+- ✅ **오픈소스 프로젝트**: AGPL-3.0 조건 하에 사용 가능
+- ⚠️ **웹 서비스 배포**: 수정된 버전을 웹 서비스로 배포할 경우, 전체 소스 코드를 AGPL-3.0으로 공개해야 함
+- ❌ **상업적 이용**: 명시적 허가 없이 상업적 목적으로 서비스화 불가
+
+### 상업적 이용 및 라이선싱
+
+이 소프트웨어를 상업적 목적으로 사용하거나, 소스 코드 공개 없이 서비스로 배포하고 싶으신 경우, 별도의 상업용 라이선스가 필요합니다.
+
+상업용 라이선스 문의: [ironjustlikethat@gmail.com]
+
+자세한 내용은 [LICENSE](./LICENSE) 파일을 참조하세요.
 
 ## 🔗 관련 문서
 
