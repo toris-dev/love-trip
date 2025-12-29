@@ -14,9 +14,9 @@ export function OnboardingStep1() {
         <div className="flex items-start gap-3 p-4 rounded-lg border">
           <MapPin className="h-5 w-5 text-primary mt-1" />
           <div>
-            <h3 className="font-semibold mb-1">AI 기반 코스 추천</h3>
+            <h3 className="font-semibold mb-1">UGC 데이트 코스 탐색</h3>
             <p className="text-sm text-muted-foreground">
-              시간, 예산, 분위기를 고려한 맞춤형 데이트/여행 코스를 추천받으세요
+              다른 커플들이 만든 데이트/여행 코스를 탐색하고 나만의 코스를 제작하세요
             </p>
           </div>
         </div>

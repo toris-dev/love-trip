@@ -38,7 +38,7 @@ export function PremiumUpgradeBanner({
   const premiumFeatures = [
     { name: "테마/기념일/럭셔리 코스", icon: Sparkles },
     { name: "커플 감성 큐레이션 필터", icon: Sparkles },
-    { name: "AI 일정 자동 재편성", icon: Sparkles },
+    { name: "일정 자동 재편성", icon: Sparkles },
     { name: "예산 최적화 대안 코스", icon: Sparkles },
     { name: "기념일 알림 + 예약 리마인더", icon: Sparkles },
     { name: "앨범 무제한 + 히스토리 리포트", icon: Sparkles },
@@ -120,7 +120,7 @@ export function PremiumUpgradeBanner({
                   <div className="flex items-center gap-4">
                     <Badge variant="secondary">기본 필터링</Badge>
                     <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">
-                      고급 필터 + AI 맞춤 추천
+                      고급 필터 + 맞춤 추천
                     </Badge>
                   </div>
                 </div>
@@ -129,7 +129,7 @@ export function PremiumUpgradeBanner({
                   <div className="flex items-center gap-4">
                     <Badge variant="secondary">알림만</Badge>
                     <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">
-                      AI 자동 재편성
+                      자동 재편성
                     </Badge>
                   </div>
                 </div>

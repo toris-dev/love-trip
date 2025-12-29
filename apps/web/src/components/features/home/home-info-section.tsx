@@ -14,9 +14,9 @@ export function HomeInfoSection() {
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h4 className="font-semibold mb-1">AI 기반 맞춤 추천</h4>
+              <h4 className="font-semibold mb-1">UGC 데이트 코스 플랫폼</h4>
               <p className="text-sm text-muted-foreground">
-                커플의 취향과 선호도를 분석하여 최적의 여행 코스를 추천합니다
+                다른 커플들이 만든 데이트 코스를 탐색하고, 나만의 코스를 제작해 공유할 수 있습니다
               </p>
             </div>
           </div>

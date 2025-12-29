@@ -13,7 +13,7 @@ import Link from "next/link"
 export const metadata: Metadata = {
   title: "소개",
   description:
-    "LOVETRIP은 커플을 위한 완벽한 여행 계획 서비스입니다. AI 기반 맞춤 추천, 실시간 지도 연동, 스마트 예산 관리 등 다양한 기능을 제공합니다.",
+    "LOVETRIP은 커플을 위한 완벽한 여행 계획 서비스입니다. 사용자들이 만든 데이트 코스 탐색, 실시간 지도 연동, 스마트 예산 관리 등 다양한 기능을 제공합니다.",
   keywords: ["LOVETRIP", "커플여행", "여행계획", "데이트코스", "여행앱", "커플앱", "여행서비스"],
   openGraph: {
     title: "소개 | LOVETRIP",
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
 const features = [
   {
     icon: Sparkles,
-    title: "AI 기반 맞춤 추천",
-    description: "커플의 취향과 예산에 맞는 최적의 여행 코스를 AI가 추천해드립니다",
+    title: "UGC 데이트 코스 플랫폼",
+    description: "다른 커플들이 만든 데이트 코스를 탐색하고, 나만의 코스를 제작해 공유할 수 있습니다",
     color: "text-yellow-500",
   },
   {
