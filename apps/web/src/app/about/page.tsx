@@ -30,7 +30,8 @@ const features = [
   {
     icon: Sparkles,
     title: "UGC 데이트 코스 플랫폼",
-    description: "다른 커플들이 만든 데이트 코스를 탐색하고, 나만의 코스를 제작해 공유할 수 있습니다",
+    description:
+      "다른 커플들이 만든 데이트 코스를 탐색하고, 나만의 코스를 제작해 공유할 수 있습니다",
     color: "text-yellow-500",
   },
   {

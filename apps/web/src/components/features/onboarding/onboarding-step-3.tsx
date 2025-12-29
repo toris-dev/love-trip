@@ -1,6 +1,6 @@
 "use client"
 
-import { Link } from "next/link"
+import Link from "next/link"
 import { Button } from "@lovetrip/ui/components/button"
 import { MapPin, Heart, Plus } from "lucide-react"
 
