@@ -346,7 +346,11 @@ export function CoursesExploreClient({
                             variant={course.isLiked ? "default" : "outline"}
                             size="sm"
                             onClick={() => handleLike(course.id)}
-                            className="px-3"
+                            className={`px-3 transition-all duration-300 ${
+                              course.isLiked
+                                ? "bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700 text-white"
+                                : "hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                            }`}
                           >
                             <Heart className={`h-4 w-4 ${course.isLiked ? "fill-current" : ""}`} />
                           </Button>
@@ -354,7 +358,11 @@ export function CoursesExploreClient({
                             variant={course.isSaved ? "default" : "outline"}
                             size="sm"
                             onClick={() => handleSave(course.id)}
-                            className="px-3"
+                            className={`px-3 transition-all duration-300 ${
+                              course.isSaved
+                                ? "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white"
+                                : "hover:bg-yellow-500 hover:text-white hover:border-yellow-500"
+                            }`}
                           >
                             <Bookmark
                               className={`h-4 w-4 ${course.isSaved ? "fill-current" : ""}`}

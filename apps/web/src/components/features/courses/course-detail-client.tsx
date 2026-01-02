@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@lovetrip/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
@@ -38,6 +38,28 @@ export function CourseDetailClient({ course, userId }: CourseDetailClientProps) 
   const [isSaved, setIsSaved] = useState(course.isSaved || false)
   const [likeCount, setLikeCount] = useState(course.like_count || 0)
   const [saveCount, setSaveCount] = useState(course.save_count || 0)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // 페이지 로드 시 스크롤 가능하도록 설정
+  useEffect(() => {
+    // 컨텐츠가 로드된 후 스크롤 가능 여부 확인
+    const timer = setTimeout(() => {
+      // 페이지 전체가 스크롤 가능하도록 보장
+      document.documentElement.style.overflowY = "auto"
+      document.body.style.overflowY = "auto"
+      
+      if (containerRef.current) {
+        const container = containerRef.current
+        // 컨텐츠 높이에 맞춰 최소 높이 설정
+        const contentHeight = container.scrollHeight
+        if (contentHeight > 0) {
+          container.style.minHeight = `${Math.max(contentHeight, window.innerHeight)}px`
+        }
+      }
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [course])
 
   const handleLike = async () => {
     if (!userId) {
@@ -130,7 +152,10 @@ export function CourseDetailClient({ course, userId }: CourseDetailClientProps) 
     .map(p => ({ lat: p.place!.lat, lng: p.place!.lng }))
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div
+      ref={containerRef}
+      className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 overflow-visible"
+    >
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* 뒤로가기 */}
@@ -275,7 +300,7 @@ export function CourseDetailClient({ course, userId }: CourseDetailClientProps) 
                       className={`w-full transition-all duration-300 ${
                         isLiked
                           ? "bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-700 text-white border-0 shadow-lg shadow-primary/30"
-                          : "hover:bg-primary/10 hover:border-primary/50"
+                          : "hover:bg-primary hover:text-primary-foreground hover:border-primary"
                       }`}
                       disabled={!userId || course.user_id === userId}
                       title={
@@ -299,7 +324,7 @@ export function CourseDetailClient({ course, userId }: CourseDetailClientProps) 
                       className={`w-full transition-all duration-300 ${
                         isSaved
                           ? "bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 shadow-lg shadow-yellow-500/30"
-                          : "hover:bg-primary/10 hover:border-primary/50"
+                          : "hover:bg-yellow-500 hover:text-white hover:border-yellow-500"
                       }`}
                       disabled={!userId}
                     >
