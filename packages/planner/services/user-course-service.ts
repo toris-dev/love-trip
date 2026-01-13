@@ -12,6 +12,7 @@ import type {
   UserCourseWithAuthor,
   UserCourseAuthor,
   Place,
+  TargetAudience,
 } from "@lovetrip/shared/types"
 
 /**
@@ -25,6 +26,7 @@ export async function createUserCourseDirectly(
     course_type: "travel" | "date"
     region: string
     is_public: boolean
+    target_audience?: TargetAudience // 기본값: 'couple'
     places: Array<{
       place_id?: string | null // 하이브리드 방식: place_id가 있으면 사용, 없으면 place_info 사용
       place_info?: {
@@ -71,6 +73,7 @@ export async function createUserCourseDirectly(
       course_type: data.course_type,
       region: data.region,
       is_public: data.is_public,
+      target_audience: data.target_audience || "couple", // 기본값: 'couple'
       status: data.is_public ? "published" : "draft",
       published_at: data.is_public ? new Date().toISOString() : null,
       estimated_budget: data.estimated_budget || null,
@@ -149,6 +152,7 @@ export async function createUserCourseFromTravelPlan(
     isPublic?: boolean
     title?: string
     description?: string
+    target_audience?: TargetAudience // 기본값: 'couple'
   } = {}
 ) {
   const supabase = await createServerClient()
@@ -198,6 +202,7 @@ export async function createUserCourseFromTravelPlan(
       course_type: courseType,
       region: travelPlan.destination,
       is_public: options.isPublic || false,
+      target_audience: options.target_audience || "couple", // 기본값: 'couple'
       status: options.isPublic ? "published" : "draft",
       published_at: options.isPublic ? new Date().toISOString() : null,
       estimated_budget: Number(travelPlan.total_budget) || null,
@@ -258,6 +263,7 @@ export async function createUserCourseFromTravelPlan(
 export async function getPublicCourses(options: {
   region?: string
   courseType?: "travel" | "date"
+  targetAudience?: TargetAudience // 타겟 오디언스 필터
   sort?: "popular" | "recent" | "views" | "likes"
   limit?: number
   offset?: number
@@ -277,6 +283,9 @@ export async function getPublicCourses(options: {
   }
   if (options.courseType) {
     query = query.eq("course_type", options.courseType)
+  }
+  if (options.targetAudience) {
+    query = query.eq("target_audience", options.targetAudience)
   }
 
   // 정렬

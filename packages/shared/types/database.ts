@@ -1053,6 +1053,7 @@ export type Database = {
           review_text: string | null
           save_count: number | null
           status: string | null
+          target_audience: string
           title: string
           updated_at: string | null
           user_id: string
@@ -1077,6 +1078,7 @@ export type Database = {
           review_text?: string | null
           save_count?: number | null
           status?: string | null
+          target_audience?: string
           title: string
           updated_at?: string | null
           user_id: string
@@ -1101,6 +1103,7 @@ export type Database = {
           review_text?: string | null
           save_count?: number | null
           status?: string | null
+          target_audience?: string
           title?: string
           updated_at?: string | null
           user_id?: string

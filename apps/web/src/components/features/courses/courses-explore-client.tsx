@@ -6,11 +6,12 @@ import { Button } from "@lovetrip/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
 import { Input } from "@lovetrip/ui/components/input"
 import { Badge } from "@lovetrip/ui/components/badge"
-import { Search, Heart, Bookmark, Eye, MapPin, Clock, ArrowLeft, Crown } from "lucide-react"
+import { Search, Heart, Bookmark, Eye, MapPin, Clock, ArrowLeft, Crown, Wallet } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
 import Link from "next/link"
-import type { UserCourseWithAuthor } from "@lovetrip/shared/types"
+import type { UserCourseWithAuthor, TargetAudience } from "@lovetrip/shared/types"
+import { formatPriceRange } from "@/lib/format-price"
 
 interface CoursesExploreClientProps {
   initialCourses: UserCourseWithAuthor[]
@@ -18,6 +19,7 @@ interface CoursesExploreClientProps {
     type?: "travel" | "date"
     region?: string
     sort?: "popular" | "recent" | "views" | "likes"
+    targetAudience?: TargetAudience
   }
   initialPage: number
   userId?: string
@@ -41,6 +43,11 @@ export function CoursesExploreClient({
   const [premiumOnly, setPremiumOnly] = useState<boolean>(false)
 
   const filteredCourses = courses.filter(course => {
+    // 타겟 오디언스 필터
+    if (filters.targetAudience && course.target_audience !== filters.targetAudience) {
+      return false
+    }
+
     // 프리미엄 고급 필터
     if (isPremium) {
       if (minViews > 0 && (course.view_count || 0) < minViews) return false
@@ -137,6 +144,7 @@ export function CoursesExploreClient({
     if (updated.type) params.set("type", updated.type)
     if (updated.region) params.set("region", updated.region)
     if (updated.sort) params.set("sort", updated.sort)
+    if (updated.targetAudience) params.set("targetAudience", updated.targetAudience)
 
     router.push(`/courses?${params.toString()}`, { scroll: false })
   }
@@ -157,7 +165,7 @@ export function CoursesExploreClient({
               <div>
                 <h1 className="text-3xl font-bold mb-2">코스 탐색</h1>
                 <p className="text-muted-foreground">
-                  다른 커플들이 만든 여행 코스를 탐색하고 공유하세요
+                  다른 사용자들이 만든 여행 코스를 탐색하고 공유하세요
                 </p>
               </div>
             </div>
@@ -178,7 +186,7 @@ export function CoursesExploreClient({
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <select
                     value={filters.type || "all"}
                     onChange={e =>
@@ -194,6 +202,25 @@ export function CoursesExploreClient({
                     <option value="all">전체</option>
                     <option value="date">데이트 코스</option>
                     <option value="travel">여행 코스</option>
+                  </select>
+                  <select
+                    value={filters.targetAudience || "all"}
+                    onChange={e =>
+                      updateFilters({
+                        targetAudience:
+                          e.target.value === "all"
+                            ? undefined
+                            : (e.target.value as TargetAudience),
+                      })
+                    }
+                    className="px-3 py-2 border rounded-md"
+                  >
+                    <option value="all">전체 타겟</option>
+                    <option value="couple">커플</option>
+                    <option value="friend">친구</option>
+                    <option value="family">가족</option>
+                    <option value="solo">혼자</option>
+                    <option value="business">비즈니스</option>
                   </select>
                   <select
                     value={filters.sort || "popular"}
@@ -290,6 +317,30 @@ export function CoursesExploreClient({
                           )}
                           <Badge variant="outline">
                             {course.course_type === "travel" ? "여행" : "데이트"}
+                          </Badge>
+                          <Badge
+                            variant="secondary"
+                            className={
+                              course.target_audience === "couple"
+                                ? "bg-pink-50 dark:bg-pink-950/20 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-900/30"
+                                : course.target_audience === "friend"
+                                  ? "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30"
+                                  : course.target_audience === "family"
+                                    ? "bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900/30"
+                                    : course.target_audience === "solo"
+                                      ? "bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/30"
+                                      : "bg-gray-50 dark:bg-gray-950/20 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-900/30"
+                            }
+                          >
+                            {course.target_audience === "couple"
+                              ? "커플"
+                              : course.target_audience === "friend"
+                                ? "친구"
+                                : course.target_audience === "family"
+                                  ? "가족"
+                                  : course.target_audience === "solo"
+                                    ? "혼자"
+                                    : "비즈니스"}
                           </Badge>
                           <Badge variant="secondary">
                             <MapPin className="h-3 w-3 mr-1" />

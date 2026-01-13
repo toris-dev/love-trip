@@ -12,6 +12,7 @@ import {
   type Place,
   type TravelCourse,
 } from "@lovetrip/planner/components/travel"
+import type { TargetAudience } from "@lovetrip/shared/types/course"
 import { Button } from "@lovetrip/ui/components/button"
 import { Plus, ArrowLeft, Save, GripVertical, X, MapPin, Plane } from "lucide-react"
 import { LocationInput } from "@/components/shared/location-input"
@@ -53,6 +54,7 @@ export function TravelPageClient({
       id: string
       title: string
       description: string
+      target_audience: TargetAudience
       places: Array<{
         id: string
         name: string
@@ -314,10 +316,11 @@ export function TravelPageClient({
                   <>
                     <Button
                       onClick={() => {
-                        const newCourse = {
+                        const newCourse =                         {
                           id: `course-${Date.now()}`,
                           title: "",
                           description: "",
+                          target_audience: "couple",
                           places: [],
                         }
                         setCreatingCourses([...creatingCourses, newCourse])
@@ -468,6 +471,31 @@ export function TravelPageClient({
                                 }}
                                 placeholder="코스에 대한 간단한 설명을 입력하세요"
                               />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="target-audience" className="font-semibold">
+                                타겟 오디언스
+                              </Label>
+                              <select
+                                id="target-audience"
+                                value={selectedCourse.target_audience}
+                                onChange={e => {
+                                  setCreatingCourses(
+                                    creatingCourses.map(c =>
+                                      c.id === selectedCourseId
+                                        ? { ...c, target_audience: e.target.value as TargetAudience }
+                                        : c
+                                    )
+                                  )
+                                }}
+                                className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                              >
+                                <option value="couple">커플</option>
+                                <option value="friend">친구</option>
+                                <option value="family">가족</option>
+                                <option value="solo">혼자</option>
+                                <option value="business">비즈니스</option>
+                              </select>
                             </div>
                           </CardContent>
                         </Card>
@@ -639,26 +667,32 @@ export function TravelPageClient({
                                 const endDate = new Date(today)
                                 endDate.setDate(today.getDate() + 2)
 
-                                const response = await fetch("/api/travel-plans", {
+                                // user_courses API 사용
+                                const response = await fetch("/api/user-courses/create", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({
                                     title: selectedCourse.title,
-                                    destination: destination,
                                     description: selectedCourse.description,
-                                    start_date: today.toISOString().split("T")[0],
-                                    end_date: endDate.toISOString().split("T")[0],
-                                    total_budget: 0,
                                     course_type: "travel",
+                                    region: destination,
+                                    is_public: false,
+                                    target_audience: selectedCourse.target_audience,
                                     places: selectedCourse.places.map((p, index) => ({
-                                      place_id: p.id,
+                                      place_info: {
+                                        name: p.name,
+                                        lat: p.lat,
+                                        lng: p.lng,
+                                        address: p.address,
+                                        type: p.type,
+                                      },
                                       day_number:
                                         Math.floor(
                                           index / Math.ceil(selectedCourse.places.length / 3)
                                         ) + 1,
                                       order_index: index,
                                     })),
-                                    budget_items: [],
+                                    duration: "2박3일",
                                   }),
                                 })
 

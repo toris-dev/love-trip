@@ -34,7 +34,7 @@ import { getCoupleRecommendations } from "@lovetrip/recommendation/services"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import dynamic from "next/dynamic"
-import type { DateCourse, Place } from "@lovetrip/shared/types/course"
+import type { DateCourse, Place, TargetAudience } from "@lovetrip/shared/types/course"
 
 const NaverMapView = dynamic(() => import("@/components/shared/naver-map-view"), { ssr: false })
 
@@ -72,6 +72,7 @@ export function DatePageClient({
       id: string
       title: string
       description: string
+      target_audience: TargetAudience
       places: Array<{
         id: string
         name: string
@@ -915,12 +916,13 @@ export function DatePageClient({
                         const newCourseId = `new-${Date.now()}`
                         setCreatingCourses([
                           ...creatingCourses,
-                          {
-                            id: newCourseId,
-                            title: "",
-                            description: "",
-                            places: [],
-                          },
+                        {
+                          id: newCourseId,
+                          title: "",
+                          description: "",
+                          target_audience: "couple",
+                          places: [],
+                        },
                         ])
                         setSelectedCourseId(newCourseId)
                       }}
@@ -1015,6 +1017,31 @@ export function DatePageClient({
                                 placeholder="코스에 대한 간단한 설명을 입력하세요"
                                 className="h-11"
                               />
+                            </div>
+                            <div>
+                              <Label htmlFor="target-audience" className="text-sm font-semibold mb-2">
+                                타겟 오디언스
+                              </Label>
+                              <select
+                                id="target-audience"
+                                value={selectedCourse.target_audience}
+                                onChange={e => {
+                                  setCreatingCourses(
+                                    creatingCourses.map(c =>
+                                      c.id === selectedCourseId
+                                        ? { ...c, target_audience: e.target.value as TargetAudience }
+                                        : c
+                                    )
+                                  )
+                                }}
+                                className="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                              >
+                                <option value="couple">커플</option>
+                                <option value="friend">친구</option>
+                                <option value="family">가족</option>
+                                <option value="solo">혼자</option>
+                                <option value="business">비즈니스</option>
+                              </select>
                             </div>
                           </CardContent>
                         </Card>
@@ -1217,23 +1244,29 @@ export function DatePageClient({
 
                                 const today = new Date().toISOString().split("T")[0]
 
-                                const response = await fetch("/api/travel-plans", {
+                                // user_courses API 사용
+                                const response = await fetch("/api/user-courses/create", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
                                   body: JSON.stringify({
                                     title: selectedCourse.title,
-                                    destination: destination,
                                     description: selectedCourse.description,
-                                    start_date: today,
-                                    end_date: today,
-                                    total_budget: 0,
                                     course_type: "date",
+                                    region: destination,
+                                    is_public: false,
+                                    target_audience: selectedCourse.target_audience,
                                     places: selectedCourse.places.map((p, index) => ({
-                                      place_id: p.id,
+                                      place_info: {
+                                        name: p.name,
+                                        lat: p.lat,
+                                        lng: p.lng,
+                                        address: p.address,
+                                        type: p.type,
+                                      },
                                       day_number: 1,
                                       order_index: index,
                                     })),
-                                    budget_items: [],
+                                    duration: "당일 코스",
                                   }),
                                 })
 

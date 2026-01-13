@@ -8,6 +8,11 @@
 import type { Database } from "./database"
 
 /**
+ * 타겟 오디언스 타입
+ */
+export type TargetAudience = "couple" | "friend" | "family" | "solo" | "business"
+
+/**
  * Database 타입 별칭
  */
 export type UserCourse = Database["public"]["Tables"]["user_courses"]["Row"]

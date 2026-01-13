@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return validation.error
     }
 
-    const { title, description, course_type, region, is_public, places, estimated_budget } =
+    const { title, description, course_type, region, is_public, places, estimated_budget, target_audience } =
       validation.data
 
     // duration과 image_url은 스키마에 없으므로 별도 처리
@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       course_type,
       region,
       is_public: is_public || false,
+      target_audience: target_audience || "couple", // 기본값: 'couple'
       places: validatedPlaces,
       estimated_budget: estimated_budget || undefined,
       duration,

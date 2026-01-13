@@ -20,10 +20,10 @@ export async function generateMetadata({ searchParams }: CoursesPageProps): Prom
     title,
     description: region
       ? `${region} 지역의 ${isTravel ? "여행" : "데이트"} 코스를 탐색하세요. 다양한 코스를 확인하고 특별한 여행을 계획해보세요.`
-      : `커플을 위한 ${isTravel ? "여행" : "데이트"} 코스를 탐색하세요. 다양한 지역과 테마의 코스를 확인하고 특별한 여행을 계획해보세요.`,
+      : `${isTravel ? "여행" : "데이트"} 코스를 탐색하세요. 다양한 지역과 테마의 코스를 확인하고 특별한 여행을 계획해보세요.`,
     keywords: [
       isTravel ? "여행코스" : "데이트코스",
-      "커플여행",
+      "여행",
       region || "전국",
       "여행추천",
       "데이트추천",
@@ -46,6 +46,7 @@ interface CoursesPageProps {
     region?: string
     sort?: string
     page?: string
+    targetAudience?: string
   }>
 }
 
@@ -58,6 +59,13 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
   const params = await searchParams
   const courseType = (params.type === "travel" ? "travel" : "date") as "travel" | "date" | undefined
   const region = params.region || undefined
+  const targetAudience = params.targetAudience as
+    | "couple"
+    | "friend"
+    | "family"
+    | "solo"
+    | "business"
+    | undefined
   const sort = (params.sort as "popular" | "recent" | "views" | "likes") || "popular"
   const page = parseInt(params.page || "1")
   const limit = 20
@@ -66,6 +74,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
   const courses = await getPublicCourses({
     region,
     courseType,
+    targetAudience,
     sort,
     limit,
     offset,
@@ -82,6 +91,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
         type: courseType,
         region,
         sort,
+        targetAudience,
       }}
       initialPage={page}
       userId={user?.id}

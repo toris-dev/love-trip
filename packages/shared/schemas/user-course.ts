@@ -11,6 +11,13 @@ export const createUserCourseSchema = z.object({
   }),
   region: z.string().min(1, "지역은 필수입니다").max(100, "지역은 100자 이하여야 합니다"),
   is_public: z.boolean().default(false),
+  target_audience: z
+    .enum(["couple", "friend", "family", "solo", "business"], {
+      errorMap: () => ({
+        message: "타겟 오디언스는 'couple', 'friend', 'family', 'solo', 'business' 중 하나여야 합니다",
+      }),
+    })
+    .default("couple"),
   places: z
     .array(
       z.object({
@@ -39,6 +46,13 @@ export const updateUserCourseSchema = z.object({
   region: z.string().min(1).max(100).optional(),
   is_public: z.boolean().optional(),
   estimated_budget: z.number().min(0).optional().nullable(),
+  target_audience: z
+    .enum(["couple", "friend", "family", "solo", "business"], {
+      errorMap: () => ({
+        message: "타겟 오디언스는 'couple', 'friend', 'family', 'solo', 'business' 중 하나여야 합니다",
+      }),
+    })
+    .optional(),
 })
 
 export type UpdateUserCourseInput = z.infer<typeof updateUserCourseSchema>
