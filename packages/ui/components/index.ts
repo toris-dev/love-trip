@@ -21,6 +21,8 @@ export * from "./sheet"
 export * from "./skeleton"
 export * from "./sonner"
 export * from "./switch"
+export * from "./tabs"
+export * from "./radio-group"
 export * from "./textarea"
 export * from "./toast"
 // Toaster는 sonner.tsx에서 export됨 (toaster.tsx는 내부용)
