@@ -4,6 +4,8 @@ import {
   toggleCourseSave,
   getMyCourses,
   updateCoursePublishStatus,
+  createUserCourseDirectly,
+  getPublicCourses,
 } from "../user-course-service"
 
 // Mock Supabase
@@ -225,6 +227,144 @@ describe("user-course-service", () => {
       const courses = await getMyCourses("user-1")
 
       expect(courses).toEqual(mockCourses)
+    })
+  })
+
+  describe("createUserCourseDirectly", () => {
+    it("target_audience가 없으면 기본값 'couple'을 사용해야 함", async () => {
+      const mockCourse = {
+        id: "course-1",
+        user_id: "user-1",
+        title: "테스트 코스",
+        target_audience: "couple",
+      }
+
+      mockSupabase.from
+        .mockReturnValueOnce({
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => ({
+                data: mockCourse,
+                error: null,
+              })),
+            })),
+          })),
+        })
+        .mockReturnValueOnce({
+          insert: vi.fn(() => ({
+            data: null,
+            error: null,
+          })),
+        })
+
+      const result = await createUserCourseDirectly("user-1", {
+        title: "테스트 코스",
+        course_type: "date",
+        region: "서울",
+        is_public: false,
+        places: [
+          {
+            place_info: {
+              name: "테스트 장소",
+              lat: 37.5665,
+              lng: 126.978,
+              type: "CAFE",
+            },
+            order_index: 0,
+          },
+        ],
+      })
+
+      expect(result).toBeDefined()
+    })
+
+    it("target_audience를 지정할 수 있어야 함", async () => {
+      const mockCourse = {
+        id: "course-1",
+        user_id: "user-1",
+        title: "테스트 코스",
+        target_audience: "friend",
+      }
+
+      mockSupabase.from
+        .mockReturnValueOnce({
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn(() => ({
+                data: mockCourse,
+                error: null,
+              })),
+            })),
+          })),
+        })
+        .mockReturnValueOnce({
+          insert: vi.fn(() => ({
+            data: null,
+            error: null,
+          })),
+        })
+
+      const result = await createUserCourseDirectly("user-1", {
+        title: "테스트 코스",
+        course_type: "date",
+        region: "서울",
+        is_public: false,
+        target_audience: "friend",
+        places: [
+          {
+            place_info: {
+              name: "테스트 장소",
+              lat: 37.5665,
+              lng: 126.978,
+              type: "CAFE",
+            },
+            order_index: 0,
+          },
+        ],
+      })
+
+      expect(result).toBeDefined()
+    })
+  })
+
+  describe("getPublicCourses", () => {
+    it("targetAudience 필터를 적용할 수 있어야 함", async () => {
+      const mockCourses = [
+        {
+          id: "course-1",
+          user_id: "user-1",
+          title: "친구 코스",
+          target_audience: "friend",
+          is_public: true,
+          status: "published",
+        },
+      ]
+
+      mockSupabase.from.mockReturnValueOnce({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                order: vi.fn(() => ({
+                  range: vi.fn(() => ({
+                    data: mockCourses,
+                    error: null,
+                  })),
+                })),
+              })),
+            })),
+          })),
+        })),
+      })
+
+      const courses = await getPublicCourses({
+        targetAudience: "friend",
+        limit: 20,
+        offset: 0,
+      })
+
+      expect(courses).toBeDefined()
+      expect(Array.isArray(courses)).toBe(true)
     })
   })
 })

@@ -3,6 +3,7 @@ import {
   getCoupleRecommendations,
   getThemeRecommendations,
   getFavoriteBasedRecommendations,
+  getTargetBasedRecommendations,
 } from "../recommendation-service"
 
 // Mock Supabase
@@ -177,6 +178,60 @@ describe("recommendation-service", () => {
       const results = await getFavoriteBasedRecommendations("user-1", 10)
 
       expect(results).toEqual([])
+    })
+  })
+
+  describe("getTargetBasedRecommendations", () => {
+    it("커플 타겟에 맞는 장소를 추천해야 함", async () => {
+      const mockPlaces = [
+        {
+          id: "place-1",
+          name: "로맨틱 카페",
+          type: "CAFE",
+          rating: 4.5,
+          price_level: 2,
+        },
+      ]
+
+      vi.mock("@lovetrip/planner/services/place-service", () => ({
+        placeService: {
+          getPlaces: vi.fn(() => Promise.resolve(mockPlaces)),
+        },
+      }))
+
+      const results = await getTargetBasedRecommendations({
+        targetAudience: "couple",
+        limit: 10,
+      })
+
+      expect(results).toBeDefined()
+      expect(Array.isArray(results)).toBe(true)
+    })
+
+    it("가족 타겟에 맞는 장소를 추천해야 함", async () => {
+      const mockPlaces = [
+        {
+          id: "place-1",
+          name: "교육 박물관",
+          type: "MUSEUM",
+          rating: 4.0,
+          price_level: 1,
+        },
+      ]
+
+      vi.mock("@lovetrip/planner/services/place-service", () => ({
+        placeService: {
+          getPlaces: vi.fn(() => Promise.resolve(mockPlaces)),
+        },
+      }))
+
+      const results = await getTargetBasedRecommendations({
+        targetAudience: "family",
+        limit: 10,
+      })
+
+      expect(results).toBeDefined()
+      expect(Array.isArray(results)).toBe(true)
     })
   })
 })
