@@ -47,7 +47,7 @@ export function CourseDetailClient({ course, userId }: CourseDetailClientProps) 
       // 페이지 전체가 스크롤 가능하도록 보장
       document.documentElement.style.overflowY = "auto"
       document.body.style.overflowY = "auto"
-      
+
       if (containerRef.current) {
         const container = containerRef.current
         // 컨텐츠 높이에 맞춰 최소 높이 설정
@@ -375,92 +375,92 @@ export function CourseDetailClient({ course, userId }: CourseDetailClientProps) 
               </CardHeader>
               <CardContent className="p-6">
                 {course.places && course.places.filter(cp => cp.place !== null).length > 0 ? (
-                <div className="space-y-4">
-                  {course.places
-                    .filter(cp => cp.place !== null)
-                    .map((coursePlace, index) => {
-                      const place = coursePlace.place!
-                      const placeNumber =
-                        coursePlace.order_index !== undefined
-                          ? coursePlace.order_index + 1
-                          : index + 1
-                      return (
-                        <motion.div
-                          key={coursePlace.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="group"
-                        >
-                          <Card className="border-2 border-transparent hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1">
-                            <CardContent className="p-5">
-                              <div className="flex items-start gap-4">
-                                <motion.div
-                                  className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-lg font-bold text-white shadow-lg"
-                                  whileHover={{ scale: 1.1, rotate: 5 }}
-                                  transition={{ type: "spring", stiffness: 400 }}
-                                >
-                                  {placeNumber}
-                                </motion.div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-4 mb-3">
-                                    <div className="flex-1">
-                                      <h3 className="font-bold text-xl mb-2 group-hover:text-primary transition-colors">
-                                        {place.name}
-                                      </h3>
-                                      {place.address && (
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 p-2 rounded-lg bg-muted/50 w-fit">
-                                          <MapPin className="h-4 w-4 text-primary" />
-                                          <span>{place.address}</span>
-                                        </div>
-                                      )}
-                                      {place.description && (
-                                        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                                          {place.description}
-                                        </p>
+                  <div className="space-y-4">
+                    {course.places
+                      .filter(cp => cp.place !== null)
+                      .map((coursePlace, index) => {
+                        const place = coursePlace.place!
+                        const placeNumber =
+                          coursePlace.order_index !== undefined
+                            ? coursePlace.order_index + 1
+                            : index + 1
+                        return (
+                          <motion.div
+                            key={coursePlace.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="group"
+                          >
+                            <Card className="border-2 border-transparent hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-1">
+                              <CardContent className="p-5">
+                                <div className="flex items-start gap-4">
+                                  <motion.div
+                                    className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-lg font-bold text-white shadow-lg"
+                                    whileHover={{ scale: 1.1, rotate: 5 }}
+                                    transition={{ type: "spring", stiffness: 400 }}
+                                  >
+                                    {placeNumber}
+                                  </motion.div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-4 mb-3">
+                                      <div className="flex-1">
+                                        <h3 className="font-bold text-xl mb-2 group-hover:text-primary transition-colors">
+                                          {place.name}
+                                        </h3>
+                                        {place.address && (
+                                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 p-2 rounded-lg bg-muted/50 w-fit">
+                                            <MapPin className="h-4 w-4 text-primary" />
+                                            <span>{place.address}</span>
+                                          </div>
+                                        )}
+                                        {place.description && (
+                                          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                                            {place.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {place.image_url && (
+                                        <motion.div
+                                          className="relative w-28 h-28 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
+                                          whileHover={{ scale: 1.05 }}
+                                        >
+                                          <Image
+                                            src={place.image_url}
+                                            alt={place.name}
+                                            fill
+                                            className="object-cover"
+                                          />
+                                        </motion.div>
                                       )}
                                     </div>
-                                    {place.image_url && (
-                                      <motion.div
-                                        className="relative w-28 h-28 rounded-xl overflow-hidden flex-shrink-0 shadow-lg"
-                                        whileHover={{ scale: 1.05 }}
-                                      >
-                                        <Image
-                                          src={place.image_url}
-                                          alt={place.name}
-                                          fill
-                                          className="object-cover"
-                                        />
-                                      </motion.div>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                    {place.rating && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs px-3 py-1.5 bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300"
-                                      >
-                                        <Star className="h-3 w-3 mr-1 fill-yellow-500 text-yellow-500" />
-                                        {place.rating.toFixed(1)}
-                                      </Badge>
-                                    )}
-                                    {place.price_level && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs px-3 py-1.5 bg-green-50 dark:bg-green-950/30 border-green-300"
-                                      >
-                                        💰 {"💰".repeat(place.price_level)}
-                                      </Badge>
-                                    )}
+                                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                                      {place.rating && (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs px-3 py-1.5 bg-yellow-50 dark:bg-yellow-950/30 border-yellow-300"
+                                        >
+                                          <Star className="h-3 w-3 mr-1 fill-yellow-500 text-yellow-500" />
+                                          {place.rating.toFixed(1)}
+                                        </Badge>
+                                      )}
+                                      {place.price_level && (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-xs px-3 py-1.5 bg-green-50 dark:bg-green-950/30 border-green-300"
+                                        >
+                                          💰 {"💰".repeat(place.price_level)}
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      )
-                    })}
-                </div>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        )
+                      })}
+                  </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />

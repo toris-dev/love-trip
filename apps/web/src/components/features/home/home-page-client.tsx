@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@lovetrip/ui/components/card"
-import { MapPin, Heart, Calendar, ArrowRight, Plus, Sparkles } from "lucide-react"
+import { MapPin, Heart, Calendar, ArrowRight, Plus, Sparkles, Users, Baby, Briefcase } from "lucide-react"
 import { TravelPlanWizard } from "./travel-plan-wizard"
 import { OnboardingWizard } from "@/components/features/onboarding"
 
@@ -152,7 +152,7 @@ export function HomePageClient({ user }: HomePageClientProps) {
             </div>
             <CardTitle className="text-xl sm:text-2xl mb-1 sm:mb-2">캘린더</CardTitle>
             <CardDescription className="text-sm sm:text-base">
-              커플과 함께 일정을 관리하고 공유하세요
+              함께 일정을 관리하고 공유하세요
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -178,6 +178,82 @@ export function HomePageClient({ user }: HomePageClientProps) {
             </Button>
           </CardContent>
         </Card>
+      </div>
+
+      {/* 타겟별 코스 탐색 섹션 */}
+      <div className="mb-8 sm:mb-12">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center">
+          누구와 함께 가시나요?
+        </h2>
+        <p className="text-center text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base">
+          다양한 타겟에 맞는 코스를 탐색해보세요
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          <Card
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.05] border-2 hover:border-pink-500/50 touch-manipulation"
+            onClick={() => router.push("/courses?targetAudience=couple")}
+          >
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-pink-200 dark:group-hover:bg-pink-900/50 transition-colors">
+                <Heart className="h-6 w-6 sm:h-8 sm:w-8 text-pink-600 dark:text-pink-400" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">커플</h3>
+              <p className="text-xs text-muted-foreground">로맨틱한 데이트</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.05] border-2 hover:border-blue-500/50 touch-manipulation"
+            onClick={() => router.push("/courses?targetAudience=friend")}
+          >
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
+                <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">친구</h3>
+              <p className="text-xs text-muted-foreground">재미있는 활동</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.05] border-2 hover:border-green-500/50 touch-manipulation"
+            onClick={() => router.push("/courses?targetAudience=family")}
+          >
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors">
+                <Baby className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 dark:text-green-400" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">가족</h3>
+              <p className="text-xs text-muted-foreground">아이 동반 가능</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.05] border-2 hover:border-purple-500/50 touch-manipulation"
+            onClick={() => router.push("/courses?targetAudience=solo")}
+          >
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
+                <MapPin className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">혼자</h3>
+              <p className="text-xs text-muted-foreground">혼자 즐기는 여행</p>
+            </CardContent>
+          </Card>
+
+          <Card
+            className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.05] border-2 hover:border-gray-500/50 touch-manipulation"
+            onClick={() => router.push("/courses?targetAudience=business")}
+          >
+            <CardContent className="p-4 sm:p-6 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-100 dark:bg-gray-900/30 flex items-center justify-center mx-auto mb-3 sm:mb-4 group-hover:bg-gray-200 dark:group-hover:bg-gray-900/50 transition-colors">
+                <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 text-gray-600 dark:text-gray-400" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base mb-1">비즈니스</h3>
+              <p className="text-xs text-muted-foreground">회의 및 네트워킹</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* 여행 계획 마법사 */}

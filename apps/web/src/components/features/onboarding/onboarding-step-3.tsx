@@ -19,7 +19,7 @@ export function OnboardingStep3() {
             <div className="flex-1">
               <h3 className="font-semibold mb-2">코스 탐색</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                다른 커플들이 만든 인기 코스를 탐색하고 저장할 수 있습니다
+                다른 사용자들이 만든 인기 코스를 탐색하고 저장할 수 있습니다
               </p>
               <Link href="/courses">
                 <Button variant="outline" size="sm">

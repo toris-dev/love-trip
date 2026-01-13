@@ -13,11 +13,11 @@ import Link from "next/link"
 export const metadata: Metadata = {
   title: "소개",
   description:
-    "LOVETRIP은 커플을 위한 완벽한 여행 계획 서비스입니다. 사용자들이 만든 데이트 코스 탐색, 실시간 지도 연동, 스마트 예산 관리 등 다양한 기능을 제공합니다.",
-  keywords: ["LOVETRIP", "커플여행", "여행계획", "데이트코스", "여행앱", "커플앱", "여행서비스"],
+    "LOVETRIP은 완벽한 여행 계획 서비스입니다. 사용자들이 만든 데이트 코스 탐색, 실시간 지도 연동, 스마트 예산 관리 등 다양한 기능을 제공합니다.",
+  keywords: ["LOVETRIP", "여행", "여행계획", "데이트코스", "여행앱", "여행서비스"],
   openGraph: {
     title: "소개 | LOVETRIP",
-    description: "커플을 위한 완벽한 여행 계획 서비스로, 특별한 순간을 함께 만들어가세요.",
+    description: "완벽한 여행 계획 서비스로, 특별한 순간을 함께 만들어가세요.",
     url: "https://love2trip.vercel.app/about",
     type: "website",
   },
@@ -31,7 +31,7 @@ const features = [
     icon: Sparkles,
     title: "UGC 데이트 코스 플랫폼",
     description:
-      "다른 커플들이 만든 데이트 코스를 탐색하고, 나만의 코스를 제작해 공유할 수 있습니다",
+      "다른 사용자들이 만든 데이트 코스를 탐색하고, 나만의 코스를 제작해 공유할 수 있습니다",
     color: "text-yellow-500",
   },
   {
@@ -94,7 +94,7 @@ export default function AboutPage() {
               LOVETRIP에 오신 것을 환영합니다
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              커플을 위한 완벽한 여행 계획 서비스로, 특별한 순간을 함께 만들어가세요
+              완벽한 여행 계획 서비스로, 특별한 순간을 함께 만들어가세요
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="group">
@@ -139,7 +139,7 @@ export default function AboutPage() {
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">우리의 미션</h2>
               <p className="text-xl text-muted-foreground">
-                모든 커플이 특별한 여행을 계획하고 추억을 만들 수 있도록 돕는 것
+                모든 사람이 특별한 여행을 계획하고 추억을 만들 수 있도록 돕는 것
               </p>
             </div>
             <div className="grid md:grid-cols-2 gap-8">
@@ -150,7 +150,7 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground leading-relaxed">
-                    기술과 로맨스가 만나는 곳에서, 모든 커플이 쉽고 즐겁게 여행을 계획할 수 있는
+                    기술과 로맨스가 만나는 곳에서, 모든 사람이 쉽고 즐겁게 여행을 계획할 수 있는
                     세계 최고의 플랫폼이 되는 것입니다.
                   </p>
                 </CardContent>
@@ -162,7 +162,7 @@ export default function AboutPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground leading-relaxed">
-                    사용자 중심의 서비스, 혁신적인 기술, 그리고 커플들의 행복한 추억을 만드는 것이
+                    사용자 중심의 서비스, 혁신적인 기술, 그리고 모든 사람들의 행복한 추억을 만드는 것이
                     우리의 핵심 가치입니다.
                   </p>
                 </CardContent>

@@ -16,7 +16,7 @@ export function HomeInfoSection() {
             <div>
               <h4 className="font-semibold mb-1">UGC 데이트 코스 플랫폼</h4>
               <p className="text-sm text-muted-foreground">
-                다른 커플들이 만든 데이트 코스를 탐색하고, 나만의 코스를 제작해 공유할 수 있습니다
+                다른 사용자들이 만든 데이트 코스를 탐색하고, 나만의 코스를 제작해 공유할 수 있습니다
               </p>
             </div>
           </div>
@@ -36,7 +36,7 @@ export function HomeInfoSection() {
               <Heart className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h4 className="font-semibold mb-1">커플 맞춤 기능</h4>
+              <h4 className="font-semibold mb-1">협업 기능</h4>
               <p className="text-sm text-muted-foreground">
                 공유 캘린더와 일정 관리를 통해 함께 여행을 계획하세요
               </p>
@@ -80,7 +80,7 @@ export function HomeInfoSection() {
               <span className="font-medium">일정 저장 및 공유</span>
             </div>
             <p className="text-sm text-muted-foreground ml-8">
-              캘린더에 일정을 저장하고 커플과 공유하세요
+              캘린더에 일정을 저장하고 함께 공유하세요
             </p>
           </div>
         </CardContent>

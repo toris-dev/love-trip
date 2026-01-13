@@ -955,7 +955,7 @@ export function TravelPlanWizard({ user, open, onOpenChange }: TravelPlanWizardP
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="text-xs sm:text-sm font-medium mb-1">
-                        다른 커플과 코스를 공유하시겠어요?
+                        다른 사용자들과 코스를 공유하시겠어요?
                       </p>
                       <p className="text-xs text-muted-foreground">
                         공개하면 다른 사용자들이 내 코스를 볼 수 있고, 좋아요/저장을 받을 때마다

@@ -14,12 +14,12 @@ import { Suspense } from "react"
 
 export const metadata: Metadata = {
   title: {
-    default: "LOVETRIP - 커플 여행 계획 서비스",
+    default: "LOVETRIP - 여행 계획 서비스",
     template: "%s | LOVETRIP",
   },
   description:
-    "커플을 위한 맞춤형 여행 계획 서비스. 네이버 지도 기반으로 데이트 코스, 숙박, 교통편을 추천하고 예산을 관리하세요.",
-  keywords: ["커플여행", "데이트코스", "여행계획", "예산관리", "네이버지도", "여행추천"],
+    "맞춤형 여행 계획 서비스. 네이버 지도 기반으로 데이트 코스, 숙박, 교통편을 추천하고 예산을 관리하세요.",
+  keywords: ["여행", "데이트코스", "여행계획", "예산관리", "네이버지도", "여행추천"],
   authors: [{ name: "LOVETRIP Team" }],
   creator: "LOVETRIP",
   publisher: "LOVETRIP",
@@ -33,9 +33,9 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "LOVETRIP - 커플 여행 계획 서비스",
+    title: "LOVETRIP - 여행 계획 서비스",
     description:
-      "커플을 위한 맞춤형 여행 계획 서비스. 네이버 지도 기반으로 데이트 코스, 숙박, 교통편을 추천하고 예산을 관리하세요.",
+      "맞춤형 여행 계획 서비스. 네이버 지도 기반으로 데이트 코스, 숙박, 교통편을 추천하고 예산을 관리하세요.",
     url: "https://love2trip.vercel.app",
     siteName: "LOVETRIP",
     images: [
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "LOVETRIP - 커플 여행 계획 서비스",
+        alt: "LOVETRIP - 여행 계획 서비스",
       },
     ],
     locale: "ko_KR",
@@ -51,8 +51,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LOVETRIP - 커플 여행 계획 서비스",
-    description: "커플을 위한 맞춤형 여행 계획 서비스",
+    title: "LOVETRIP - 여행 계획 서비스",
+    description: "맞춤형 여행 계획 서비스",
     images: ["/og-image.png"],
   },
   robots: {
@@ -103,7 +103,7 @@ export default function RootLayout({
               "@context": "https://schema.org",
               "@type": "WebApplication",
               name: "LOVETRIP",
-              description: "커플을 위한 맞춤형 여행 계획 서비스",
+              description: "맞춤형 여행 계획 서비스",
               url: "https://love2trip.vercel.app",
               applicationCategory: "TravelApplication",
               operatingSystem: "Any",

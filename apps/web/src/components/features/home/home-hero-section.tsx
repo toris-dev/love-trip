@@ -18,7 +18,7 @@ export function HomeHeroSection() {
         className="inline-flex items-center gap-2 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full bg-white/50 dark:bg-black/50 backdrop-blur-sm border border-primary/20 text-primary mb-6 sm:mb-8 shadow-sm"
       >
         <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin-slow" />
-        <span className="text-xs sm:text-sm font-medium">커플을 위한 UGC 데이트 코스 플랫폼</span>
+        <span className="text-xs sm:text-sm font-medium">UGC 데이트 코스 플랫폼</span>
       </motion.div>
 
       <motion.h1
@@ -40,7 +40,7 @@ export function HomeHeroSection() {
         transition={{ duration: 0.5, delay: 0.2 }}
         className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-4"
       >
-        다른 커플들이 만든 코스를 탐색하고,
+        다른 사용자들이 만든 코스를 탐색하고,
         <br className="hidden sm:block" />
         나만의 특별한 데이트 코스를 제작해보세요.
       </motion.p>

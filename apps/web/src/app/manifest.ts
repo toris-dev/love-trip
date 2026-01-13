@@ -6,10 +6,10 @@ import { MetadataRoute } from "next"
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "LOVETRIP - 커플 여행 계획 서비스",
+    name: "LOVETRIP - 여행 계획 서비스",
     short_name: "LOVETRIP",
     description:
-      "커플을 위한 맞춤형 여행 계획 서비스. 네이버 지도 기반으로 데이트 코스, 숙박, 교통편을 추천하고 예산을 관리하세요.",
+      "맞춤형 여행 계획 서비스. 네이버 지도 기반으로 데이트 코스, 숙박, 교통편을 추천하고 예산을 관리하세요.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
