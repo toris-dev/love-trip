@@ -1,12 +1,15 @@
 "use client"
 
+import { useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
 import { Button } from "@lovetrip/ui/components/button"
 import { Input } from "@lovetrip/ui/components/input"
 import { Label } from "@lovetrip/ui/components/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@lovetrip/ui/components/avatar"
 import { Badge } from "@lovetrip/ui/components/badge"
-import { Mail, Calendar, Camera, Edit2, Save, X } from "lucide-react"
+import { Mail, Calendar, Camera, Edit2, Save, X, Loader2, AlertTriangle } from "lucide-react"
+import { toast } from "sonner"
+import { validateImageFile } from "@/lib/security/file-validation"
 import type { ProfileData } from "../types"
 
 interface ProfileCardProps {
@@ -26,9 +29,63 @@ export function ProfileCard({
   onCancel,
   onSave,
 }: ProfileCardProps) {
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 클라이언트 사이드 파일 검증 (보안 강화)
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      toast.error(validation.error || "파일 검증에 실패했습니다", {
+        icon: <AlertTriangle className="h-4 w-4" />,
+      })
+      // 파일 입력 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch("/api/profile/avatar", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "이미지 업로드에 실패했습니다")
+      }
+
+      const { avatarUrl } = await response.json()
+      onProfileChange({ ...profile, avatar: avatarUrl })
+      toast.success("프로필 이미지가 업로드되었습니다")
+    } catch (error) {
+      console.error("Error uploading avatar:", error)
+      toast.error(error instanceof Error ? error.message : "이미지 업로드에 실패했습니다")
+    } finally {
+      setIsUploading(false)
+      // 파일 입력 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }
+
   return (
     <Card className="mb-8 border-2">
-      <CardHeader>
+      <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6">
         <div className="flex items-center justify-between">
           <CardTitle>프로필 정보</CardTitle>
           {!isEditing ? (
@@ -50,22 +107,47 @@ export function ProfileCard({
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Avatar */}
           <div className="flex-shrink-0">
             <div className="relative inline-block">
-              <Avatar className="h-24 w-24 border-4 border-primary/20">
-                <AvatarImage src={profile.avatar} alt={profile.name} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <Avatar
+                className={`h-24 w-24 border-4 border-primary/20 ${
+                  isUploading ? "opacity-50 cursor-wait" : "cursor-pointer hover:border-primary/40"
+                } transition-all duration-200`}
+                onClick={handleAvatarClick}
+              >
+                <AvatarImage
+                  src={profile.avatar || "/placeholder-user.jpg"}
+                  alt={profile.name}
+                />
                 <AvatarFallback className="text-2xl bg-primary/10 text-primary">
                   {profile.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              {isEditing && (
+              {isUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-full">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              )}
+              {!isUploading && (
                 <Button
                   size="icon"
-                  className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+                  className="absolute bottom-0 right-0 rounded-full h-8 w-8 shadow-md"
                   variant="secondary"
+                  onClick={e => {
+                    e.stopPropagation()
+                    handleAvatarClick()
+                  }}
+                  title="프로필 이미지 변경"
                 >
                   <Camera className="h-4 w-4" />
                 </Button>

@@ -1,0 +1,39 @@
+-- Migration: Create secure Storage bucket policies for avatars
+-- Created: 2025-01-21
+-- Description: avatars 버킷에 대한 보안 정책 설정
+-- 
+-- 주의: Supabase Storage 정책은 SQL로 직접 생성할 수 없습니다.
+-- Supabase 대시보드에서 다음 정책들을 수동으로 설정해야 합니다:
+--
+-- 1. 업로드 정책 (INSERT):
+--    Policy name: "Users can upload their own avatars"
+--    Allowed operation: INSERT
+--    Policy definition: 
+--      (bucket_id = 'avatars') 
+--      AND (storage.foldername(name))[1] = (auth.uid())::text
+--    Target roles: authenticated
+--
+-- 2. 읽기 정책 (SELECT):
+--    Policy name: "Public read access for avatars"
+--    Allowed operation: SELECT
+--    Policy definition: bucket_id = 'avatars'
+--    Target roles: authenticated
+--
+-- 3. 업데이트 정책 (UPDATE):
+--    Policy name: "Users can update their own avatars"
+--    Allowed operation: UPDATE
+--    Policy definition: 
+--      (bucket_id = 'avatars') 
+--      AND (storage.foldername(name))[1] = (auth.uid())::text
+--    Target roles: authenticated
+--
+-- 4. 삭제 정책 (DELETE):
+--    Policy name: "Users can delete their own avatars"
+--    Allowed operation: DELETE
+--    Policy definition: 
+--      (bucket_id = 'avatars') 
+--      AND (storage.foldername(name))[1] = (auth.uid())::text
+--    Target roles: authenticated
+
+-- 참고: Storage 정책은 Supabase Management API를 통해 설정할 수 있습니다.
+-- 또는 Supabase 대시보드의 Storage > Policies 섹션에서 설정하세요.
