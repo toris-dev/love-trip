@@ -35,12 +35,41 @@ export default async function HomePage() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // 프로필 display_name 가져오기
+  let displayName: string | null = null
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .single()
+    displayName = profile?.display_name || null
+  }
+
   return (
-    <div className="w-full bg-gradient-to-br from-primary/5 via-background to-accent/5">
-      <section className="relative py-12 sm:py-16 md:py-20 px-4 sm:px-6">
-        <div className="container mx-auto max-w-6xl">
+    <div className="w-full bg-background">
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background via-accent/5 to-background" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(236,72,153,0.1),transparent_50%)]" />
+        <div className="container mx-auto max-w-7xl w-full relative z-10">
           <HomeHeroSection />
-          <HomePageClient user={user} />
+        </div>
+      </section>
+
+      {/* Main Content Section */}
+      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-20">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-primary/5 to-background" />
+        <div className="container mx-auto max-w-7xl w-full relative z-10">
+          <HomePageClient user={user} displayName={displayName} />
+        </div>
+      </section>
+
+      {/* Info Section */}
+      <section className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 py-20">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/5 to-background" />
+        <div className="container mx-auto max-w-7xl w-full relative z-10">
           <HomeInfoSection />
         </div>
       </section>
