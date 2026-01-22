@@ -1,6 +1,43 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { getPublicCourses, getMyCourses } from "@lovetrip/planner/services"
+import type { SupabaseClient } from "@supabase/supabase-js"
+import type { Database } from "@lovetrip/shared/types/database"
+
+/**
+ * date_courses 또는 travel_courses 테이블에서 코스를 가져오는 헬퍼 함수
+ */
+async function fetchCoursesFromTable(
+  supabase: SupabaseClient<Database>,
+  tableName: "date_courses" | "travel_courses",
+  courseType: "date" | "travel",
+  region: string | undefined,
+  limit: number
+) {
+  try {
+    let query = supabase.from(tableName).select("*")
+    if (region) {
+      query = query.eq("region", region)
+    }
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(limit)
+    if (error) {
+      console.error(`Error fetching ${tableName}:`, error)
+      return []
+    }
+    // user_courses 형식으로 변환
+    return (data || []).map(course => ({
+      ...course,
+      course_type: courseType as const,
+      is_public: true,
+      status: "published" as const,
+      user_id: null,
+      author: null,
+    }))
+  } catch (error) {
+    console.error(`Error in fetchCoursesFromTable for ${tableName}:`, error)
+    return []
+  }
+}
 
 /**
  * GET /api/user-courses
@@ -80,47 +117,9 @@ export async function GET(request: NextRequest) {
           userId: user?.id,
         }).catch(() => []),
         // date_courses 테이블에서 모든 코스 가져오기
-        (async () => {
-          let query = supabase.from("date_courses").select("*")
-          if (region) {
-            query = query.eq("region", region)
-          }
-          const { data, error } = await query.order("created_at", { ascending: false }).limit(limit)
-          if (error) {
-            console.error("Error fetching date_courses:", error)
-            return []
-          }
-          // user_courses 형식으로 변환
-          return (data || []).map(course => ({
-            ...course,
-            course_type: "date" as const,
-            is_public: true,
-            status: "published" as const,
-            user_id: null,
-            author: null,
-          }))
-        })(),
+        fetchCoursesFromTable(supabase, "date_courses", "date", region, limit),
         // travel_courses 테이블에서 모든 코스 가져오기
-        (async () => {
-          let query = supabase.from("travel_courses").select("*")
-          if (region) {
-            query = query.eq("region", region)
-          }
-          const { data, error } = await query.order("created_at", { ascending: false }).limit(limit)
-          if (error) {
-            console.error("Error fetching travel_courses:", error)
-            return []
-          }
-          // user_courses 형식으로 변환
-          return (data || []).map(course => ({
-            ...course,
-            course_type: "travel" as const,
-            is_public: true,
-            status: "published" as const,
-            user_id: null,
-            author: null,
-          }))
-        })(),
+        fetchCoursesFromTable(supabase, "travel_courses", "travel", region, limit),
       ])
 
       // 중복 제거: 내 코스 > 공개 코스 > date_courses > travel_courses 순서로 우선순위

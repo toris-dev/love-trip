@@ -24,6 +24,44 @@ export class NotificationService {
 
   async sendPushNotification(params: SendNotificationParams): Promise<boolean> {
     try {
+      const supabase = this.getSupabase()
+
+      // 단일 사용자에게 보내는 경우 알림 설정 확인
+      if (params.userId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("notifications_enabled")
+          .eq("id", params.userId)
+          .single()
+
+        // 알림이 비활성화되어 있으면 전송하지 않음
+        if (profile?.notifications_enabled === false) {
+          console.log("[Notification] User has notifications disabled, skipping notification")
+          return false
+        }
+      }
+
+      // 여러 사용자에게 보내는 경우 각 사용자의 알림 설정 확인
+      if (params.userIds && params.userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, notifications_enabled")
+          .in("id", params.userIds)
+
+        // 알림이 활성화된 사용자만 필터링
+        const enabledUserIds = profiles
+          ?.filter((p) => p.notifications_enabled !== false)
+          .map((p) => p.id) || []
+
+        if (enabledUserIds.length === 0) {
+          console.log("[Notification] No users with notifications enabled")
+          return false
+        }
+
+        // 활성화된 사용자에게만 알림 전송
+        params.userIds = enabledUserIds
+      }
+
       const response = await fetch("/api/push/send", {
         method: "POST",
         headers: {

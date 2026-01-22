@@ -188,7 +188,7 @@ export class CalendarService {
       })
       return {
         success: false,
-        error: error?.message || error?.details || error?.hint || "캘린더 생성에 실패했습니다",
+        error: err?.message || err?.details || err?.hint || "캘린더 생성에 실패했습니다",
       }
     }
   }
@@ -343,6 +343,19 @@ export class CalendarService {
 
       // 파트너 ID 찾기
       const partnerId = couple.user1_id === user.id ? couple.user2_id : couple.user1_id
+
+      // 파트너의 알림 설정 확인
+      const { data: partnerProfile } = await this.supabase
+        .from("profiles")
+        .select("notifications_enabled")
+        .eq("id", partnerId)
+        .single()
+
+      // 알림이 비활성화되어 있으면 전송하지 않음
+      if (partnerProfile?.notifications_enabled === false) {
+        console.log("[Calendar] Partner has notifications disabled, skipping notification")
+        return
+      }
 
       // 푸시 알림 API 호출
       await fetch("/api/push/send", {

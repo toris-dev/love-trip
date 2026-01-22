@@ -34,8 +34,8 @@ export const PREMIUM_FEATURES = {
   AI_RESCHEDULE: "ai_reschedule",
   // 예산 최적화 대안 코스 AI 추천
   BUDGET_OPTIMIZATION: "budget_optimization",
-  // 기념일 알림 + 예약 리마인더
-  ANNIVERSARY_REMINDERS: "anniversary_reminders",
+  // 예약 리마인더
+  RESERVATION_REMINDERS: "reservation_reminders",
   // 앨범 무제한 + 커플 히스토리 리포트
   UNLIMITED_ALBUM: "unlimited_album",
   // 프리미엄 배지 + 우선 노출

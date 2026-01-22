@@ -265,6 +265,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 7. 여행 계획 생성 알림 전송 (트랜잭션 외부 - 실패해도 무시)
+    try {
+      const { notificationService } = await import("@lovetrip/api/clients")
+      await notificationService.sendTravelPlanNotification(plan.id, "created")
+    } catch (notificationError) {
+      // 알림 전송 실패는 로그만 남기고 계속 진행
+      console.error("Failed to send travel plan notification (non-critical):", notificationError)
+    }
+
     return NextResponse.json({ plan })
   } catch (error) {
     const { handleError, logError } = await import("@/lib/errors/error-handler")

@@ -33,7 +33,26 @@ export async function POST(request: NextRequest) {
     const { duration, image_url } = body
 
     // places 배열 검증 및 변환 (하이브리드 방식)
-    const validatedPlaces = places.map((place: any, index: number) => {
+    interface PlaceInput {
+      place_id?: string | null
+      place_info?: {
+        name: string
+        lat: number
+        lng: number
+        address?: string
+        type?: "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC"
+        rating?: number
+        price_level?: number
+        image_url?: string
+        description?: string
+      }
+      day_number?: number
+      order_index?: number
+      visit_duration_minutes?: number
+      notes?: string | null
+    }
+
+    const validatedPlaces = places.map((place: PlaceInput, index: number) => {
       // place_id가 있으면 사용, 없으면 place_info 사용
       if (place.place_id) {
         return {
