@@ -14,18 +14,29 @@ export async function Header() {
     points: 0,
   }
 
+  // 프로필 닉네임 조회
+  let nickname: string | null = null
   if (user) {
     try {
       const gamification = await getOrCreateUserGamification(user.id)
       gamificationData = {
-        level: gamification.level,
-        points: gamification.points,
+        level: gamification.level ?? 1,
+        points: gamification.points ?? 0,
       }
+
+      // 프로필 닉네임 가져오기
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("nickname")
+        .eq("id", user.id)
+        .single()
+
+      nickname = profileData?.nickname || null
     } catch (error) {
-      console.error("Failed to load gamification data:", error)
+      console.error("Failed to load gamification or profile data:", error)
       // 에러가 발생해도 기본값 사용
     }
   }
 
-  return <HeaderClient initialUser={user} gamificationData={gamificationData} />
+  return <HeaderClient initialUser={user} initialNickname={nickname} gamificationData={gamificationData} />
 }

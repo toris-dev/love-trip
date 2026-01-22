@@ -11,20 +11,34 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 262 83% 58%; /* Modern Indigo */
+    --primary: 330 70% 60%; /* 핑크 계열 */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 5.9% 96%; /* Soft Gray */
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 217 91% 60%; /* Vibrant Blue */
+    --secondary: 330 50% 95%; /* 연한 핑크 */
+    --secondary-foreground: 330 20% 20%;
+    --muted: 330 30% 96%;
+    --muted-foreground: 330 10% 40%;
+    --accent: 280 70% 60%; /* 퍼플 계열 */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262 83% 58%;
-    --radius: 0.75rem;
+    --border: 330 20% 90%;
+    --input: 330 20% 90%;
+    --ring: 330 70% 60%;
+    --radius: 1.5rem;
+  }
+
+  @keyframes gradient {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .animate-gradient {
+    animation: gradient 3s ease infinite;
+    background-size: 200% 200%;
   }
 
   .dark {
@@ -34,19 +48,19 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 262 83% 58%;
+    --primary: 330 65% 55%; /* 다크 모드 핑크 */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 15.9%;
+    --secondary: 330 20% 20%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 217 91% 60%;
+    --muted: 330 15% 20%;
+    --muted-foreground: 330 10% 65%;
+    --accent: 280 65% 55%; /* 다크 모드 퍼플 */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 262 83% 58%;
+    --border: 330 15% 25%;
+    --input: 330 15% 25%;
+    --ring: 330 65% 55%;
   }
 }
 
@@ -55,6 +69,13 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* 추가 스타일 개선 */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }

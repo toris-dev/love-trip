@@ -111,9 +111,9 @@ export function TravelSidebar({
   // 상세 뷰 모드
   if (viewMode === "detail" && selectedCourse) {
     return (
-      <div className="h-full w-full bg-background border-r border-border shadow-xl pointer-events-auto flex flex-col">
+      <div className="h-full w-full bg-background border-r border-border shadow-xl pointer-events-auto flex flex-col overflow-hidden">
         {/* 뒤로가기 헤더 */}
-        <div className="p-3 sm:p-4 border-b border-border bg-card flex items-center gap-2 sm:gap-3">
+        <div className="p-3 sm:p-4 border-b border-border bg-card flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
@@ -126,8 +126,8 @@ export function TravelSidebar({
         </div>
 
         {/* 상세 정보 */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex-1 overflow-y-auto min-h-0" style={{ WebkitOverflowScrolling: "touch" }}>
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 pb-20 sm:pb-24">
             {/* 코스 이미지 */}
             {selectedCourse.image_url && (
               <div className="relative w-full h-48 sm:h-64 rounded-lg overflow-hidden">
@@ -299,7 +299,11 @@ export function TravelSidebar({
       )}
 
       {/* 코스 목록 */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto min-h-0"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         <div className="p-3 sm:p-4 pb-12 sm:pb-16">
           {isLoading ? (
             <div className="flex items-center justify-center h-full min-h-[300px] sm:min-h-[400px]">
