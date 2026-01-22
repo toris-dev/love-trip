@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { updateExpense } from "@lovetrip/expense/services"
+import { validateImageFile, sanitizeFilename, MAX_FILE_SIZE_LARGE } from "@/lib/security/file-validation"
+import { sanitizeError } from "@/lib/security/error-sanitization"
+import { validateContentType, validateRequestSize } from "@/lib/security/request-validation"
 
 /**
  * POST /api/travel-plans/[id]/expenses/[expenseId]/receipt
@@ -46,6 +49,24 @@ export async function POST(
       return NextResponse.json({ error: "지출 내역을 찾을 수 없습니다" }, { status: 404 })
     }
 
+    // Content-Type 검증
+    const contentTypeValidation = validateContentType(request, ["multipart/form-data"])
+    if (!contentTypeValidation.valid) {
+      return NextResponse.json(
+        { error: contentTypeValidation.error || "잘못된 요청 형식입니다" },
+        { status: 400 }
+      )
+    }
+
+    // 요청 크기 제한 (10MB)
+    const requestSizeValidation = validateRequestSize(request, MAX_FILE_SIZE_LARGE)
+    if (!requestSizeValidation.valid) {
+      return NextResponse.json(
+        { error: requestSizeValidation.error },
+        { status: 400 }
+      )
+    }
+
     // FormData에서 파일 추출
     const formData = await request.formData()
     const file = formData.get("file") as File | null
@@ -54,20 +75,31 @@ export async function POST(
       return NextResponse.json({ error: "파일이 제공되지 않았습니다" }, { status: 400 })
     }
 
-    // 파일 타입 검증
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "이미지 파일만 업로드 가능합니다" }, { status: 400 })
+    // 파일 검증 (보안 강화) - 영수증은 10MB까지 허용
+    const validation = validateImageFile(file)
+    if (!validation.valid) {
+      // 영수증은 10MB까지 허용하므로 크기 검증만 재확인
+      if (file.size > MAX_FILE_SIZE_LARGE) {
+        return NextResponse.json(
+          { error: "파일 크기는 10MB 이하여야 합니다" },
+          { status: 400 }
+        )
+      }
+      // 다른 검증 실패는 원래 에러 반환
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+    // 크기 재검증 (10MB까지 허용)
+    if (file.size > MAX_FILE_SIZE_LARGE) {
+      return NextResponse.json(
+        { error: "파일 크기는 10MB 이하여야 합니다" },
+        { status: 400 }
+      )
     }
 
-    // 파일 크기 제한 (10MB)
-    const maxSize = 10 * 1024 * 1024
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: "파일 크기는 10MB 이하여야 합니다" }, { status: 400 })
-    }
-
-    // 파일명 생성 (고유한 이름)
-    const fileExt = file.name.split(".").pop()
-    const fileName = `${user.id}/${travelPlanId}/${expenseId}/${Date.now()}.${fileExt}`
+    // 파일명 생성 (고유한 이름, 보안 강화)
+    const sanitizedOriginalName = sanitizeFilename(file.name)
+    const fileExt = sanitizedOriginalName.split(".").pop()?.toLowerCase() || "jpg"
+    const fileName = `${user.id}/${travelPlanId}/${expenseId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
     const filePath = `receipts/${fileName}`
 
     // Supabase Storage에 업로드
@@ -80,8 +112,9 @@ export async function POST(
 
     if (uploadError) {
       console.error("Error uploading receipt:", uploadError)
+      const safeError = sanitizeError(uploadError)
       return NextResponse.json(
-        { error: uploadError.message || "영수증 업로드에 실패했습니다" },
+        { error: safeError || "영수증 업로드에 실패했습니다" },
         { status: 500 }
       )
     }
@@ -99,8 +132,9 @@ export async function POST(
     return NextResponse.json({ expense: updatedExpense, receiptUrl: publicUrl }, { status: 200 })
   } catch (error) {
     console.error("Error in POST /api/travel-plans/[id]/expenses/[expenseId]/receipt:", error)
+    const safeError = sanitizeError(error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "영수증 업로드 중 오류가 발생했습니다" },
+      { error: safeError },
       { status: 500 }
     )
   }

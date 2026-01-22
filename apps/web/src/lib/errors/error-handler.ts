@@ -6,6 +6,7 @@ import {
   NotFoundError,
   ValidationError,
 } from "@lovetrip/shared/types/errors"
+import { sanitizeError } from "@/lib/security/error-sanitization"
 
 /**
  * 표준 에러 응답 형식
@@ -100,11 +101,13 @@ export function handleError(error: unknown): NextResponse<ErrorResponse> {
       )
     }
 
+    // 민감한 정보 제거된 에러 메시지
+    const safeMessage = sanitizeError(error)
     return NextResponse.json(
       {
         error: {
           code: "INTERNAL_ERROR",
-          message: error.message || "서버 오류가 발생했습니다",
+          message: safeMessage,
         },
       },
       { status: 500 }
