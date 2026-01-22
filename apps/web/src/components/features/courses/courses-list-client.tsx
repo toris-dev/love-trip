@@ -149,24 +149,35 @@ export function CoursesListClient({
     }
   }
 
-  const filteredCourses = courses.filter(course => {
-    // 프리미엄 고급 필터
-    if (isPremium) {
-      if (minViews > 0 && (course.view_count || 0) < minViews) return false
-      if (minLikes > 0 && (course.like_count || 0) < minLikes) return false
-      if (premiumOnly && !course.author?.isPremium) return false
+  // 필터링 로직을 useMemo로 최적화
+  const filteredCourses = useMemo(() => {
+    if (!searchQuery && minViews === 0 && minLikes === 0 && !premiumOnly) {
+      return courses
     }
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      return (
-        course.title.toLowerCase().includes(query) ||
-        course.region.toLowerCase().includes(query) ||
-        course.description?.toLowerCase().includes(query)
-      )
-    }
-    return true
-  })
+    const query = searchQuery.toLowerCase()
+    const hasSearchQuery = query.length > 0
+
+    return courses.filter(course => {
+      // 프리미엄 고급 필터
+      if (isPremium) {
+        if (minViews > 0 && (course.view_count || 0) < minViews) return false
+        if (minLikes > 0 && (course.like_count || 0) < minLikes) return false
+        if (premiumOnly && !course.author?.isPremium) return false
+      }
+
+      // 검색어 필터
+      if (hasSearchQuery) {
+        return (
+          course.title.toLowerCase().includes(query) ||
+          course.region.toLowerCase().includes(query) ||
+          course.description?.toLowerCase().includes(query)
+        )
+      }
+
+      return true
+    })
+  }, [courses, searchQuery, isPremium, minViews, minLikes, premiumOnly])
 
   return (
     <div className="min-h-screen bg-background/50 backdrop-blur-3xl">

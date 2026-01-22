@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@lovetrip/ui/components/button"
@@ -643,31 +643,32 @@ export function CoursesPageClient({
     }
   }, [datePage, dateHasMore, dateIsLoadingMore, dateSearchQuery])
 
-  const filterDateCourses = useCallback(() => {
-    let filtered = [...dateCourses]
-
-    // 검색어 필터
-    if (dateSearchQuery.trim()) {
-      filtered = filtered.filter(
-        course =>
-          course.title.toLowerCase().includes(dateSearchQuery.toLowerCase()) ||
-          course.region.toLowerCase().includes(dateSearchQuery.toLowerCase()) ||
-          course.description?.toLowerCase().includes(dateSearchQuery.toLowerCase())
-      )
+  // 필터링 로직을 useMemo로 최적화
+  const filteredDateCourses = useMemo(() => {
+    if (!dateSearchQuery.trim() && Object.keys(dateFilters).length === 0) {
+      return dateCourses
     }
 
-    // 추가 필터 적용
-    filtered = filtered.filter(course => {
+    const query = dateSearchQuery.toLowerCase()
+    const hasSearchQuery = query.length > 0
+
+    return dateCourses.filter(course => {
+      // 검색어 필터
+      if (hasSearchQuery) {
+        const matchesSearch =
+          course.title.toLowerCase().includes(query) ||
+          course.region.toLowerCase().includes(query) ||
+          course.description?.toLowerCase().includes(query)
+        if (!matchesSearch) return false
+      }
+
+      // 추가 필터 적용
       if (
         dateFilters.region &&
         !course.region.toLowerCase().includes(dateFilters.region.toLowerCase())
       ) {
         return false
       }
-      // DateCourse 타입에 rating 속성이 없으므로 필터 제거
-      // if (dateFilters.minRating && (course.rating || 0) < dateFilters.minRating) {
-      //   return false
-      // }
       if (dateFilters.maxPrice && course.max_price && course.max_price > dateFilters.maxPrice) {
         return false
       }
@@ -681,14 +682,16 @@ export function CoursesPageClient({
       }
       return true
     })
+  }, [dateCourses, dateSearchQuery, dateFilters])
 
-    setFilteredDateCourses(filtered)
+  const filterDateCourses = useCallback(() => {
+    setFilteredDateCourses(filteredDateCourses)
     if (dateSearchQuery.trim() || Object.keys(dateFilters).length > 0) {
-      setDisplayedDateCourses(filtered.slice(0, ITEMS_PER_PAGE))
+      setDisplayedDateCourses(filteredDateCourses.slice(0, ITEMS_PER_PAGE))
       setDateHasMore(false)
       setDatePage(0)
     }
-  }, [dateCourses, dateSearchQuery, dateFilters])
+  }, [filteredDateCourses, dateSearchQuery, dateFilters])
 
   useEffect(() => {
     filterDateCourses()
@@ -972,7 +975,7 @@ export function CoursesPageClient({
                 <>
                   {/* 선택된 데이트 코스 상세 뷰 */}
                   {selectedDateCourse ? (
-                    <div className="h-full w-full flex flex-col">
+                    <div className="h-full w-full flex flex-col overflow-hidden">
                       {/* 뒤로가기 헤더 */}
                       <div className="p-3 sm:p-4 border-b border-border bg-card flex items-center gap-2 sm:gap-3 flex-shrink-0">
                         <Button
@@ -1002,7 +1005,7 @@ export function CoursesPageClient({
                         className="flex-1 overflow-y-auto min-h-0"
                         style={{ WebkitOverflowScrolling: "touch" }}
                       >
-                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 pb-40">
+                        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 pb-20 sm:pb-24">
                           {/* 코스 이미지 */}
                           {selectedDateCourse.image_url && (
                             <div className="relative w-full h-48 sm:h-64 rounded-lg overflow-hidden">

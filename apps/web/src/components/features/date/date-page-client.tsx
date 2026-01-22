@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { Button } from "@lovetrip/ui/components/button"
 import { Plus, ArrowLeft, Save, GripVertical, X } from "lucide-react"
 import { LocationInput } from "@/components/shared/location-input"
@@ -35,6 +35,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import dynamic from "next/dynamic"
 import type { DateCourse, Place, TargetAudience } from "@lovetrip/shared/types/course"
+import { MoodFilter, type MoodType } from "@lovetrip/ui/components/mood-filter"
 
 const NaverMapView = dynamic(() => import("@/components/shared/naver-map-view"), { ssr: false })
 
@@ -98,6 +99,7 @@ export function DatePageClient({
     image: string
   } | null>(null)
   const [user, setUser] = useState<{ id: string; email?: string } | null>(initialUser)
+  const [selectedMoods, setSelectedMoods] = useState<MoodType[]>([])
   const observerTarget = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -476,28 +478,35 @@ export function DatePageClient({
     }
   }, [page, isLoadingMore, hasMore, loadCourses])
 
-  const filterCourses = useCallback(() => {
-    let filtered = [...courses]
+  // 필터링 로직을 useMemo로 최적화
+  const filteredCourses = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return courses
+    }
 
+    const query = searchQuery.toLowerCase()
+    return courses.filter(
+      course =>
+        course.title.toLowerCase().includes(query) ||
+        course.region.toLowerCase().includes(query) ||
+        course.description?.toLowerCase().includes(query)
+    )
+  }, [courses, searchQuery])
+
+  const filterCourses = useCallback(() => {
     if (searchQuery.trim()) {
-      filtered = filtered.filter(
-        course =>
-          course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          course.region.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          course.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
       // 검색어가 있을 때는 필터링된 결과만 표시
-      setFilteredCourses(filtered)
-      setDisplayedCourses(filtered.slice(0, ITEMS_PER_PAGE))
+      setFilteredCourses(filteredCourses)
+      setDisplayedCourses(filteredCourses.slice(0, ITEMS_PER_PAGE))
       setHasMore(false) // 검색 시 무한스크롤 비활성화
       setPage(0)
     } else {
       // 검색어가 없을 때는 필터링만 하고 displayedCourses는 리셋하지 않음 (무한스크롤 유지)
-      setFilteredCourses(filtered)
+      setFilteredCourses(courses)
       // displayedCourses는 loadCourses에서 관리하므로 여기서 리셋하지 않음
       // hasMore와 page도 유지
     }
-  }, [courses, searchQuery])
+  }, [courses, searchQuery, filteredCourses])
 
   useEffect(() => {
     loadRecommendedPlaces()
@@ -749,7 +758,7 @@ export function DatePageClient({
                 </div>
               </div>
 
-              <div className="p-4 border-b border-border bg-muted/30">
+              <div className="p-4 border-b border-border bg-muted/30 space-y-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -759,6 +768,12 @@ export function DatePageClient({
                     className="pl-10 pr-4 h-11 bg-background"
                   />
                 </div>
+                {/* 무드 필터 */}
+                <MoodFilter
+                  selectedMoods={selectedMoods}
+                  onMoodChange={setSelectedMoods}
+                  className="flex-wrap"
+                />
               </div>
 
               {error && (

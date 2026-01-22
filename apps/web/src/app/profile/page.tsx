@@ -1,7 +1,14 @@
 import type { Metadata } from "next"
+import { cache } from "react"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { ProfilePageClient } from "@/components/features/profile/profile-page-client"
 import { getOrCreateUserGamification } from "@lovetrip/gamification"
+
+// React.cache()로 요청당 중복 호출 방지
+const getCachedProfileStats = cache(getProfileStats)
+const getCachedProfileData = cache(getProfileData)
+const getCachedUserCourses = cache(getUserCourses)
+const getCachedTravelPlans = cache(getTravelPlans)
 
 export const metadata: Metadata = {
   title: "프로필",
@@ -172,58 +179,71 @@ async function getTravelPlans(userId: string) {
     .order("created_at", { ascending: false })
     .limit(6)
 
-  if (error || !plans) {
+  if (error || !plans || plans.length === 0) {
     return []
   }
 
-  // 각 여행 계획의 장소 개수 조회
-  const plansWithPlaces = await Promise.all(
-    plans.map(async plan => {
-      const { data: days } = await supabase
-        .from("travel_days")
-        .select("id")
-        .eq("travel_plan_id", plan.id)
+  const planIds = plans.map(p => p.id)
 
-      let places = 0
-      if (days && days.length > 0) {
-        const dayIds = days.map(d => d.id)
-        const { count } = await supabase
-          .from("travel_day_places")
-          .select("*", { count: "exact", head: true })
-          .in("travel_day_id", dayIds)
+  // 병렬로 모든 여행 계획의 일차와 장소 개수 조회
+  const [daysResult, placesCountResult] = await Promise.all([
+    supabase
+      .from("travel_days")
+      .select("id, travel_plan_id")
+      .in("travel_plan_id", planIds),
+    supabase
+      .from("travel_day_places")
+      .select("travel_day_id, travel_days!inner(travel_plan_id)", { count: "exact", head: false })
+      .in("travel_days.travel_plan_id", planIds),
+  ])
 
-        places = count || 0
-      }
+  // 일차별로 그룹화
+  const daysByPlan = new Map<string, string[]>()
+  daysResult.data?.forEach(day => {
+    if (!daysByPlan.has(day.travel_plan_id)) {
+      daysByPlan.set(day.travel_plan_id, [])
+    }
+    daysByPlan.get(day.travel_plan_id)!.push(day.id)
+  })
 
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+  // 장소 개수 계산
+  const placesByDay = new Map<string, number>()
+  placesCountResult.data?.forEach(place => {
+    const dayId = place.travel_day_id
+    placesByDay.set(dayId, (placesByDay.get(dayId) || 0) + 1)
+  })
 
-      const startDate = new Date(plan.start_date)
-      const endDate = new Date(plan.end_date)
-      startDate.setHours(0, 0, 0, 0)
-      endDate.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
-      let status: "planning" | "ongoing" | "completed" = "planning"
-      if (endDate < today) {
-        status = "completed"
-      } else if (startDate <= today && today <= endDate) {
-        status = "ongoing"
-      }
+  // 각 여행 계획의 정보 구성
+  return plans.map(plan => {
+    const dayIds = daysByPlan.get(plan.id) || []
+    const places = dayIds.reduce((sum, dayId) => sum + (placesByDay.get(dayId) || 0), 0)
 
-      return {
-        id: plan.id,
-        title: plan.title,
-        destination: plan.destination,
-        start_date: plan.start_date,
-        end_date: plan.end_date,
-        total_budget: plan.total_budget || 0,
-        status,
-        places,
-      }
-    })
-  )
+    const startDate = new Date(plan.start_date)
+    const endDate = new Date(plan.end_date)
+    startDate.setHours(0, 0, 0, 0)
+    endDate.setHours(0, 0, 0, 0)
 
-  return plansWithPlaces
+    let status: "planning" | "ongoing" | "completed" = "planning"
+    if (endDate < today) {
+      status = "completed"
+    } else if (startDate <= today && today <= endDate) {
+      status = "ongoing"
+    }
+
+    return {
+      id: plan.id,
+      title: plan.title,
+      destination: plan.destination,
+      start_date: plan.start_date,
+      end_date: plan.end_date,
+      total_budget: plan.total_budget || 0,
+      status,
+      places,
+    }
+  })
 }
 
 export default async function ProfilePage() {

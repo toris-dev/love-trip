@@ -44,6 +44,7 @@ import { BudgetPlanner } from "@/components/features/expense/budget-planner"
 import { BudgetDashboard } from "@/components/features/expense/budget-dashboard"
 import { BudgetVisualization } from "@/components/features/expense/budget-visualization"
 import { BudgetOptimization } from "@/components/features/expense/budget-optimization"
+import { BudgetProgress } from "@lovetrip/ui/components/budget-progress"
 import { SettlementView } from "@/components/features/expense/settlement-view"
 import type { BudgetOptimizationSuggestion } from "@lovetrip/expense/services"
 
@@ -329,6 +330,16 @@ export function TravelPlanDetailClient({
 
           {/* 예산 관리 */}
           <div className="mb-6 space-y-4">
+            {budgetSummary && (
+              <BudgetProgress
+                totalBudget={budgetSummary.totalPlanned}
+                spentToday={budgetSummary.totalActual}
+                totalSpent={budgetSummary.totalActual}
+                onBreakdownClick={() => {
+                  // Breakdown 다이얼로그 열기 (기존 BudgetDashboard 표시)
+                }}
+              />
+            )}
             <BudgetPlanner travelPlanId={plan.id} initialBudget={plan.total_budget || 0} />
             {budgetSummary && (
               <>

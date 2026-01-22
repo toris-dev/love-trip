@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@lovetrip/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
@@ -42,27 +42,40 @@ export function CoursesExploreClient({
   const [minLikes, setMinLikes] = useState<number>(0)
   const [premiumOnly, setPremiumOnly] = useState<boolean>(false)
 
-  const filteredCourses = courses.filter(course => {
-    // 타겟 오디언스 필터
-    if (filters.targetAudience && course.target_audience !== filters.targetAudience) {
-      return false
+  // 필터링 로직을 useMemo로 최적화
+  const filteredCourses = useMemo(() => {
+    if (!searchQuery.trim() && !filters.targetAudience && minViews === 0 && minLikes === 0 && !premiumOnly) {
+      return courses
     }
 
-    // 프리미엄 고급 필터
-    if (isPremium) {
-      if (minViews > 0 && (course.view_count || 0) < minViews) return false
-      if (minLikes > 0 && (course.like_count || 0) < minLikes) return false
-      if (premiumOnly && !course.author?.isPremium) return false
-    }
-
-    if (!searchQuery.trim()) return true
     const query = searchQuery.toLowerCase()
-    return (
-      course.title.toLowerCase().includes(query) ||
-      course.region.toLowerCase().includes(query) ||
-      course.description?.toLowerCase().includes(query)
-    )
-  })
+    const hasSearchQuery = query.length > 0
+
+    return courses.filter(course => {
+      // 타겟 오디언스 필터
+      if (filters.targetAudience && course.target_audience !== filters.targetAudience) {
+        return false
+      }
+
+      // 프리미엄 고급 필터
+      if (isPremium) {
+        if (minViews > 0 && (course.view_count || 0) < minViews) return false
+        if (minLikes > 0 && (course.like_count || 0) < minLikes) return false
+        if (premiumOnly && !course.author?.isPremium) return false
+      }
+
+      // 검색어 필터
+      if (hasSearchQuery) {
+        return (
+          course.title.toLowerCase().includes(query) ||
+          course.region.toLowerCase().includes(query) ||
+          course.description?.toLowerCase().includes(query)
+        )
+      }
+
+      return true
+    })
+  }, [courses, filters.targetAudience, searchQuery, isPremium, minViews, minLikes, premiumOnly])
 
   const handleLike = async (courseId: string) => {
     if (!userId) {

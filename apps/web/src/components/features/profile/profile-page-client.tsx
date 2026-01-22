@@ -228,7 +228,7 @@ export function ProfilePageClient({
                     className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
                     onClick={() => router.push("/profile/date?type=date")}
                   >
-                    <CardContent className="pt-6 text-center">
+                    <CardContent className="p-6 text-center">
                       <div className="inline-flex items-center justify-center mb-4">
                         <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/20">
                           <Heart className="h-6 w-6 text-primary" />
@@ -245,7 +245,7 @@ export function ProfilePageClient({
                     className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
                     onClick={() => router.push("/profile/date?type=travel")}
                   >
-                    <CardContent className="pt-6 text-center">
+                    <CardContent className="p-6 text-center">
                       <div className="inline-flex items-center justify-center mb-4">
                         <div className="p-3 rounded-full bg-blue-50 dark:bg-blue-950">
                           <Plane className="h-6 w-6 text-blue-600" />
@@ -279,7 +279,7 @@ export function ProfilePageClient({
                           className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
                           onClick={() => router.push(`/profile/date?type=${course.course_type}`)}
                         >
-                          <CardContent className="pt-6">
+                          <CardContent className="p-6">
                             <div className="flex items-center gap-2 mb-2">
                               {course.course_type === "date" ? (
                                 <Heart className="h-4 w-4 text-primary" />
@@ -339,7 +339,7 @@ export function ProfilePageClient({
                             className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
                             onClick={() => router.push(`/my-trips/${plan.id}`)}
                           >
-                            <CardContent className="pt-6">
+                            <CardContent className="p-6">
                               <div className="flex items-start justify-between mb-2">
                                 <h3 className="font-semibold text-base flex-1 line-clamp-1">
                                   {plan.title}

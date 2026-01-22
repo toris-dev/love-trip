@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { cache } from "react"
 import { createClient } from "@lovetrip/api/supabase/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { CoursesPageClient } from "@/components/features/courses/courses-page-client"
@@ -6,6 +7,10 @@ import type { Database } from "@lovetrip/shared/types/database"
 import type { DateCourse, TravelCourseWithPlaces, Place } from "@lovetrip/shared/types/course"
 
 const ITEMS_PER_PAGE = 10
+
+// React.cache()로 요청당 중복 호출 방지
+const getCachedInitialDateCourses = cache(getInitialDateCourses)
+const getCachedInitialTravelCourses = cache(getInitialTravelCourses)
 
 // TravelCourse는 TravelCourseWithPlaces의 별칭으로 사용
 type TravelCourse = TravelCourseWithPlaces
@@ -18,6 +23,24 @@ type CourseWithPlaces = Database["public"]["Tables"]["travel_courses"]["Row"] & 
     order_index: number
     places: Place | null
   }>
+}
+
+interface TravelCoursePlaceRow {
+  day_number: number
+  order_index: number
+  place_name?: string | null
+  place_lat?: number | null
+  place_lng?: number | null
+  place_address?: string | null
+  place_type?: string | null
+  place_rating?: number | null
+  place_price_level?: number | null
+  place_image_url?: string | null
+  place_description?: string | null
+}
+
+type TravelCourseRow = Database["public"]["Tables"]["travel_courses"]["Row"] & {
+  travel_course_places?: TravelCoursePlaceRow[]
 }
 
 /**
@@ -220,70 +243,78 @@ async function getInitialDateCourses(): Promise<{
       const totalCount = count || 0
       const hasMore = to < totalCount - 1
 
-      // 각 코스의 장소 정보 가져오기
-      const coursesWithPlaces = await Promise.all(
-        dateCoursesData.map(async course => {
-          // 하이브리드 방식: place_id와 저장된 정보 모두 조회
-          const { data: placesData, error: placesError } = await supabase
-            .from("date_course_places")
-            .select(
-              "place_id, place_name, place_lat, place_lng, place_address, place_type, place_rating, place_price_level, place_image_url, place_description, order_index, distance_from_previous_km, visit_duration_minutes"
-            )
-            .eq("date_course_id", course.id)
-            .order("order_index", { ascending: true })
+      // 모든 코스의 장소를 한 번에 배치 조회 (성능 최적화)
+      const courseIds = dateCoursesData.map(c => c.id)
+      const { data: allPlacesData } = await supabase
+        .from("date_course_places")
+        .select(
+          "date_course_id, place_id, place_name, place_lat, place_lng, place_address, place_type, place_rating, place_price_level, place_image_url, place_description, order_index, distance_from_previous_km, visit_duration_minutes"
+        )
+        .in("date_course_id", courseIds)
+        .order("date_course_id", { ascending: true })
+        .order("order_index", { ascending: true })
 
-          if (placesError || !placesData || placesData.length === 0) {
+      // 코스별로 장소 그룹화
+      const placesByCourseId = new Map<string, typeof allPlacesData>()
+      allPlacesData?.forEach(place => {
+        if (!placesByCourseId.has(place.date_course_id)) {
+          placesByCourseId.set(place.date_course_id, [])
+        }
+        placesByCourseId.get(place.date_course_id)!.push(place)
+      })
+
+      // 각 코스의 장소 정보 매핑
+      const coursesWithPlaces = dateCoursesData.map(course => {
+        const placesData = placesByCourseId.get(course.id) || []
+
+        if (placesData.length === 0) {
+          return null
+        }
+
+        // places 테이블이 삭제되었으므로 저장된 정보만 사용
+        const sortedPlaces = placesData
+          .map(cp => {
+            // place_id가 없고 저장된 정보가 있는 경우
+            if (cp.place_name && cp.place_lat && cp.place_lng) {
+              const place: Place = {
+                id: `stored-${cp.order_index}`,
+                name: cp.place_name,
+                lat: Number(cp.place_lat),
+                lng: Number(cp.place_lng),
+                type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
+                rating: cp.place_rating ? Number(cp.place_rating) : null,
+                price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
+                description: cp.place_description || null,
+                image_url: cp.place_image_url || null,
+                address: cp.place_address || null,
+              }
+              return place
+            }
+
             return null
-          }
+          })
+          .filter((p): p is Place => p !== null)
+          .sort((a, b) => {
+            const aIndex = placesData.findIndex(p => p.place_name === a.name)
+            const bIndex = placesData.findIndex(p => p.place_name === b.name)
+            return (placesData[aIndex]?.order_index || 0) - (placesData[bIndex]?.order_index || 0)
+          })
 
-          // places 테이블이 삭제되었으므로 저장된 정보만 사용
-          const sortedPlaces =
-            placesData
-              ?.map(cp => {
-                // place_id가 없고 저장된 정보가 있는 경우
-                if (cp.place_name && cp.place_lat && cp.place_lng) {
-                  const place: Place = {
-                    id: `stored-${cp.order_index}`,
-                    name: cp.place_name,
-                    lat: Number(cp.place_lat),
-                    lng: Number(cp.place_lng),
-                    type: (cp.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
-                    rating: cp.place_rating ? Number(cp.place_rating) : null,
-                    price_level: cp.place_price_level ? Number(cp.place_price_level) : null,
-                    description: cp.place_description || null,
-                    image_url: cp.place_image_url || null,
-                    address: cp.place_address || null,
-                  }
-                  return place
-                }
-
-                return null
-              })
-              .filter((p): p is Place => p !== null)
-              .sort((a, b) => {
-                const aIndex = placesData.findIndex(p => p.place_name === a.name)
-                const bIndex = placesData.findIndex(p => p.place_name === b.name)
-                return (
-                  (placesData[aIndex]?.order_index || 0) - (placesData[bIndex]?.order_index || 0)
-                )
-              }) || []
-
-          return {
-            id: course.id,
-            title: course.title,
-            region: course.region,
-            description: course.description || "",
-            image_url: course.image_url,
-            place_count: course.place_count,
-            places: sortedPlaces,
-            duration: course.duration,
-            total_distance_km: course.total_distance_km,
-            max_distance_km: course.max_distance_km,
-            min_price: course.min_price ?? null,
-            max_price: course.max_price ?? null,
-          } as DateCourse
-        })
-      )
+        return {
+          id: course.id,
+          title: course.title,
+          region: course.region,
+          description: course.description || "",
+          image_url: course.image_url,
+          place_count: course.place_count,
+          places: sortedPlaces,
+          duration: course.duration,
+          total_distance_km: course.total_distance_km,
+          max_distance_km: course.max_distance_km,
+          min_price: course.min_price ?? null,
+          max_price: course.max_price ?? null,
+        } as DateCourse
+      })
 
       return {
         courses: coursesWithPlaces.filter((c): c is DateCourse => c !== null),
@@ -375,17 +406,17 @@ async function getInitialTravelCourses(): Promise<{
       const totalCount = count || 0
       const hasMore = to < totalCount - 1
 
-      const travelCourses: TravelCourse[] = ((coursesData as any[]) || [])
+      const travelCourses: TravelCourse[] = ((coursesData as TravelCourseRow[]) || [])
         .filter(course => course.place_count > 0)
         .map(course => {
           const sortedPlaces = (course.travel_course_places || [])
-            .sort((a: any, b: any) => {
+            .sort((a: TravelCoursePlaceRow, b: TravelCoursePlaceRow) => {
               if (a.day_number !== b.day_number) {
                 return a.day_number - b.day_number
               }
               return a.order_index - b.order_index
             })
-            .map((tcp: any) => {
+            .map((tcp: TravelCoursePlaceRow) => {
               // places 테이블이 삭제되었으므로 저장된 정보만 사용
               if (tcp.place_name && tcp.place_lat && tcp.place_lng) {
                 const place: Place = {
@@ -516,9 +547,10 @@ export default async function DatePage({ searchParams }: DatePageProps) {
   const params = await searchParams
   const courseType = params.type === "travel" ? "travel" : "date"
 
+  // 병렬로 두 타입의 코스 모두 조회 (필요한 것만 사용)
   const [dateCoursesData, travelCoursesData] = await Promise.all([
-    getInitialDateCourses(),
-    getInitialTravelCourses(),
+    getCachedInitialDateCourses(),
+    getCachedInitialTravelCourses(),
   ])
 
   return (

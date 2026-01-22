@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { cache } from "react"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { getExpenses } from "@lovetrip/expense/services"
 import { calculateSettlement } from "@lovetrip/expense/services"
@@ -10,6 +11,10 @@ import type { ExpenseWithSplits, SettlementSummary } from "@lovetrip/expense/typ
 type TravelPlan = Database["public"]["Tables"]["travel_plans"]["Row"]
 
 export const dynamic = "force-dynamic"
+
+// React.cache()로 요청당 중복 호출 방지
+const getCachedTravelPlan = cache(getTravelPlan)
+const getCachedCoupleInfo = cache(getCoupleInfo)
 
 interface TravelPlanDetailPageProps {
   params: Promise<{ id: string }>
@@ -116,27 +121,25 @@ export default async function TravelPlanDetailPage({ params }: TravelPlanDetailP
     notFound()
   }
 
-  // 여행 계획 조회
-  const plan = await getTravelPlan(id, user.id)
+  // 병렬로 데이터 페칭 (여행 계획, 커플 정보, 지출 내역)
+  const [plan, coupleInfo, expensesResult] = await Promise.all([
+    getCachedTravelPlan(id, user.id),
+    getCachedCoupleInfo(user.id),
+    getExpenses(id).catch(error => {
+      console.error("Failed to load expenses:", error)
+      return [] as ExpenseWithSplits[]
+    }),
+  ])
 
   if (!plan) {
     notFound()
   }
 
-  // 지출 내역 조회
-  let expenses: ExpenseWithSplits[] = []
-  try {
-    expenses = await getExpenses(id)
-  } catch (error) {
-    console.error("Failed to load expenses:", error)
-  }
-
-  // 커플 정보 및 정산 조회
-  const { partnerId } = await getCoupleInfo(user.id)
+  // 정산 조회 (커플이 있는 경우에만)
   let settlement: SettlementSummary[] = []
-  if (partnerId) {
+  if (coupleInfo.partnerId) {
     try {
-      settlement = await calculateSettlement(id, [user.id, partnerId])
+      settlement = await calculateSettlement(id, [user.id, coupleInfo.partnerId])
     } catch (error) {
       console.error("Failed to load settlement:", error)
     }
@@ -145,10 +148,10 @@ export default async function TravelPlanDetailPage({ params }: TravelPlanDetailP
   return (
     <TravelPlanDetailClient
       plan={plan}
-      initialExpenses={expenses}
+      initialExpenses={expensesResult}
       initialSettlement={settlement}
       userId={user.id}
-      partnerId={partnerId || undefined}
+      partnerId={coupleInfo.partnerId || undefined}
     />
   )
 }
