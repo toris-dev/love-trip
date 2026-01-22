@@ -9,17 +9,17 @@
 export const colors = {
   // Semantic Colors
   primary: {
-    DEFAULT: "oklch(0.55 0.15 162)",
+    DEFAULT: "oklch(0.65 0.18 330)", // 핑크 계열
     foreground: "oklch(1 0 0)",
-    light: "oklch(0.62 0.12 162)",
-    dark: "oklch(0.48 0.15 162)",
+    light: "oklch(0.72 0.15 330)",
+    dark: "oklch(0.58 0.18 330)",
   },
   secondary: {
-    DEFAULT: "oklch(0.62 0.12 162)",
-    foreground: "oklch(1 0 0)",
+    DEFAULT: "oklch(0.95 0.05 330)", // 연한 핑크
+    foreground: "oklch(0.25 0.05 330)",
   },
   accent: {
-    DEFAULT: "oklch(0.62 0.12 162)",
+    DEFAULT: "oklch(0.65 0.18 280)", // 퍼플 계열
     foreground: "oklch(1 0 0)",
   },
   destructive: {

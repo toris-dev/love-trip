@@ -5,12 +5,13 @@ import { cn } from "@lovetrip/utils"
 import { cva, type VariantProps } from "class-variance-authority"
 
 const cardVariants = cva(
-  "flex flex-col gap-6 rounded-xl border py-6 shadow-sm transition-all",
+  "flex flex-col gap-6 rounded-3xl border bg-card text-card-foreground shadow-sm transition-all duration-200",
   {
     variants: {
       variant: {
-        default: "bg-card text-card-foreground",
+        default: "hover:shadow-md hover:border-primary/20",
         glass: "bg-white/40 dark:bg-black/40 backdrop-blur-md border-white/20 dark:border-white/10 shadow-lg hover:shadow-xl hover:-translate-y-1",
+        image: "overflow-hidden hover:shadow-lg hover:scale-[1.02] transition-transform duration-300",
       },
     },
     defaultVariants: {
