@@ -91,18 +91,72 @@
 
 ## Performance Optimization
 
+### Server Component Optimization
+
+- Use React.cache() for request-level deduplication
+  ```typescript
+  import { cache } from "react"
+  
+  const getCachedData = cache(async (id: string) => {
+    // This will be deduplicated per request
+    return await fetchData(id)
+  })
+  ```
+
+- Parallel data fetching with Promise.all
+  ```typescript
+  const [data1, data2, data3] = await Promise.all([
+    fetchData1(),
+    fetchData2(),
+    fetchData3(),
+  ])
+  ```
+
+- Batch queries to avoid N+1 problem
+  ```typescript
+  // ❌ Bad: N+1 queries
+  const results = await Promise.all(items.map(item => fetchItemDetails(item.id)))
+  
+  // ✅ Good: Single batch query
+  const allDetails = await fetchBatchDetails(items.map(item => item.id))
+  ```
+
 ### Memoization
 
 - React.memo: For components with infrequently changing props
+  ```typescript
+  export const MyComponent = memo(function MyComponent({ data }: Props) {
+    // Component implementation
+  })
+  ```
+
 - useMemo: For expensive computed values
+  ```typescript
+  const filteredItems = useMemo(() => {
+    return items.filter(item => item.category === selectedCategory)
+  }, [items, selectedCategory])
+  ```
+
 - useCallback: For functions passed to child components
+  ```typescript
+  const handleClick = useCallback((id: string) => {
+    // Handler logic
+  }, [dependencies])
+  ```
 
 ### Code Splitting
 
-- Use dynamic import
+- Use dynamic import for heavy components
   ```typescript
   const NaverMapView = dynamic(() => import("@/components/shared/naver-map-view"), {
     ssr: false,
+  })
+  ```
+
+- Conditional module loading
+  ```typescript
+  const HeavyComponent = dynamic(() => import("./heavy-component"), {
+    loading: () => <Skeleton />,
   })
   ```
 
