@@ -54,7 +54,7 @@ export function CoupleConnection() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      setUser(user)
+      setUser(user ? { id: user.id, email: user.email || "" } : null)
 
       const coupleData = await calendarService.getMyCouple()
       setCouple(coupleData)
@@ -195,7 +195,7 @@ export function CoupleConnection() {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="py-8">
+        <CardContent className="px-6 sm:px-8 py-8">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
@@ -207,14 +207,14 @@ export function CoupleConnection() {
   if (couple) {
     return (
       <Card>
-        <CardHeader>
+        <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6">
           <CardTitle className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-primary fill-primary" />
             커플 연결됨
           </CardTitle>
           <CardDescription>커플과 일정을 공유하고 있습니다</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8 space-y-4">
           <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <Heart className="h-6 w-6 text-white" />
@@ -247,18 +247,18 @@ export function CoupleConnection() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6">
         <CardTitle className="flex items-center gap-2">
           <UserPlus className="h-5 w-5 text-primary" />
           커플 연결
         </CardTitle>
         <CardDescription>파트너의 닉네임을 검색하여 커플 연결을 요청하세요</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8 space-y-4">
         {/* 닉네임 검색 */}
         <div className="space-y-2">
           <Label htmlFor="partner-nickname">커플 닉네임</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               id="partner-nickname"
               type="text"
@@ -291,28 +291,28 @@ export function CoupleConnection() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="flex items-center gap-4">
-              <Avatar className="h-12 w-12">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <Avatar className="h-12 w-12 shrink-0">
                 <AvatarImage src={searchedUser.avatar_url || undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {searchedUser.display_name?.[0] || searchedUser.nickname[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1">
-                <div className="font-semibold flex items-center gap-2">
-                  {searchedUser.display_name || "이름 없음"}
-                  <Badge variant="outline" className="text-xs">
+              <div className="flex-1 min-w-0 w-full sm:w-auto">
+                <div className="font-semibold flex flex-wrap items-center gap-2">
+                  <span className="truncate">{searchedUser.display_name || "이름 없음"}</span>
+                  <Badge variant="outline" className="text-xs shrink-0">
                     @{searchedUser.nickname}
                   </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                  <Mail className="h-3 w-3" />
-                  {searchedUser.email}
+                  <Mail className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{searchedUser.email}</span>
                 </div>
               </div>
-              <Button onClick={handleRequestCouple}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                연결 요청
+              <Button onClick={handleRequestCouple} className="w-full sm:w-auto shrink-0">
+                <UserPlus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">연결 요청</span>
               </Button>
             </div>
           </motion.div>
@@ -345,9 +345,9 @@ export function CoupleConnection() {
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="text-sm font-medium">초대 링크</div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input value={inviteLink} readOnly className="flex-1 text-xs" />
-                <Button size="sm" onClick={handleCopyInviteLink}>
+                <Button size="sm" onClick={handleCopyInviteLink} className="w-full sm:w-auto">
                   복사
                 </Button>
               </div>
@@ -367,31 +367,40 @@ export function CoupleConnection() {
               return (
                 <motion.div
                   key={request.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 border rounded-lg"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <div className="font-medium">{isIncoming ? "받은 요청" : "보낸 요청"}</div>
                     <div className="text-sm text-muted-foreground">
                       {new Date(request.created_at).toLocaleDateString("ko-KR")}
                     </div>
                   </div>
                   {isIncoming && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleRespondToRequest(request.id, false)}
+                        className="flex-1 sm:flex-initial"
                       >
                         <X className="h-4 w-4" />
                       </Button>
-                      <Button size="sm" onClick={() => handleRespondToRequest(request.id, true)}>
+                      <Button
+                        size="sm"
+                        onClick={() => handleRespondToRequest(request.id, true)}
+                        className="flex-1 sm:flex-initial"
+                      >
                         <Check className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
-                  {!isIncoming && <Badge variant="secondary">대기 중</Badge>}
+                  {!isIncoming && (
+                    <Badge variant="secondary" className="w-full sm:w-auto text-center">
+                      대기 중
+                    </Badge>
+                  )}
                 </motion.div>
               )
             })}
