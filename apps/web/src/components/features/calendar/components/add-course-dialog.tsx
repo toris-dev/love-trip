@@ -41,7 +41,28 @@ export function AddCourseDialog({
   const [endTime, setEndTime] = useState("18:00")
   const [intervalMinutes, setIntervalMinutes] = useState(60)
   const [loading, setLoading] = useState(false)
-  const [travelPlanPlaces, setTravelPlanPlaces] = useState<any[]>([])
+  const [travelPlanPlaces, setTravelPlanPlaces] = useState<
+    Array<{
+      id: string
+      place_name: string
+      place_address?: string | null
+      place_lat?: number | null
+      place_lng?: number | null
+      place_type?: string | null
+      order_index: number
+      visit_duration_minutes?: number | null
+      day_number?: number | null
+      place_id?: string | null
+      place?: {
+        id: string
+        name: string
+        address?: string | null
+        lat: number
+        lng: number
+        type: string
+      } | null
+    }>
+  >([])
 
   const { handleCreateEvent } = useEventActions(selectedCalendar, onSuccess)
 
@@ -75,7 +96,21 @@ export function AddCourseDialog({
       const places = data.places || []
 
       // travel_day_places 데이터를 Place 형식으로 변환
-      const formattedPlaces = places.map((p: any) => ({
+      interface TravelDayPlace {
+        id: string
+        place_name?: string | null
+        place_address?: string | null
+        place_lat?: number | null
+        place_lng?: number | null
+        place_type?: string | null
+        order_index?: number | null
+        visit_duration_minutes?: number | null
+        day_number?: number | null
+        place_id?: string | null
+        [key: string]: unknown
+      }
+
+      const formattedPlaces = (places as TravelDayPlace[]).map(p => ({
         id: p.id,
         place_name: p.place_name || "장소",
         place_address: p.place_address || "",
@@ -92,7 +127,7 @@ export function AddCourseDialog({
               address: p.place_address || null,
               lat: Number(p.place_lat || 0),
               lng: Number(p.place_lng || 0),
-              type: (p.place_type as any) || "ETC",
+              type: (p.place_type as "CAFE" | "FOOD" | "VIEW" | "MUSEUM" | "ETC") || "ETC",
             }
           : null,
       }))

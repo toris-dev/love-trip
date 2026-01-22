@@ -43,7 +43,7 @@ export function Achievements({ achievements }: AchievementsProps) {
 
   return (
     <Card className="border-2">
-      <CardHeader>
+      <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-500" />
@@ -54,7 +54,7 @@ export function Achievements({ achievements }: AchievementsProps) {
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {achievements.map((achievement, index) => {
             const Icon = achievement.icon

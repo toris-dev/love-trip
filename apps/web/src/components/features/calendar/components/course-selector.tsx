@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@lovetrip/ui/components/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@lovetrip/ui/components/tabs"
 import { Loader2, MapPin, Calendar as CalendarIcon } from "lucide-react"
@@ -26,9 +26,9 @@ export function CourseSelector({
   useEffect(() => {
     loadCourses()
     loadTravelPlans()
-  }, [userId])
+  }, [loadCourses, loadTravelPlans])
 
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     setLoadingCourses(true)
     setError(null)
     try {
@@ -41,13 +41,15 @@ export function CourseSelector({
       const data = await response.json()
       setCourses(data.courses || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : "코스를 불러오는데 실패했습니다")
+      const errorMessage = err instanceof Error ? err.message : "코스를 불러오는데 실패했습니다"
+      setError(errorMessage)
+      console.error("Error loading courses:", err)
     } finally {
       setLoadingCourses(false)
     }
-  }
+  }, [])
 
-  const loadTravelPlans = async () => {
+  const loadTravelPlans = useCallback(async () => {
     setLoadingPlans(true)
     setError(null)
     try {
@@ -58,11 +60,13 @@ export function CourseSelector({
       const data = await response.json()
       setTravelPlans(data.plans || [])
     } catch (err) {
-      setError(err instanceof Error ? err.message : "여행 계획을 불러오는데 실패했습니다")
+      const errorMessage = err instanceof Error ? err.message : "여행 계획을 불러오는데 실패했습니다"
+      setError(errorMessage)
+      console.error("Error loading travel plans:", err)
     } finally {
       setLoadingPlans(false)
     }
-  }
+  }, [])
 
   const handleCourseClick = async (courseId: string) => {
     try {
@@ -80,7 +84,13 @@ export function CourseSelector({
   return (
     <div className="space-y-4">
       {error && (
-        <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg">{error}</div>
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20"
+        >
+          {error}
+        </div>
       )}
 
       <Tabs defaultValue="courses" className="w-full">

@@ -1,97 +1,163 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Sparkles, Heart, Map, Calendar } from "lucide-react"
+import { Sparkles, Heart, Map, Calendar, ArrowRight } from "lucide-react"
 import { Button } from "@lovetrip/ui/components/button"
 import Link from "next/link"
 
 export function HomeHeroSection() {
   return (
-    <div className="relative text-center mb-24 pt-10">
-      {/* Background Elements */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[200px] sm:w-[500px] sm:h-[300px] md:w-[600px] md:h-[400px] lg:w-[800px] lg:h-[500px] bg-primary/20 blur-[50px] sm:blur-[70px] md:blur-[90px] lg:blur-[100px] rounded-full -z-10 opacity-50 animate-pulse" />
+    <div className="relative text-center min-h-screen flex flex-col items-center justify-center py-20" aria-labelledby="hero-heading">
+      {/* Animated Background Orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{
+            x: [0, 100, 0],
+            y: [0, 50, 0],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{
+            x: [0, -80, 0],
+            y: [0, -60, 0],
+            scale: [1, 1.3, 1],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5,
+          }}
+          className="absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl"
+        />
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="inline-flex items-center gap-2 px-4 sm:px-6 py-1.5 sm:py-2 rounded-full bg-white/50 dark:bg-black/50 backdrop-blur-sm border border-primary/20 text-primary mb-6 sm:mb-8 shadow-sm"
-      >
-        <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin-slow" />
-        <span className="text-xs sm:text-sm font-medium">UGC 데이트 코스 플랫폼</span>
-      </motion.div>
-
-      <motion.h1
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold mb-6 sm:mb-8 tracking-tight px-4"
-      >
-        <span className="bg-gradient-to-r from-primary via-indigo-600 to-blue-600 bg-clip-text text-transparent">
-          우리만의 특별한
-        </span>
-        <br />
-        <span className="text-foreground">여행을 디자인하다</span>
-      </motion.h1>
-
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-4"
-      >
-        다른 사용자들이 만든 코스를 탐색하고,
-        <br className="hidden sm:block" />
-        나만의 특별한 데이트 코스를 제작해보세요.
-      </motion.p>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4"
-      >
-        <Link href="/date?type=date" className="w-full sm:w-auto">
-          <Button
-            size="lg"
-            variant="glow"
-            className="rounded-full px-6 sm:px-8 h-11 sm:h-12 text-base sm:text-lg w-full sm:w-auto touch-manipulation"
+      {/* Main Content */}
+      <div className="relative z-10 max-w-5xl mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="mb-6"
+        >
+          <motion.span
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="inline-block px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm font-medium text-primary mb-8 backdrop-blur-sm"
           >
-            코스 구경하기
-          </Button>
-        </Link>
-        <Link href="/planner" className="w-full sm:w-auto">
-          <Button
-            size="lg"
-            variant="outline"
-            className="rounded-full px-6 sm:px-8 h-11 sm:h-12 text-base sm:text-lg border-primary/20 hover:bg-primary/5 w-full sm:w-auto touch-manipulation"
-          >
-            여행 계획하기
-          </Button>
-        </Link>
-      </motion.div>
+            ✨ 특별한 순간을 만들어보세요
+          </motion.span>
+        </motion.div>
 
-      {/* Floating Icons */}
+        <motion.h1
+          id="hero-heading"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 tracking-tight leading-tight"
+        >
+          <span className="block mb-2 bg-gradient-to-r from-primary via-accent via-primary to-accent bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+            데이트, 이제 더
+          </span>
+          <span className="block bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+            특별하게 ✨
+          </span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-10 sm:mb-12 max-w-3xl mx-auto leading-relaxed font-light"
+        >
+          당신의 기분에 맞는 손으로 골라낸 장소를 발견하고,
+          <br className="hidden sm:block" />
+          특별한 추억을 만들어보세요
+        </motion.p>
+
+        {/* CTA Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
+        >
+          <Link href="/date?surprise=true" className="w-full sm:w-auto group">
+            <Button
+              size="lg"
+              className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg rounded-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105 active:scale-95"
+              aria-label="놀라운 추천 받기"
+            >
+              <Sparkles className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform" aria-hidden="true" />
+              놀라운 추천 받기
+              <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+            </Button>
+          </Link>
+          <Link href="/date?type=date" className="w-full sm:w-auto group">
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg rounded-full border-2 border-primary/30 hover:border-primary/50 bg-background/80 backdrop-blur-sm hover:bg-primary/5 transition-all duration-300 hover:scale-105 active:scale-95"
+              aria-label="코스 구경하기"
+            >
+              코스 구경하기
+              <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+            </Button>
+          </Link>
+        </motion.div>
+
+        {/* Feature Pills */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.9 }}
+          className="mt-12 sm:mt-16 flex flex-wrap items-center justify-center gap-4 sm:gap-6"
+        >
+          {[
+            { icon: Heart, text: "로맨틱한 장소" },
+            { icon: Map, text: "실시간 지도" },
+            { icon: Calendar, text: "일정 관리" },
+          ].map((item, index) => (
+            <motion.div
+              key={item.text}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 1 + index * 0.1 }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-background/60 backdrop-blur-sm border border-border/50 hover:border-primary/30 transition-colors"
+            >
+              <item.icon className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">{item.text}</span>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+
+      {/* Scroll Indicator */}
       <motion.div
-        animate={{ y: [0, -20, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-20 left-[10%] hidden lg:block text-primary/40"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 1.5 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2"
       >
-        <Heart className="w-12 h-12" />
-      </motion.div>
-      <motion.div
-        animate={{ y: [0, 20, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute top-40 right-[15%] hidden lg:block text-blue-500/40"
-      >
-        <Map className="w-16 h-16" />
-      </motion.div>
-      <motion.div
-        animate={{ y: [0, -15, 0] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        className="absolute bottom-0 left-[20%] hidden lg:block text-purple-500/40"
-      >
-        <Calendar className="w-10 h-10" />
+        <motion.div
+          animate={{ y: [0, 10, 0] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="w-6 h-10 rounded-full border-2 border-primary/30 flex items-start justify-center p-2"
+        >
+          <motion.div
+            animate={{ y: [0, 12, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="w-1.5 h-1.5 rounded-full bg-primary/50"
+          />
+        </motion.div>
       </motion.div>
     </div>
   )

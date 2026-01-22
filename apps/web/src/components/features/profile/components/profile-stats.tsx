@@ -39,7 +39,7 @@ export function ProfileStats({ planningTrips, totalPlans }: ProfileStatsProps) {
           key={index}
           className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 hover:scale-105"
         >
-          <CardContent className="pt-6 text-center">
+          <CardContent className="p-6 text-center">
             <div className="inline-flex items-center justify-center mb-4">
               <div className={`p-3 rounded-full ${stat.bgColor}`}>
                 <stat.icon className={`h-6 w-6 ${stat.color}`} />

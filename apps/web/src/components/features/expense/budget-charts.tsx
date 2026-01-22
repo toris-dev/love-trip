@@ -76,12 +76,25 @@ export function BudgetCharts({ summary }: BudgetChartsProps) {
     .sort((a, b) => b.value - a.value)
 
   // 커스텀 툴팁
-  const CustomTooltip = ({ active, payload }: any) => {
+  interface TooltipProps {
+    active?: boolean
+    payload?: Array<{
+      name: string
+      value: number
+      color: string
+      payload: {
+        category: string
+        [key: string]: unknown
+      }
+    }>
+  }
+
+  const CustomTooltip = ({ active, payload }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
-          <p className="font-semibold mb-2">{payload[0].payload.category}</p>
-          {payload.map((entry: any, index: number) => (
+          <p className="font-semibold mb-2">{payload[0]?.payload.category}</p>
+          {payload.map((entry, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: {entry.value.toLocaleString()}원
             </p>
@@ -93,7 +106,16 @@ export function BudgetCharts({ summary }: BudgetChartsProps) {
   }
 
   // 파이 차트 커스텀 레이블
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: any) => {
+  interface LabelProps {
+    cx: number
+    cy: number
+    midAngle: number
+    innerRadius: number
+    outerRadius: number
+    percentage: number
+  }
+
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: LabelProps) => {
     const RADIAN = Math.PI / 180
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5
     const x = cx + radius * Math.cos(-midAngle * RADIAN)
@@ -195,7 +217,7 @@ export function BudgetCharts({ summary }: BudgetChartsProps) {
                   }}
                 />
                 <Legend
-                  formatter={(value, entry: any) => {
+                  formatter={(value: string, entry: { payload: { percentage: number } }) => {
                     const data = entry.payload
                     return `${value} (${data.percentage}%)`
                   }}
