@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata, Viewport } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
+import { GoogleAnalytics } from "@next/third-parties/google"
 import "./globals.css"
 import { Toaster } from "@lovetrip/ui/components/sonner"
 import { ThemeProvider } from "@/components/shared/theme-provider-wrapper"
@@ -90,8 +91,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
+  modal,
 }: Readonly<{
   children: React.ReactNode
+  /** 병렬 라우트: 모달 슬롯 (예: 로그인 오버레이). @modal 폴더와 default.tsx 필요 */
+  modal?: React.ReactNode
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
@@ -117,6 +121,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        ) : null}
         <ServiceWorkerScript />
         <MSWProvider>
           <ThemeProvider>
@@ -136,6 +143,7 @@ export default function RootLayout({
                 <Header />
               </Suspense>
               <main className="flex-1">{children}</main>
+              {modal}
               <FooterWrapper />
             </LayoutWrapper>
             <Toaster />

@@ -1,10 +1,16 @@
 import { config } from "dotenv"
+import { createRequire } from "module"
 import { fileURLToPath } from "url"
 import { dirname, resolve } from "path"
 
 // ESM에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
+const require = createRequire(import.meta.url)
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+  openAnalyzer: false,
+})
 
 // 루트 프로젝트의 .env.local 파일 로드 (존재하는 경우)
 // Next.js는 기본적으로 apps/web/.env.local을 자동으로 로드하므로,
@@ -49,7 +55,15 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    // Next Image 최적화 활성화 (Vercel/호스팅 환경에서 동작)
+    // 외부 이미지 사용 시 해당 호스트를 remotePatterns에 추가 (예: your-project.supabase.co, Naver CDN)
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
   // 환경 변수를 명시적으로 전달
   env: {
@@ -120,4 +134,5 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+// ANALYZE=true pnpm build 시 번들 분석 리포트 생성 (--webpack 플래그 필요, Turbopack 미지원)
+export default withBundleAnalyzer(nextConfig)

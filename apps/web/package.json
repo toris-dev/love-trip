@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -68,7 +69,7 @@
     "geist": "latest",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
-    "next": "16.0.7",
+    "next": "16.1.6",
     "next-auth": "^4.24.13",
     "next-themes": "^0.4.6",
     "react": "19.2.1",
@@ -88,6 +89,8 @@
     "zod": "3.25.67"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.6",
+    "@next/third-parties": "^16.1.6",
     "@storybook/addon-a11y": "^10.1.0",
     "@storybook/addon-links": "^10.1.0",
     "@storybook/react": "^10.1.0",
@@ -108,7 +111,7 @@
     "autoprefixer": "^10.4.22",
     "dotenv": "^16.4.5",
     "eslint": "^9",
-    "eslint-config-next": "16.0.7",
+    "eslint-config-next": "16.1.6",
     "happy-dom": "latest",
     "jsdom": "latest",
     "msw": "^2.12.3",
