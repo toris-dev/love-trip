@@ -509,6 +509,39 @@ export type Database = {
         }
         Relationships: []
       }
+      anniversary_reminders: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          event_date: string
+          remind_days_before: number
+          last_notified_at: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          event_date: string
+          remind_days_before?: number
+          last_notified_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          event_date?: string
+          remind_days_before?: number
+          last_notified_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       shared_calendars: {
         Row: {
           color: string

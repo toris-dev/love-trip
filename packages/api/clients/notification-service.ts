@@ -152,6 +152,22 @@ export class NotificationService {
       userId: plan.user_id,
     })
   }
+
+  /**
+   * 기념일 알림 푸시 발송
+   */
+  async sendAnniversaryReminder(
+    userId: string,
+    title: string,
+    options?: { url?: string }
+  ): Promise<boolean> {
+    return this.sendPushNotification({
+      title: "기념일 알림",
+      body: `오늘은 ${title}입니다.`,
+      url: options?.url ?? "/calendar",
+      userId,
+    })
+  }
 }
 
 export const notificationService = NotificationService.getInstance()

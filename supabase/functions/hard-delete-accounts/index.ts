@@ -90,6 +90,8 @@ serve(async (req) => {
       
       // 예약 리마인더
       { table: "reservation_reminders", where: "user_id" },
+      // 기념일 알림
+      { table: "anniversary_reminders", where: "user_id" },
       
       // 커플 관련 (calendar_events를 먼저 삭제)
       { table: "calendar_events", where: "calendar_id", subQuery: "shared_calendars", subWhere: "couple_id", subSubQuery: "couples" },
