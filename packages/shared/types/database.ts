@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
@@ -453,27 +447,39 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          deleted_at: string | null
           display_name: string | null
           id: string
+          is_deleted: boolean
+          is_public: boolean
           nickname: string | null
+          notifications_enabled: boolean
           onboarding_completed: boolean
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           display_name?: string | null
           id: string
+          is_deleted?: boolean
+          is_public?: boolean
           nickname?: string | null
+          notifications_enabled?: boolean
           onboarding_completed?: boolean
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          deleted_at?: string | null
           display_name?: string | null
           id?: string
+          is_deleted?: boolean
+          is_public?: boolean
           nickname?: string | null
+          notifications_enabled?: boolean
           onboarding_completed?: boolean
           updated_at?: string | null
         }
@@ -509,38 +515,71 @@ export type Database = {
         }
         Relationships: []
       }
-      anniversary_reminders: {
+      reservation_reminders: {
         Row: {
+          contact_info: string | null
+          created_at: string
+          description: string | null
           id: string
-          user_id: string
+          is_sent: boolean
+          place_address: string | null
+          place_name: string | null
+          reminder_hours_before: number | null
+          reservation_date: string
+          sent_at: string | null
           title: string
-          event_date: string
-          remind_days_before: number
-          last_notified_at: string | null
-          created_at: string | null
-          updated_at: string | null
+          travel_plan_id: string | null
+          updated_at: string
+          user_id: string
         }
         Insert: {
+          contact_info?: string | null
+          created_at?: string
+          description?: string | null
           id?: string
-          user_id: string
+          is_sent?: boolean
+          place_address?: string | null
+          place_name?: string | null
+          reminder_hours_before?: number | null
+          reservation_date: string
+          sent_at?: string | null
           title: string
-          event_date: string
-          remind_days_before?: number
-          last_notified_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
+          travel_plan_id?: string | null
+          updated_at?: string
+          user_id: string
         }
         Update: {
+          contact_info?: string | null
+          created_at?: string
+          description?: string | null
           id?: string
-          user_id?: string
+          is_sent?: boolean
+          place_address?: string | null
+          place_name?: string | null
+          reminder_hours_before?: number | null
+          reservation_date?: string
+          sent_at?: string | null
           title?: string
-          event_date?: string
-          remind_days_before?: number
-          last_notified_at?: string | null
-          created_at?: string | null
-          updated_at?: string | null
+          travel_plan_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reservation_reminders_travel_plan_id_fkey"
+            columns: ["travel_plan_id"]
+            isOneToOne: false
+            referencedRelation: "expense_settlement_summary"
+            referencedColumns: ["travel_plan_id"]
+          },
+          {
+            foreignKeyName: "reservation_reminders_travel_plan_id_fkey"
+            columns: ["travel_plan_id"]
+            isOneToOne: false
+            referencedRelation: "travel_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shared_calendars: {
         Row: {
@@ -820,6 +859,69 @@ export type Database = {
           },
           {
             foreignKeyName: "travel_days_travel_plan_id_fkey"
+            columns: ["travel_plan_id"]
+            isOneToOne: false
+            referencedRelation: "travel_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      travel_memories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_shared: boolean
+          location: string | null
+          memory_date: string
+          photo_urls: string[]
+          place_id: string | null
+          tags: string[] | null
+          title: string | null
+          travel_plan_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          location?: string | null
+          memory_date?: string
+          photo_urls?: string[]
+          place_id?: string | null
+          tags?: string[] | null
+          title?: string | null
+          travel_plan_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          location?: string | null
+          memory_date?: string
+          photo_urls?: string[]
+          place_id?: string | null
+          tags?: string[] | null
+          title?: string | null
+          travel_plan_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "travel_memories_travel_plan_id_fkey"
+            columns: ["travel_plan_id"]
+            isOneToOne: false
+            referencedRelation: "expense_settlement_summary"
+            referencedColumns: ["travel_plan_id"]
+          },
+          {
+            foreignKeyName: "travel_memories_travel_plan_id_fkey"
             columns: ["travel_plan_id"]
             isOneToOne: false
             referencedRelation: "travel_plans"
@@ -1201,14 +1303,24 @@ export type Database = {
       }
     }
     Functions: {
-      calculate_distance: {
-        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
-        Returns: number
-      }
-      calculate_distance_km: {
-        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
-        Returns: number
-      }
+      calculate_distance:
+        | {
+            Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+            Returns: number
+          }
+        | {
+            Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+            Returns: number
+          }
+      calculate_distance_km:
+        | {
+            Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+            Returns: number
+          }
+        | {
+            Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+            Returns: number
+          }
       create_travel_plan_with_transaction: {
         Args: {
           p_budget_items?: Json
@@ -1276,6 +1388,13 @@ export type Database = {
         Args: { plan_id: string; user_id: string }
         Returns: number
       }
+      hard_delete_expired_accounts: {
+        Args: never
+        Returns: {
+          deleted_count: number
+          deleted_user_ids: string[]
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -1309,10 +1428,8 @@ export type Tables<
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
