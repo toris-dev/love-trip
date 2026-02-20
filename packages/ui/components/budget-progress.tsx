@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { BarChart3 } from "lucide-react"
-import { cn } from "@lovetrip/utils"
+import { cn } from "@lovetrip/shared"
 import { Card, CardContent, CardHeader, CardTitle } from "./card"
 import { Button } from "./button"
 import { Progress } from "./progress"

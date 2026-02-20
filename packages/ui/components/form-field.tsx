@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "@lovetrip/utils"
+import { cn } from "@lovetrip/shared"
 import { Label } from "./label"
 import { Input } from "./input"
 import { Textarea } from "./textarea"

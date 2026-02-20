@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "@lovetrip/utils"
+import { cn } from "@lovetrip/shared"
 
 export interface TimelineItem {
   id: string

@@ -4,7 +4,7 @@ import * as React from "react"
 import { memo } from "react"
 import Image from "next/image"
 import { MapPin, Calendar, Heart } from "lucide-react"
-import { cn } from "@lovetrip/utils"
+import { cn } from "@lovetrip/shared"
 import { Card, CardContent } from "./card"
 import { Badge } from "./badge"
 

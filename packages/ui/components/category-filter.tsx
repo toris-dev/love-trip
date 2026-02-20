@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Heart, Mountain, Leaf, UtensilsCrossed, Palette } from "lucide-react"
-import { cn } from "@lovetrip/utils"
+import { cn } from "@lovetrip/shared"
 import { Button } from "./button"
 
 export type CategoryType = "romantic" | "adventurous" | "relaxing" | "foodie" | "artistic"

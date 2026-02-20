@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Mountain, Flame, Crown, DollarSign, Sparkles, Zap } from "lucide-react"
-import { cn } from "@lovetrip/utils"
+import { cn } from "@lovetrip/shared"
 import { Button } from "./button"
 
 export type MoodType =

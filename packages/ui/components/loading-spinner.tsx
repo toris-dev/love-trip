@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Loader2 } from "lucide-react"
-import { cn } from "@lovetrip/utils"
+import { cn } from "@lovetrip/shared"
 
 interface LoadingSpinnerProps {
   size?: "sm" | "md" | "lg"

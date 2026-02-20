@@ -1,6 +1,6 @@
 import * as React from "react"
 import { AlertCircle, X } from "lucide-react"
-import { cn } from "@lovetrip/utils"
+import { cn } from "@lovetrip/shared"
 import { Alert, AlertDescription, AlertTitle } from "./alert"
 import { Button } from "./button"
 
