@@ -1,0 +1,28 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "dev": {
+      "persistent": true,
+      "cache": false
+    },
+    "lint": {},
+    "lint:fix": {},
+    "type-check": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "cache": false
+    },
+    "test:ui": {
+      "persistent": true,
+      "cache": false
+    }
+  },
+  "globalDependencies": ["tsconfig.json", ".env*"],
+  "globalEnv": ["NODE_ENV", "VERCEL_ENV"]
+}

@@ -3,14 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter web dev",
-    "build": "pnpm --filter web build",
-    "start": "pnpm --filter web start",
-    "lint": "pnpm -r --filter \"./apps/**\" --filter \"./packages/**\" lint",
-    "lint:fix": "pnpm -r --filter \"./apps/**\" --filter \"./packages/**\" lint --fix",
+    "dev": "turbo run dev --filter=@love-trip/web",
+    "build": "turbo run build --filter=@love-trip/web",
+    "build:all": "turbo run build",
+    "start": "turbo run start --filter=@love-trip/web",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "type-check": "pnpm --filter web type-check",
+    "type-check": "turbo run type-check",
     "gen-types": "supabase gen types typescript --project-id dyomownljgsbwaxnljau > packages/shared/types/database.ts",
     "generate:date-courses": "pnpm exec tsx scripts/date-courses/generate-from-ollama.ts",
     "generate:travel-courses": "pnpm exec tsx scripts/travel-courses/generate-from-ollama.ts",
@@ -22,25 +23,27 @@
     "import:date-courses": "pnpm exec tsx scripts/date-courses/import-from-json.ts scripts/date-courses/courses.json",
     "import:travel-courses": "pnpm exec tsx scripts/travel-courses/import-from-json.ts scripts/travel-courses/courses.json",
     "setup:github": "tsx scripts/setup-github-labels.ts",
-    "test": "pnpm --filter web test",
-    "test:ui": "pnpm --filter web test:ui",
+    "test": "turbo run test",
+    "test:ui": "turbo run test:ui --filter=@love-trip/web",
     "test:e2e": "cypress run",
     "test:e2e:open": "cypress open",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
+  "packageManager": "pnpm@10.23.0",
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
   "devDependencies": {
+    "turbo": "^2.3.0",
     "@cypress/webpack-preprocessor": "^7.0.2",
     "@eslint/js": "^9.39.1",
     "@supabase/supabase-js": "^2.87.1",
     "@types/node": "^24.10.2",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
-    "baseline-browser-mapping": "^2.8.32",
+    "baseline-browser-mapping": "^2.10.0",
     "cypress": "^13.7.0",
     "dotenv": "^16.6.1",
     "eslint": "^9.0.0",
@@ -59,6 +62,12 @@
       "eslint": "^9.0.0",
       "@typescript-eslint/eslint-plugin": "^8.0.0",
       "@typescript-eslint/parser": "^8.0.0"
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "react": "19",
+        "react-dom": "19"
+      }
     }
   }
 }
