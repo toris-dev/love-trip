@@ -15,13 +15,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@lovetrip/ui/components/sheet"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@lovetrip/ui/components/dropdown-menu"
 
 interface HeaderClientProps {
   initialUser: User | null
@@ -86,8 +79,10 @@ export function HeaderClient({
               <input
                 id="header-search"
                 type="search"
-                placeholder="다음 목적지는 어디인가요?"
-                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 aria-[invalid=true]:border-destructive"
+                name="q"
+                autoComplete="off"
+                placeholder="다음 목적지는 어디인가요…"
+                className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-border bg-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/50 aria-[invalid=true]:border-destructive"
                 aria-label="목적지 검색"
               />
               <Search
@@ -186,118 +181,16 @@ export function HeaderClient({
               )}
             </nav>
 
-            {/* 모바일 메뉴 */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="lg:hidden h-9 w-9 p-0">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/about"
-                    className={`flex items-center w-full ${
-                      pathname === "/about" ? "bg-primary/10 text-primary font-semibold" : ""
-                    }`}
-                  >
-                    소개
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/date"
-                    className={`flex items-center w-full ${
-                      pathname === "/date" ? "bg-primary/10 text-primary font-semibold" : ""
-                    }`}
-                  >
-                    <Heart className="h-4 w-4 mr-2" />
-                    데이트 코스
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/date?type=travel"
-                    className={`flex items-center w-full ${
-                      pathname === "/date" && searchParams?.get("type") === "travel"
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : ""
-                    }`}
-                  >
-                    <MapPin className="h-4 w-4 mr-2" />
-                    여행 코스
-                  </Link>
-                </DropdownMenuItem>
-                {initialUser && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/calendar"
-                        className={`flex items-center w-full ${
-                          pathname === "/calendar" ? "bg-primary/10 text-primary font-semibold" : ""
-                        }`}
-                      >
-                        <Calendar className="h-4 w-4 mr-2" />
-                        캘린더
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/courses"
-                        className={`flex items-center w-full ${
-                          pathname === "/courses" ? "bg-primary/10 text-primary font-semibold" : ""
-                        }`}
-                      >
-                        <Plane className="h-4 w-4 mr-2" />
-                        코스 탐색
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/favorites"
-                        className={`flex items-center w-full ${
-                          pathname === "/favorites"
-                            ? "bg-primary/10 text-primary font-semibold"
-                            : ""
-                        }`}
-                      >
-                        <Heart className="h-4 w-4 mr-2" />
-                        즐겨찾기
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/profile"
-                        className={`flex items-center w-full ${
-                          pathname === "/profile" ? "bg-primary/10 text-primary font-semibold" : ""
-                        }`}
-                      >
-                        프로필
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="text-destructive bg-destructive/10 hover:bg-destructive/20 focus:bg-destructive/20 cursor-pointer"
-                    >
-                      로그아웃
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* 모바일 메뉴 */}
+            {/* 모바일 메뉴 (Sheet만 사용 — 드로어 UX) */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="lg:hidden h-8 w-8 sm:h-9 sm:w-9 p-0 touch-manipulation"
+                  aria-label="메뉴 열기"
                 >
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">메뉴 열기</span>
+                  <Menu className="h-5 w-5" aria-hidden />
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-[280px] sm:w-[320px] p-4 sm:p-6">
