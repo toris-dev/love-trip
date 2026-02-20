@@ -51,6 +51,12 @@ cypress/videos
 cypress/screenshots
 cypress/downloads
 
+# turbo
+.turbo/
+
+# supabase
+supabase/.temp/
+
 # storybook
 storybook-static
 
