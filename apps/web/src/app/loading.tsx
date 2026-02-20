@@ -2,8 +2,8 @@ import { Skeleton } from "@lovetrip/ui/components/skeleton"
 
 export default function Loading() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 shadow-sm">
+    <div className="min-h-screen flex flex-col bg-background">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
         <div className="container mx-auto px-2 sm:px-3 md:px-4 py-3">
           <div className="flex items-center justify-between">
             <Skeleton className="h-8 w-32 rounded-lg" />

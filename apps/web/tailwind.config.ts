@@ -4,8 +4,8 @@ import tailwindcssAnimate from "tailwindcss-animate"
 const config: Config = {
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
-    "../../packages/ui/**/*.{js,ts,jsx,tsx}",
-    "../../packages/**/components/**/*.{js,ts,jsx,tsx}",
+    "../../packages/ui/components/**/*.{js,ts,jsx,tsx}",
+    "../../packages/*/components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     container: {

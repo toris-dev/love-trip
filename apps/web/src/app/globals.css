@@ -72,8 +72,26 @@
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground antialiased;
+    -webkit-tap-highlight-color: hsl(var(--primary) / 0.15);
+  }
+}
+
+/* 접근성: 동작 축소 선호 시 애니메이션 완화 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

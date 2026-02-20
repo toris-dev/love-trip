@@ -85,8 +85,6 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 }
 
 export default function RootLayout({
@@ -130,7 +128,7 @@ export default function RootLayout({
             <LayoutWrapper>
               <Suspense
                 fallback={
-                  <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-black/10 dark:border-white/10 shadow-sm">
+                  <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
                     <div className="container mx-auto px-2 sm:px-3 md:px-4 py-3">
                       <div className="flex items-center justify-between">
                         <div className="h-8 w-32 bg-muted animate-pulse rounded" />
