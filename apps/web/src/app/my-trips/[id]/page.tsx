@@ -4,6 +4,7 @@ import { cache } from "react"
 import { createClient } from "@lovetrip/api/supabase/server"
 import { getExpenses } from "@lovetrip/expense/services"
 import { calculateSettlement } from "@lovetrip/expense/services"
+import { isPremiumUser } from "@lovetrip/subscription"
 import { TravelPlanDetailClient } from "@/components/features/my-trips/travel-plan-detail-client"
 import type { Database } from "@lovetrip/shared/types/database"
 import type { ExpenseWithSplits, SettlementSummary } from "@lovetrip/expense/types"
@@ -145,6 +146,8 @@ export default async function TravelPlanDetailPage({ params }: TravelPlanDetailP
     }
   }
 
+  const isPremium = await isPremiumUser(user.id)
+
   return (
     <TravelPlanDetailClient
       plan={plan}
@@ -152,6 +155,7 @@ export default async function TravelPlanDetailPage({ params }: TravelPlanDetailP
       initialSettlement={settlement}
       userId={user.id}
       partnerId={coupleInfo.partnerId || undefined}
+      isPremium={isPremium}
     />
   )
 }

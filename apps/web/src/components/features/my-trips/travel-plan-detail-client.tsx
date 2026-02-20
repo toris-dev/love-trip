@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@lovetrip/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
@@ -28,6 +28,7 @@ import {
   X,
   Upload,
   Image as ImageIcon,
+  Sparkles,
 } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -46,6 +47,7 @@ import { BudgetVisualization } from "@/components/features/expense/budget-visual
 import { BudgetOptimization } from "@/components/features/expense/budget-optimization"
 import { BudgetProgress } from "@lovetrip/ui/components/budget-progress"
 import { SettlementView } from "@/components/features/expense/settlement-view"
+import { PremiumUpgradeBanner } from "@/components/shared/premium-upgrade-banner"
 import type { BudgetOptimizationSuggestion } from "@lovetrip/expense/services"
 
 type TravelPlan = Database["public"]["Tables"]["travel_plans"]["Row"]
@@ -57,6 +59,7 @@ interface TravelPlanDetailClientProps {
   initialSettlement: SettlementSummary[]
   userId: string
   partnerId?: string
+  isPremium?: boolean
 }
 
 export function TravelPlanDetailClient({
@@ -65,6 +68,7 @@ export function TravelPlanDetailClient({
   initialSettlement,
   userId,
   partnerId,
+  isPremium = false,
 }: TravelPlanDetailClientProps) {
   const router = useRouter()
   const [expenses, setExpenses] = useState(initialExpenses)
@@ -72,6 +76,7 @@ export function TravelPlanDetailClient({
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false)
   const [travelDays, setTravelDays] = useState<TravelDay[]>([])
   const [isLoadingDays, setIsLoadingDays] = useState(true)
+  const [isRescheduling, setIsRescheduling] = useState(false)
   const [budgetSummary, setBudgetSummary] = useState<BudgetSummary | null>(null)
 
   // 새 지출 입력 폼
@@ -253,29 +258,52 @@ export function TravelPlanDetailClient({
   }
 
   // 여행 일차 목록 불러오기
-  useEffect(() => {
-    const loadTravelDays = async () => {
-      try {
-        setIsLoadingDays(true)
-        const supabase = createClient()
-        const { data, error } = await supabase
-          .from("travel_days")
-          .select("*")
-          .eq("travel_plan_id", plan.id)
-          .order("day_number", { ascending: true })
+  const loadTravelDays = useCallback(async () => {
+    try {
+      setIsLoadingDays(true)
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from("travel_days")
+        .select("*")
+        .eq("travel_plan_id", plan.id)
+        .order("day_number", { ascending: true })
 
-        if (error) throw error
-        setTravelDays(data || [])
-      } catch (error) {
-        console.error("Error loading travel days:", error)
-        toast.error("일차 정보를 불러오는데 실패했습니다")
-      } finally {
-        setIsLoadingDays(false)
-      }
+      if (error) throw error
+      setTravelDays(data || [])
+    } catch (error) {
+      console.error("Error loading travel days:", error)
+      toast.error("일차 정보를 불러오는데 실패했습니다")
+    } finally {
+      setIsLoadingDays(false)
     }
-
-    loadTravelDays()
   }, [plan.id])
+
+  useEffect(() => {
+    loadTravelDays()
+  }, [loadTravelDays])
+
+  const handleReschedule = useCallback(async () => {
+    if (!isPremium) {
+      toast.error("일정 자동 재편성은 프리미엄 구독자만 사용할 수 있습니다.")
+      return
+    }
+    try {
+      setIsRescheduling(true)
+      const response = await fetch(`/api/travel-plans/${plan.id}/reschedule`, {
+        method: "POST",
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(data.error || "일정 재편성에 실패했습니다")
+      }
+      toast.success(data.message || "일정이 재편성되었습니다.")
+      await loadTravelDays()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "일정 재편성에 실패했습니다")
+    } finally {
+      setIsRescheduling(false)
+    }
+  }, [plan.id, isPremium, loadTravelDays])
 
   const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0)
   const remainingBudget = (plan.total_budget || 0) - totalExpenses
@@ -314,7 +342,32 @@ export function TravelPlanDetailClient({
           {/* 일차별 장소 관리 */}
           {!isLoadingDays && travelDays.length > 0 && (
             <div className="mb-6 space-y-4">
-              <h2 className="text-2xl font-bold">여행 일정</h2>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-2xl font-bold">여행 일정</h2>
+                {isPremium ? (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleReschedule}
+                    disabled={isRescheduling}
+                    title="거리 기준으로 일차별 방문 순서를 자동으로 최적화합니다"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {isRescheduling ? "재편성 중..." : "일정 자동 재편성"}
+                  </Button>
+                ) : (
+                  <PremiumUpgradeBanner
+                    featureName="일정 자동 재편성"
+                    featureDescription="거리 기준으로 일차별 방문 순서를 자동 최적화할 수 있습니다."
+                    trigger={
+                      <Button variant="outline" size="sm">
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        일정 자동 재편성
+                      </Button>
+                    }
+                  />
+                )}
+              </div>
               {travelDays.map(day => (
                 <TravelDayPlaces
                   key={day.id}
