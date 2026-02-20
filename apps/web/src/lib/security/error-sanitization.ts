@@ -34,10 +34,11 @@ export function sanitizeSupabaseError(error: unknown): string {
       return "잘못된 데이터 형식입니다"
     case "23514": // check_violation
       return "데이터 검증에 실패했습니다"
-    default:
+    default: {
       // 원본 메시지에서 민감한 정보 제거
       const message = supabaseError.message || "오류가 발생했습니다"
       return sanitizeErrorMessage(message)
+    }
   }
 }
 
@@ -58,10 +59,7 @@ function sanitizeErrorMessage(message: string): string {
   sanitized = sanitized.replace(/\/[^\s]+\/[^\s]+/g, "[경로]")
 
   // 이메일 주소 마스킹
-  sanitized = sanitized.replace(
-    /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g,
-    "[이메일]"
-  )
+  sanitized = sanitized.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[이메일]")
 
   // SQL 쿼리 제거
   sanitized = sanitized.replace(/SELECT|INSERT|UPDATE|DELETE|FROM|WHERE/gi, "[쿼리]")
@@ -82,8 +80,8 @@ function sanitizeErrorMessage(message: string): string {
  */
 export function sanitizeError(error: unknown): string {
   if (error instanceof Error) {
-    // Supabase 에러인지 확인
-    if ("code" in error || "message" in error) {
+    // Supabase 에러(code 있음)면 Supabase 전용 처리, 아니면 message만 정제
+    if ("code" in error) {
       return sanitizeSupabaseError(error)
     }
     return sanitizeErrorMessage(error.message)
