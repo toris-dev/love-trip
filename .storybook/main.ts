@@ -27,7 +27,6 @@ const config: StorybookConfig = {
         "@lovetrip/ui": require("path").resolve(__dirname, "../packages/ui"),
         "@lovetrip/api": require("path").resolve(__dirname, "../packages/api"),
         "@lovetrip/shared": require("path").resolve(__dirname, "../packages/shared"),
-        "@lovetrip/utils": require("path").resolve(__dirname, "../packages/utils"),
         "@lovetrip/user": require("path").resolve(__dirname, "../packages/user"),
         "@lovetrip/couple": require("path").resolve(__dirname, "../packages/couple"),
         "@lovetrip/planner": require("path").resolve(__dirname, "../packages/planner"),
