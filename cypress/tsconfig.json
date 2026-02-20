@@ -21,7 +21,6 @@
       "@lovetrip/ui/*": ["./packages/ui/*"],
       "@lovetrip/api": ["./packages/api"],
       "@lovetrip/api/*": ["./packages/api/*"],
-      "@lovetrip/utils": ["./packages/utils"],
       "@lovetrip/user": ["./packages/user"],
       "@lovetrip/user/*": ["./packages/user/*"],
       "@lovetrip/couple": ["./packages/couple"],

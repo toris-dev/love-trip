@@ -5,9 +5,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    "noEmit": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -20,7 +18,6 @@
       "@lovetrip/ui/*": ["./packages/ui/*"],
       "@lovetrip/api": ["./packages/api"],
       "@lovetrip/api/*": ["./packages/api/*"],
-      "@lovetrip/utils": ["./packages/utils"],
       "@lovetrip/user": ["./packages/user"],
       "@lovetrip/user/*": ["./packages/user/*"],
       "@lovetrip/couple": ["./packages/couple"],
@@ -33,6 +30,20 @@
       "@lovetrip/gamification/*": ["./packages/gamification/*"]
     }
   },
-  "include": [],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "scripts/**/*.ts",
+    "packages/**/*.ts",
+    "packages/**/*.tsx",
+    "apps/**/*.ts",
+    "apps/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/node_modules",
+    "**/dist",
+    ".next",
+    "out",
+    "storybook-static"
+  ]
 }

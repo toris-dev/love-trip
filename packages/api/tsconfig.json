@@ -5,6 +5,7 @@
     "baseUrl": ".",
     "types": ["node"],
     "paths": {
+      "@lovetrip/shared": ["../shared"],
       "@lovetrip/shared/*": ["../shared/*"]
     }
   },

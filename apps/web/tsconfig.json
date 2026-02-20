@@ -46,9 +46,6 @@
       "@lovetrip/api/*": [
         "../../packages/api/*"
       ],
-      "@lovetrip/utils": [
-        "../../packages/utils"
-      ],
       "@lovetrip/user": [
         "../../packages/user"
       ],
