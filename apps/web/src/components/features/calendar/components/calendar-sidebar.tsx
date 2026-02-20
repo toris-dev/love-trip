@@ -21,7 +21,7 @@ import { AddCourseDialog } from "./add-course-dialog"
 import type { CourseForCalendar, TravelPlanForCalendar } from "../types"
 
 const TravelPlanWizard = dynamic(
-  () => import("@/components/features/home/travel-plan-wizard").then((m) => ({ default: m.TravelPlanWizard })),
+  () => import("@/components/shared/travel-plan-wizard").then((m) => ({ default: m.TravelPlanWizard })),
   { ssr: false, loading: () => <Skeleton className="h-0 w-0" /> }
 )
 

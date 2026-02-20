@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { User, Car, Bus } from "lucide-react"
-import { cn } from "@lovetrip/utils"
+import { cn } from "@lovetrip/shared"
 import { Button } from "@lovetrip/ui/components/button"
 
 export type TransportMode = "walking" | "driving" | "transit"

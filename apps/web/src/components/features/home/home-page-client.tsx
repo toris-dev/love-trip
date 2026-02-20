@@ -5,7 +5,6 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Button } from "@lovetrip/ui/components/button"
 import {
   Card,
   CardContent,
@@ -19,12 +18,12 @@ import { UpcomingDatesSection } from "./upcoming-dates-section"
 import { TrendingDestinationsSection } from "./trending-destinations-section"
 
 const TravelPlanWizard = dynamic(
-  () => import("./travel-plan-wizard").then((m) => ({ default: m.TravelPlanWizard })),
+  () => import("@/components/shared/travel-plan-wizard").then((m) => ({ default: m.TravelPlanWizard })),
   { ssr: false, loading: () => <Skeleton className="h-0 w-0" /> }
 )
 
 const OnboardingWizard = dynamic(
-  () => import("@/components/features/onboarding").then((m) => ({ default: m.OnboardingWizard })),
+  () => import("@/components/shared/onboarding").then((m) => ({ default: m.OnboardingWizard })),
   { ssr: false, loading: () => <Skeleton className="h-0 w-0" /> }
 )
 
@@ -80,13 +79,13 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Link href="/travel" className="block" prefetch>
-            <Card
-              role="button"
-              tabIndex={0}
-              aria-label="여행 코스 페이지로 이동"
-              className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-primary/40 bg-gradient-to-br from-background to-primary/5 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[320px] flex flex-col overflow-hidden relative"
-            >
+          <Link
+            href="/travel"
+            className="block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 touch-manipulation"
+            prefetch
+            aria-label="여행 코스 페이지로 이동"
+          >
+            <Card className="group cursor-pointer hover:shadow-2xl transition-[box-shadow,transform,border-color] duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-primary/40 bg-gradient-to-br from-background to-primary/5 min-h-[320px] flex flex-col overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-0" />
             <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 relative z-10">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" aria-hidden="true">
@@ -110,13 +109,10 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
                   </div>
                 ))}
               </div>
-              <Button 
-                className="w-full mt-auto group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 h-12 rounded-xl font-semibold"
-                aria-label="여행 코스 페이지로 이동"
-              >
+              <span className="inline-flex items-center justify-center w-full mt-auto h-12 rounded-xl font-semibold bg-primary text-primary-foreground group-hover:opacity-90 transition-opacity">
                 <span>여행 코스 보기</span>
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-              </Button>
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" aria-hidden />
+              </span>
             </CardContent>
           </Card>
           </Link>
@@ -129,13 +125,13 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Link href="/date" className="block" prefetch>
-            <Card
-              role="button"
-              tabIndex={0}
-              aria-label="데이트 코스 페이지로 이동"
-              className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-accent/40 bg-gradient-to-br from-background to-accent/5 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 min-h-[320px] flex flex-col overflow-hidden relative"
-            >
+          <Link
+            href="/date"
+            className="block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 touch-manipulation"
+            prefetch
+            aria-label="데이트 코스 페이지로 이동"
+          >
+            <Card className="group cursor-pointer hover:shadow-2xl transition-[box-shadow,transform,border-color] duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-accent/40 bg-gradient-to-br from-background to-accent/5 min-h-[320px] flex flex-col overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -z-0" />
             <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 relative z-10">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" aria-hidden="true">
@@ -159,14 +155,10 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
                   </div>
                 ))}
               </div>
-              <Button
-                variant="outline"
-                className="w-full mt-auto group-hover:bg-accent group-hover:text-accent-foreground transition-all duration-300 h-12 rounded-xl font-semibold border-2"
-                aria-label="데이트 코스 페이지로 이동"
-              >
+              <span className="inline-flex items-center justify-center w-full mt-auto h-12 rounded-xl font-semibold border-2 border-accent/40 bg-accent/10 text-accent-foreground group-hover:bg-accent/20 transition-colors">
                 <span>데이트 코스 보기</span>
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-              </Button>
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" aria-hidden />
+              </span>
             </CardContent>
           </Card>
           </Link>
@@ -179,13 +171,13 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Link href={user ? "/calendar" : "/login"} className="block" prefetch>
-            <Card
-              role="button"
-              tabIndex={0}
-              aria-label={user ? "캘린더 페이지로 이동" : "로그인 페이지로 이동"}
-              className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-primary/40 bg-gradient-to-br from-background to-primary/5 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[320px] flex flex-col overflow-hidden relative"
-            >
+          <Link
+            href={user ? "/calendar" : "/login"}
+            className="block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 touch-manipulation"
+            prefetch
+            aria-label={user ? "캘린더 페이지로 이동" : "로그인 페이지로 이동"}
+          >
+            <Card className="group cursor-pointer hover:shadow-2xl transition-[box-shadow,transform,border-color] duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-primary/40 bg-gradient-to-br from-background to-primary/5 min-h-[320px] flex flex-col overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-0" />
             <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 relative z-10">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" aria-hidden="true">
@@ -209,13 +201,10 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
                   </div>
                 ))}
               </div>
-              <Button 
-                className="w-full mt-auto group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 h-12 rounded-xl font-semibold"
-                aria-label={user ? "캘린더 페이지로 이동" : "로그인 페이지로 이동"}
-              >
+              <span className="inline-flex items-center justify-center w-full mt-auto h-12 rounded-xl font-semibold bg-primary text-primary-foreground group-hover:opacity-90 transition-opacity">
                 <span>{user ? "캘린더 보기" : "로그인 후 이용"}</span>
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-              </Button>
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" aria-hidden />
+              </span>
             </CardContent>
           </Card>
           </Link>

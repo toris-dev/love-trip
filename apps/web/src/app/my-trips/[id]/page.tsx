@@ -6,6 +6,8 @@ import { getExpenses } from "@lovetrip/expense/services"
 import { calculateSettlement } from "@lovetrip/expense/services"
 import { isPremiumUser } from "@lovetrip/subscription"
 import { TravelPlanDetailClient } from "@/components/features/my-trips/travel-plan-detail-client"
+import { TravelPlanDaysSection } from "@/components/features/travel/components/travel-plan-days-section"
+import { TripExpenseSection } from "@/components/features/expense/trip-expense-section"
 import type { Database } from "@lovetrip/shared/types/database"
 import type { ExpenseWithSplits, SettlementSummary } from "@lovetrip/expense/types"
 
@@ -156,6 +158,8 @@ export default async function TravelPlanDetailPage({ params }: TravelPlanDetailP
       userId={user.id}
       partnerId={coupleInfo.partnerId || undefined}
       isPremium={isPremium}
+      DaysSection={TravelPlanDaysSection}
+      ExpenseSection={TripExpenseSection}
     />
   )
 }

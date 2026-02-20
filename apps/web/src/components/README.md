@@ -22,17 +22,18 @@ components/
 │   ├── header.tsx
 │   ├── header-client.tsx
 │   └── layout-wrapper.tsx
-├── shared/             # 공유 컴포넌트 및 유틸리티
+├── shared/             # [FSD Shared] 공유 컴포넌트 및 유틸리티
+│   ├── travel-plan-wizard.tsx   # 여행 계획 만들기 (홈/캘린더 공용)
+│   ├── onboarding/              # 온보딩 위저드 (홈 등에서 사용)
 │   ├── naver-map-view.tsx
 │   ├── push-notification-banner.tsx
 │   ├── push-notification-settings.tsx
 │   ├── pwa-install.tsx
-│   ├── service-worker-script.tsx
 │   ├── theme-provider-wrapper.tsx
 │   ├── theme-provider.tsx
 │   ├── msw-provider.tsx
-│   └── gamification/   # 게이미피케이션 관련 컴포넌트
-└── ui/                 # shadcn/ui 기본 컴포넌트 (유지)
+│   └── gamification/            # 게이미피케이션 관련 컴포넌트
+└── ui/                 # shadcn/ui 기본 컴포넌트 (유지, @lovetrip/ui 패키지)
 ```
 
 ## 컴포넌트 설계 원칙
@@ -59,6 +60,11 @@ components/
 - **shared/**: 여러 기능에서 공유되는 컴포넌트
 - **ui/**: 기본 UI 컴포넌트 (shadcn/ui)
 
+### 5. Feature public API (선택)
+
+- feature 폴더에 `index.ts`를 두고 외부에 노출할 컴포넌트만 re-export 가능 (예: `expense/index.ts`).
+- 페이지에서는 `@/components/features/<feature>/...` 경로로 직접 import해도 됨.
+
 ## 사용 예시
 
 ```tsx
@@ -80,6 +86,12 @@ import { tokens } from "@/design-system/tokens"
 - **파일명**: kebab-case (예: `home-page-client.tsx`)
 - **컴포넌트명**: PascalCase (예: `HomePageClient`)
 - **디렉터리명**: kebab-case (예: `my-trips/`)
+
+## FSD 의존성 방향
+
+- **app** → **features** → **shared** (같은 앱 내)
+- **features** 간 직접 import 지양. 공통 UI는 `shared/`로 올리기.
+- 상세 규칙: `.cursor/rules/fsd.md` 참고.
 
 ## 주의사항
 
