@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { XPLevel, Achievements } from "@/components/shared/gamification"
 import { CoupleConnection } from "@/components/features/profile/couple-connection"
@@ -222,41 +223,39 @@ export function ProfilePageClient({
                   totalPlans={statsData.stats.totalPlans}
                 />
 
-                {/* 내가 등록한 코스 */}
+                {/* 내가 등록한 코스 - Link로 prefetch */}
                 <div className="grid md:grid-cols-2 gap-4 mb-8">
-                  <Card
-                    className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
-                    onClick={() => router.push("/profile/date?type=date")}
-                  >
-                    <CardContent className="p-6 text-center">
-                      <div className="inline-flex items-center justify-center mb-4">
-                        <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/20">
-                          <Heart className="h-6 w-6 text-primary" />
+                  <Link href="/profile/date?type=date" prefetch>
+                    <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer h-full">
+                      <CardContent className="p-6 text-center">
+                        <div className="inline-flex items-center justify-center mb-4">
+                          <div className="p-3 rounded-full bg-primary/10 dark:bg-primary/20">
+                            <Heart className="h-6 w-6 text-primary" />
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-2xl font-bold text-primary mb-2">데이트 코스</div>
-                      <div className="text-sm text-muted-foreground font-medium">
-                        내가 등록한 데이트 코스 보기
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <div className="text-2xl font-bold text-primary mb-2">데이트 코스</div>
+                        <div className="text-sm text-muted-foreground font-medium">
+                          내가 등록한 데이트 코스 보기
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
 
-                  <Card
-                    className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
-                    onClick={() => router.push("/profile/date?type=travel")}
-                  >
-                    <CardContent className="p-6 text-center">
-                      <div className="inline-flex items-center justify-center mb-4">
-                        <div className="p-3 rounded-full bg-blue-50 dark:bg-blue-950">
-                          <Plane className="h-6 w-6 text-blue-600" />
+                  <Link href="/profile/date?type=travel" prefetch>
+                    <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer h-full">
+                      <CardContent className="p-6 text-center">
+                        <div className="inline-flex items-center justify-center mb-4">
+<div className="p-3 rounded-full bg-accent/10 dark:bg-accent/20">
+                          <Plane className="h-6 w-6 text-accent" />
                         </div>
                       </div>
-                      <div className="text-2xl font-bold text-blue-600 mb-2">여행 코스</div>
-                      <div className="text-sm text-muted-foreground font-medium">
-                        내가 등록한 여행 코스 보기
-                      </div>
-                    </CardContent>
-                  </Card>
+                      <div className="text-2xl font-bold text-accent mb-2">여행 코스</div>
+                        <div className="text-sm text-muted-foreground font-medium">
+                          내가 등록한 여행 코스 보기
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </div>
 
                 {/* 내가 만든 코스 목록 */}
@@ -264,27 +263,20 @@ export function ProfilePageClient({
                   <div className="mb-8">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-2xl font-bold">내가 만든 코스</h2>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => router.push("/profile/date")}
-                      >
-                        전체 보기
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href="/profile/date" prefetch>전체 보기</Link>
                       </Button>
                     </div>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {initialUserCourses.slice(0, 6).map(course => (
-                        <Card
-                          key={course.id}
-                          className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
-                          onClick={() => router.push(`/profile/date?type=${course.course_type}`)}
-                        >
+                        <Link key={course.id} href={`/profile/date?type=${course.course_type}`} prefetch>
+                          <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer h-full">
                           <CardContent className="p-6">
                             <div className="flex items-center gap-2 mb-2">
                               {course.course_type === "date" ? (
                                 <Heart className="h-4 w-4 text-primary" />
                               ) : (
-                                <Plane className="h-4 w-4 text-blue-600" />
+                                <Plane className="h-4 w-4 text-accent" />
                               )}
                               <Badge variant="outline" className="text-xs">
                                 {course.course_type === "date" ? "데이트" : "여행"}
@@ -307,25 +299,26 @@ export function ProfilePageClient({
                             )}
                           </CardContent>
                         </Card>
+                        </Link>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* 여행 계획 목록 */}
+                {/* 여행 계획 목록 - Link로 prefetch */}
                 {initialTravelPlans.length > 0 && (
                   <div className="mb-8">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-2xl font-bold">내 여행 계획</h2>
-                      <Button variant="ghost" size="sm" onClick={() => router.push("/my-trips")}>
-                        전체 보기
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href="/my-trips" prefetch>전체 보기</Link>
                       </Button>
                     </div>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {initialTravelPlans.slice(0, 6).map(plan => {
                         const statusColors = {
-                          planning: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-                          ongoing: "bg-green-500/10 text-green-500 border-green-500/20",
+                          planning: "bg-accent/10 text-accent border-accent/20",
+                          ongoing: "bg-success/10 text-success border-success/20",
                           completed: "bg-muted text-muted-foreground border-border",
                         }
                         const statusLabels = {
@@ -334,11 +327,8 @@ export function ProfilePageClient({
                           completed: "완료",
                         }
                         return (
-                          <Card
-                            key={plan.id}
-                            className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer"
-                            onClick={() => router.push(`/my-trips/${plan.id}`)}
-                          >
+                          <Link key={plan.id} href={`/my-trips/${plan.id}`} prefetch>
+                            <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer h-full">
                             <CardContent className="p-6">
                               <div className="flex items-start justify-between mb-2">
                                 <h3 className="font-semibold text-base flex-1 line-clamp-1">
@@ -379,6 +369,7 @@ export function ProfilePageClient({
                               </div>
                             </CardContent>
                           </Card>
+                          </Link>
                         )
                       })}
                     </div>

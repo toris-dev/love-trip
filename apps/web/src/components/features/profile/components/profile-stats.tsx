@@ -14,8 +14,8 @@ export function ProfileStats({ planningTrips, totalPlans }: ProfileStatsProps) {
       label: "계획 중인 여행",
       value: planningTrips,
       icon: Calendar,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50 dark:bg-blue-950",
+      color: "text-accent",
+      bgColor: "bg-accent/10",
     },
     ...(totalPlans !== undefined
       ? [

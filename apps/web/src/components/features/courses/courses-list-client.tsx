@@ -203,7 +203,7 @@ export function CoursesListClient({
             >
               <Sparkles className="h-8 w-8 text-primary/30" />
             </motion.div>
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-primary via-indigo-600 to-blue-600 bg-clip-text text-transparent animate-gradient">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-primary via-primary/90 to-accent bg-clip-text text-transparent animate-gradient">
               트렌디한 여행 코스
             </h1>
             <p className="text-lg text-muted-foreground">
@@ -459,7 +459,7 @@ export function CoursesListClient({
                               </Badge>
                             )}
                             {formatPriceRange(course.min_price, course.max_price) && (
-                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 font-medium border border-green-200 dark:border-green-900/30">
+                              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-success/10 text-success font-medium border border-success/20">
                                 <Wallet className="h-3.5 w-3.5" />
                                 <span>{formatPriceRange(course.min_price, course.max_price)}</span>
                               </div>

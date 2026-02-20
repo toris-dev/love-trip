@@ -24,8 +24,8 @@ interface AchievementsProps {
 }
 
 const rarityColors = {
-  common: "bg-gray-500",
-  rare: "bg-blue-500",
+  common: "bg-muted-foreground",
+  rare: "bg-accent",
   epic: "bg-purple-500",
   legendary: "bg-yellow-500",
 }

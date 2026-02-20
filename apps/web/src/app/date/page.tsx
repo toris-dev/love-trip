@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { buildPageMetadata } from "@/lib/seo"
 import { cache } from "react"
 import { createClient } from "@lovetrip/api/supabase/server"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -515,27 +516,19 @@ export async function generateMetadata({ searchParams }: DatePageProps): Promise
   const params = await searchParams
   const courseType = params.type === "travel" ? "travel" : "date"
   const isTravel = courseType === "travel"
+  const canonical = isTravel ? "/date?type=travel" : "/date"
 
-  return {
+  return buildPageMetadata({
     title: isTravel ? "여행 코스" : "데이트 코스",
     description: isTravel
       ? "여행 코스를 탐색하세요. 다양한 지역의 여행 코스를 확인하고 특별한 여행을 계획해보세요."
       : "데이트 코스를 탐색하세요. 로맨틱한 데이트 장소와 코스를 찾아 특별한 하루를 만들어보세요.",
+    canonical,
+    path: canonical,
     keywords: isTravel
       ? ["여행코스", "여행", "여행계획", "여행추천", "국내여행"]
       : ["데이트코스", "데이트", "로맨틱데이트", "데이트장소", "데이트추천"],
-    openGraph: {
-      title: isTravel ? "여행 코스 | LOVETRIP" : "데이트 코스 | LOVETRIP",
-      description: isTravel
-        ? "여행 코스를 탐색하고 특별한 여행을 계획해보세요."
-        : "데이트 코스를 탐색하고 특별한 하루를 만들어보세요.",
-      url: `https://love2trip.vercel.app/date${isTravel ? "?type=travel" : ""}`,
-      type: "website",
-    },
-    alternates: {
-      canonical: isTravel ? "/date?type=travel" : "/date",
-    },
-  }
+  })
 }
 
 export default async function DatePage({ searchParams }: DatePageProps) {

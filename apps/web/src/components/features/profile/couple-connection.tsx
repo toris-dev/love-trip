@@ -235,7 +235,7 @@ export function CoupleConnection() {
                 </span>
               </div>
             </div>
-            <Badge variant="secondary" className="bg-green-500/10 text-green-600">
+            <Badge variant="secondary" className="bg-success/10 text-success">
               <Check className="h-3 w-3 mr-1" />
               연결됨
             </Badge>

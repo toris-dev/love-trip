@@ -14,6 +14,7 @@ import {
 } from "@lovetrip/ui/components/dialog"
 import { GripVertical, Plus, Search, Calendar, MapPin } from "lucide-react"
 import { toast } from "sonner"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useTravelDayPlaces } from "./hooks/use-travel-day-places"
 import { searchPlaces } from "./utils/place-search-utils"
 import { PlaceCard } from "./PlaceCard"
@@ -44,6 +45,7 @@ export function TravelDayPlaces({ travelPlanId, travelDay, onUpdate }: TravelDay
   const [places, setPlaces] = useState<TravelDayPlace[]>([])
   const [searchDialogOpen, setSearchDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300)
   const [searchResults, setSearchResults] = useState<Place[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
@@ -66,7 +68,7 @@ export function TravelDayPlaces({ travelPlanId, travelDay, onUpdate }: TravelDay
   }, [loadPlaces])
 
   /**
-   * 장소 검색 핸들러
+   * 장소 검색 핸들러 (버튼/Enter 시 즉시 실행)
    */
   const handleSearch = useCallback(async () => {
     const trimmedQuery = searchQuery.trim()
@@ -88,6 +90,38 @@ export function TravelDayPlaces({ travelPlanId, travelDay, onUpdate }: TravelDay
       setIsSearching(false)
     }
   }, [searchQuery])
+
+  /**
+   * debounced 검색어 변경 시 자동 검색 (입력 후 300ms 지나면 API 호출)
+   */
+  useEffect(() => {
+    const trimmed = debouncedSearchQuery.trim()
+    if (!trimmed) {
+      setSearchResults([])
+      return
+    }
+    let cancelled = false
+    const run = async () => {
+      try {
+        setIsSearching(true)
+        const results = await searchPlaces(trimmed)
+        if (!cancelled) setSearchResults(results)
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Error searching places:", error)
+          const message = handleApiError(error, "장소 검색에 실패했습니다")
+          toast.error(message)
+          setSearchResults([])
+        }
+      } finally {
+        if (!cancelled) setIsSearching(false)
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedSearchQuery])
 
   /**
    * 장소 추가 핸들러

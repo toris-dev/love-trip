@@ -17,10 +17,10 @@ interface LevelInfoDialogProps {
  */
 const LEVEL_TIERS = [
   { name: "브론즈", minLevel: 1, maxLevel: 10, color: "bg-amber-600", icon: Trophy },
-  { name: "실버", minLevel: 11, maxLevel: 20, color: "bg-gray-400", icon: Star },
+  { name: "실버", minLevel: 11, maxLevel: 20, color: "bg-muted-foreground", icon: Star },
   { name: "골드", minLevel: 21, maxLevel: 30, color: "bg-yellow-500", icon: Trophy },
   { name: "플래티넘", minLevel: 31, maxLevel: 40, color: "bg-cyan-500", icon: Sparkles },
-  { name: "다이아몬드", minLevel: 41, maxLevel: 50, color: "bg-blue-500", icon: Sparkles },
+  { name: "다이아몬드", minLevel: 41, maxLevel: 50, color: "bg-accent", icon: Sparkles },
   { name: "마스터", minLevel: 51, maxLevel: 100, color: "bg-purple-600", icon: Trophy },
 ]
 

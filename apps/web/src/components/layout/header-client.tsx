@@ -32,7 +32,11 @@ interface HeaderClientProps {
   }
 }
 
-export function HeaderClient({ initialUser, initialNickname, gamificationData }: HeaderClientProps) {
+export function HeaderClient({
+  initialUser,
+  initialNickname,
+  gamificationData,
+}: HeaderClientProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -44,7 +48,7 @@ export function HeaderClient({ initialUser, initialNickname, gamificationData }:
     // Auth 상태 변경 감지 - 서버 컴포넌트를 새로고침하여 데이터 갱신
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } = supabase.auth.onAuthStateChange(event => {
       // 로그인/로그아웃 이벤트 시 서버 컴포넌트 업데이트를 위한 새로고침
       if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
         router.refresh()
@@ -69,7 +73,7 @@ export function HeaderClient({ initialUser, initialNickname, gamificationData }:
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-border/50 shadow-sm">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between gap-4">
           <InteractiveLogo />
@@ -86,7 +90,10 @@ export function HeaderClient({ initialUser, initialNickname, gamificationData }:
                 className="w-full px-4 py-2 pl-10 pr-4 rounded-full border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 aria-[invalid=true]:border-destructive"
                 aria-label="목적지 검색"
               />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
+                aria-hidden="true"
+              />
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -182,11 +189,7 @@ export function HeaderClient({ initialUser, initialNickname, gamificationData }:
             {/* 모바일 메뉴 */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="lg:hidden h-9 w-9 p-0"
-                >
+                <Button variant="ghost" size="sm" className="lg:hidden h-9 w-9 p-0">
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -276,7 +279,7 @@ export function HeaderClient({ initialUser, initialNickname, gamificationData }:
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={handleLogout}
-                      className="text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 focus:bg-red-100 dark:focus:bg-red-950/50 cursor-pointer"
+                      className="text-destructive bg-destructive/10 hover:bg-destructive/20 focus:bg-destructive/20 cursor-pointer"
                     >
                       로그아웃
                     </DropdownMenuItem>
@@ -413,7 +416,7 @@ export function HeaderClient({ initialUser, initialNickname, gamificationData }:
                       </div>
                     </div>
                     <Button
-                      className="w-full bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white"
+                      className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                       onClick={() => {
                         handleLogout()
                         setIsMobileMenuOpen(false)

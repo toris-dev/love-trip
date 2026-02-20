@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { Button } from "@lovetrip/ui/components/button"
 import { Plus, ArrowLeft, Save, GripVertical, X, Heart, Plane, Menu } from "lucide-react"
 import { LocationInput } from "@/components/shared/location-input"
@@ -88,6 +89,7 @@ export function CoursesPageClient({
 
   const [selectedDateCourse, setSelectedDateCourse] = useState<DateCourse | null>(null)
   const [dateSearchQuery, setDateSearchQuery] = useState("")
+  const debouncedDateSearchQuery = useDebouncedValue(dateSearchQuery, 300)
   const [dateHasMore, setDateHasMore] = useState(initialDateHasMore)
   const [datePage, setDatePage] = useState(0)
   const [dateIsLoading] = useState(false)
@@ -641,15 +643,15 @@ export function CoursesPageClient({
     } finally {
       setDateIsLoadingMore(false)
     }
-  }, [datePage, dateHasMore, dateIsLoadingMore, dateSearchQuery])
+  }, [datePage, dateHasMore, dateIsLoadingMore, debouncedDateSearchQuery])
 
-  // 필터링 로직을 useMemo로 최적화
+  // 필터링 로직을 useMemo로 최적화 (debounced 검색어 사용)
   const filteredDateCourses = useMemo(() => {
-    if (!dateSearchQuery.trim() && Object.keys(dateFilters).length === 0) {
+    if (!debouncedDateSearchQuery.trim() && Object.keys(dateFilters).length === 0) {
       return dateCourses
     }
 
-    const query = dateSearchQuery.toLowerCase()
+    const query = debouncedDateSearchQuery.toLowerCase()
     const hasSearchQuery = query.length > 0
 
     return dateCourses.filter(course => {
@@ -682,16 +684,16 @@ export function CoursesPageClient({
       }
       return true
     })
-  }, [dateCourses, dateSearchQuery, dateFilters])
+  }, [dateCourses, debouncedDateSearchQuery, dateFilters])
 
   const filterDateCourses = useCallback(() => {
     setFilteredDateCourses(filteredDateCourses)
-    if (dateSearchQuery.trim() || Object.keys(dateFilters).length > 0) {
+    if (debouncedDateSearchQuery.trim() || Object.keys(dateFilters).length > 0) {
       setDisplayedDateCourses(filteredDateCourses.slice(0, ITEMS_PER_PAGE))
       setDateHasMore(false)
       setDatePage(0)
     }
-  }, [filteredDateCourses, dateSearchQuery, dateFilters])
+  }, [filteredDateCourses, debouncedDateSearchQuery, dateFilters])
 
   useEffect(() => {
     filterDateCourses()
@@ -699,7 +701,7 @@ export function CoursesPageClient({
 
   // IntersectionObserver 설정
   useEffect(() => {
-    if (!observerTarget.current || !dateHasMore || dateIsLoadingMore || dateSearchQuery.trim())
+    if (!observerTarget.current || !dateHasMore || dateIsLoadingMore || debouncedDateSearchQuery.trim())
       return
 
     const observer = new IntersectionObserver(
@@ -708,7 +710,7 @@ export function CoursesPageClient({
           entries[0].isIntersecting &&
           dateHasMore &&
           !dateIsLoadingMore &&
-          !dateSearchQuery.trim()
+          !debouncedDateSearchQuery.trim()
         ) {
           loadMoreDateCourses()
         }
@@ -722,7 +724,7 @@ export function CoursesPageClient({
     return () => {
       observer.disconnect()
     }
-  }, [dateHasMore, dateIsLoadingMore, dateSearchQuery, loadMoreDateCourses])
+  }, [dateHasMore, dateIsLoadingMore, debouncedDateSearchQuery, loadMoreDateCourses])
 
   useEffect(() => {
     document.body.style.overflow = "hidden"
@@ -816,7 +818,7 @@ export function CoursesPageClient({
                     {formatPriceRange(selectedCourse.min_price, selectedCourse.max_price) && (
                       <>
                         <span>•</span>
-                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-900/30">
+                        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20">
                           <Wallet className="h-3 w-3" />
                           <span className="text-xs font-medium">
                             {formatPriceRange(selectedCourse.min_price, selectedCourse.max_price)}
@@ -1043,7 +1045,7 @@ export function CoursesPageClient({
                                   selectedDateCourse.min_price,
                                   selectedDateCourse.max_price
                                 ) && (
-                                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-900/30">
+                                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20">
                                     <Wallet className="h-3 w-3" />
                                     <span className="text-xs font-medium">
                                       {formatPriceRange(
@@ -1314,7 +1316,7 @@ export function CoursesPageClient({
                                   )
                                 })}
                               </AnimatePresence>
-                              {!dateSearchQuery.trim() && dateHasMore && (
+                              {!debouncedDateSearchQuery.trim() && dateHasMore && (
                                 <div ref={observerTarget} className="h-4" />
                               )}
                               {dateIsLoadingMore && (
@@ -1899,8 +1901,8 @@ export function CoursesPageClient({
                           </div>
                         )}
                         {place.price_level !== null && place.price_level !== undefined && (
-                          <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30">
-                            <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                          <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-xl bg-success/10 border border-success/20">
+                            <span className="text-xs font-semibold text-success">
                               {"💰".repeat(place.price_level) || "💰"}
                             </span>
                           </div>

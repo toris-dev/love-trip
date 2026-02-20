@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@lovetrip/ui/components/card"
 import { Button } from "@lovetrip/ui/components/button"
@@ -11,13 +12,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@lovetrip/ui/components/dialog"
+import { Skeleton } from "@lovetrip/ui/components/skeleton"
 import { MapPin, Calendar as CalendarIcon, BookOpen } from "lucide-react"
 import type { SharedCalendar } from "@lovetrip/couple/services"
 import { CreateEventDialog } from "./create-event-dialog"
-import { TravelPlanWizard } from "@/components/features/home/travel-plan-wizard"
 import { CourseSelector } from "./course-selector"
 import { AddCourseDialog } from "./add-course-dialog"
 import type { CourseForCalendar, TravelPlanForCalendar } from "../types"
+
+const TravelPlanWizard = dynamic(
+  () => import("@/components/features/home/travel-plan-wizard").then((m) => ({ default: m.TravelPlanWizard })),
+  { ssr: false, loading: () => <Skeleton className="h-0 w-0" /> }
+)
 
 interface CalendarSidebarProps {
   calendars: SharedCalendar[]

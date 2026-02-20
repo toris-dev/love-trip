@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@lovetrip/ui/components/button"
@@ -11,11 +13,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@lovetrip/ui/components/card"
+import { Skeleton } from "@lovetrip/ui/components/skeleton"
 import { MapPin, Heart, Calendar, ArrowRight, Plus, Sparkles, Users, Baby, Briefcase } from "lucide-react"
-import { TravelPlanWizard } from "./travel-plan-wizard"
-import { OnboardingWizard } from "@/components/features/onboarding"
 import { UpcomingDatesSection } from "./upcoming-dates-section"
 import { TrendingDestinationsSection } from "./trending-destinations-section"
+
+const TravelPlanWizard = dynamic(
+  () => import("./travel-plan-wizard").then((m) => ({ default: m.TravelPlanWizard })),
+  { ssr: false, loading: () => <Skeleton className="h-0 w-0" /> }
+)
+
+const OnboardingWizard = dynamic(
+  () => import("@/components/features/onboarding").then((m) => ({ default: m.OnboardingWizard })),
+  { ssr: false, loading: () => <Skeleton className="h-0 w-0" /> }
+)
 
 interface HomePageClientProps {
   user: { id: string; email?: string } | null
@@ -62,26 +73,20 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
 
       {/* 선택 카드 그리드 - 모던한 스타일 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {/* 여행 코스 카드 */}
+        {/* 여행 코스 카드 - Link로 prefetch 및 접근성 보장 */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Card
-            role="button"
-            tabIndex={0}
-            aria-label="여행 코스 페이지로 이동"
-            className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-primary/40 bg-gradient-to-br from-background to-primary/5 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[320px] flex flex-col overflow-hidden relative"
-            onClick={() => router.push("/travel")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                router.push("/travel")
-              }
-            }}
-          >
+          <Link href="/travel" className="block" prefetch>
+            <Card
+              role="button"
+              tabIndex={0}
+              aria-label="여행 코스 페이지로 이동"
+              className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-primary/40 bg-gradient-to-br from-background to-primary/5 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[320px] flex flex-col overflow-hidden relative"
+            >
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-0" />
             <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 relative z-10">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" aria-hidden="true">
@@ -114,28 +119,23 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
               </Button>
             </CardContent>
           </Card>
+          </Link>
         </motion.div>
 
-        {/* 데이트 코스 카드 */}
+        {/* 데이트 코스 카드 - Link로 prefetch */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <Card
-            role="button"
-            tabIndex={0}
-            aria-label="데이트 코스 페이지로 이동"
-            className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-accent/40 bg-gradient-to-br from-background to-accent/5 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 min-h-[320px] flex flex-col overflow-hidden relative"
-            onClick={() => router.push("/date")}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                router.push("/date")
-              }
-            }}
-          >
+          <Link href="/date" className="block" prefetch>
+            <Card
+              role="button"
+              tabIndex={0}
+              aria-label="데이트 코스 페이지로 이동"
+              className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-accent/40 bg-gradient-to-br from-background to-accent/5 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 min-h-[320px] flex flex-col overflow-hidden relative"
+            >
             <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -z-0" />
             <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 relative z-10">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" aria-hidden="true">
@@ -169,38 +169,23 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
               </Button>
             </CardContent>
           </Card>
+          </Link>
         </motion.div>
 
-        {/* 캘린더 카드 */}
+        {/* 캘린더 카드 - Link로 prefetch (비로그인 시 로그인으로) */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Card
-            role="button"
-            tabIndex={0}
-            aria-label={user ? "캘린더 페이지로 이동" : "로그인 페이지로 이동"}
-            className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-primary/40 bg-gradient-to-br from-background to-primary/5 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[320px] flex flex-col overflow-hidden relative"
-            onClick={() => {
-              if (user) {
-                router.push("/calendar")
-              } else {
-                router.push("/login")
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault()
-                if (user) {
-                  router.push("/calendar")
-                } else {
-                  router.push("/login")
-                }
-              }
-            }}
-          >
+          <Link href={user ? "/calendar" : "/login"} className="block" prefetch>
+            <Card
+              role="button"
+              tabIndex={0}
+              aria-label={user ? "캘린더 페이지로 이동" : "로그인 페이지로 이동"}
+              className="group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-primary/40 bg-gradient-to-br from-background to-primary/5 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 min-h-[320px] flex flex-col overflow-hidden relative"
+            >
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-0" />
             <CardHeader className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 relative z-10">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" aria-hidden="true">
@@ -233,6 +218,7 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
               </Button>
             </CardContent>
           </Card>
+          </Link>
         </motion.div>
       </div>
 
@@ -241,7 +227,7 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      {/* Upcoming Dates 섹션 */}
+      {/* Upcoming Dates 섹션 - Link로 prefetch */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -252,6 +238,7 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
           dates={[]} // TODO: 실제 데이터 연결
           onViewAll={() => router.push("/calendar")}
         />
+        <Link href="/calendar" className="sr-only" prefetch aria-hidden>캘린더 prefetch</Link>
       </motion.div>
 
       {/* 섹션 구분선 */}
@@ -259,7 +246,7 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
         <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 
-      {/* Trending Destinations 섹션 */}
+      {/* Trending Destinations 섹션 - Link로 prefetch */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -270,6 +257,7 @@ export function HomePageClient({ user, displayName }: HomePageClientProps) {
           destinations={[]} // TODO: 실제 데이터 연결
           onSeeMore={() => router.push("/courses")}
         />
+        <Link href="/courses" className="sr-only" prefetch aria-hidden>코스 prefetch</Link>
       </motion.div>
 
 

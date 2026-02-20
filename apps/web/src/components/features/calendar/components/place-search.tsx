@@ -8,6 +8,7 @@ import Image from "next/image"
 import { Star } from "lucide-react"
 import { createClient } from "@lovetrip/api/supabase/client"
 import { toast } from "sonner"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { Place } from "../types"
 
 interface PlaceSearchProps {
@@ -28,6 +29,7 @@ export function PlaceSearch({
   onSelectPlace,
 }: PlaceSearchProps) {
   const [searchResults, setSearchResults] = useState<Place[]>([])
+  const debouncedQuery = useDebouncedValue(query, 300)
 
   const searchPlaces = async (searchQuery: string) => {
     // places 테이블이 삭제되어 빈 배열 반환
@@ -35,12 +37,12 @@ export function PlaceSearch({
   }
 
   useEffect(() => {
-    if (query) {
-      searchPlaces(query)
+    if (debouncedQuery) {
+      searchPlaces(debouncedQuery)
     } else {
       setSearchResults([])
     }
-  }, [query])
+  }, [debouncedQuery])
 
   const displayResults = results.length > 0 ? results : searchResults
 
@@ -50,10 +52,7 @@ export function PlaceSearch({
         <Input
           placeholder="장소 이름으로 검색..."
           value={query}
-          onChange={e => {
-            onQueryChange(e.target.value)
-            searchPlaces(e.target.value)
-          }}
+          onChange={e => onQueryChange(e.target.value)}
           onFocus={() => onShowResultsChange(true)}
         />
         <Button type="button" variant="outline" onClick={() => onShowResultsChange(!showResults)}>

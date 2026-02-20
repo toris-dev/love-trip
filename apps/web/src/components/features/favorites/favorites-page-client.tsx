@@ -9,6 +9,7 @@ import { Badge } from "@lovetrip/ui/components/badge"
 import { ArrowLeft, Heart, MapPin, Star, Search, X } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { Database } from "@lovetrip/shared/types/database"
 
 type PlaceFavorite = Database["public"]["Tables"]["place_favorites"]["Row"] & {
@@ -23,6 +24,7 @@ export function FavoritesPageClient({ initialFavorites }: FavoritesPageClientPro
   const router = useRouter()
   const [favorites, setFavorites] = useState(initialFavorites)
   const [searchQuery, setSearchQuery] = useState("")
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300)
 
   // places 테이블이 삭제되어 필터링 불가
   // 모든 즐겨찾기는 places 정보가 없으므로 빈 배열로 표시
@@ -61,7 +63,7 @@ export function FavoritesPageClient({ initialFavorites }: FavoritesPageClientPro
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-                  <Heart className="h-8 w-8 text-red-500 fill-red-500" />
+                  <Heart className="h-8 w-8 text-primary fill-primary" />
                   즐겨찾기 장소
                 </h1>
                 <p className="text-muted-foreground">저장한 장소를 한눈에 확인하고 관리하세요</p>
@@ -85,7 +87,7 @@ export function FavoritesPageClient({ initialFavorites }: FavoritesPageClientPro
           {/* 즐겨찾기 목록 */}
           <Card>
             <CardContent className="py-16 text-center">
-              <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <Heart className="h-16 w-16 mx-auto mb-4 text-primary opacity-50 fill-primary/30" />
               <h3 className="text-lg font-semibold mb-2">즐겨찾기 기능을 사용할 수 없습니다</h3>
               <p className="text-muted-foreground">
                 places 테이블이 삭제되어 즐겨찾기 기능을 일시적으로 사용할 수 없습니다.

@@ -12,6 +12,7 @@ import Image from "next/image"
 import Link from "next/link"
 import type { UserCourseWithAuthor, TargetAudience } from "@lovetrip/shared/types"
 import { formatPriceRange } from "@/lib/format-price"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
 interface CoursesExploreClientProps {
   initialCourses: UserCourseWithAuthor[]
@@ -36,19 +37,20 @@ export function CoursesExploreClient({
   const [courses, setCourses] = useState(initialCourses)
   const [filters, setFilters] = useState(initialFilters)
   const [searchQuery, setSearchQuery] = useState("")
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300)
 
   // 프리미엄 고급 필터
   const [minViews, setMinViews] = useState<number>(0)
   const [minLikes, setMinLikes] = useState<number>(0)
   const [premiumOnly, setPremiumOnly] = useState<boolean>(false)
 
-  // 필터링 로직을 useMemo로 최적화
+  // 필터링 로직을 useMemo로 최적화 (debounced 검색어로 API/상태 업데이트 빈도 감소)
   const filteredCourses = useMemo(() => {
-    if (!searchQuery.trim() && !filters.targetAudience && minViews === 0 && minLikes === 0 && !premiumOnly) {
+    if (!debouncedSearchQuery.trim() && !filters.targetAudience && minViews === 0 && minLikes === 0 && !premiumOnly) {
       return courses
     }
 
-    const query = searchQuery.toLowerCase()
+    const query = debouncedSearchQuery.toLowerCase()
     const hasSearchQuery = query.length > 0
 
     return courses.filter(course => {
@@ -75,7 +77,7 @@ export function CoursesExploreClient({
 
       return true
     })
-  }, [courses, filters.targetAudience, searchQuery, isPremium, minViews, minLikes, premiumOnly])
+  }, [courses, filters.targetAudience, debouncedSearchQuery, isPremium, minViews, minLikes, premiumOnly])
 
   const handleLike = async (courseId: string) => {
     if (!userId) {
@@ -337,12 +339,12 @@ export function CoursesExploreClient({
                               course.target_audience === "couple"
                                 ? "bg-pink-50 dark:bg-pink-950/20 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-900/30"
                                 : course.target_audience === "friend"
-                                  ? "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/30"
+                                  ? "bg-accent/10 text-accent border-accent/20"
                                   : course.target_audience === "family"
-                                    ? "bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900/30"
+                                    ? "bg-success/10 text-success border-success/20"
                                     : course.target_audience === "solo"
-                                      ? "bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/30"
-                                      : "bg-gray-50 dark:bg-gray-950/20 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-900/30"
+                                      ? "bg-primary/10 text-primary border-primary/20"
+                                      : "bg-muted/80 text-muted-foreground border-border"
                             }
                           >
                             {course.target_audience === "couple"
@@ -362,7 +364,7 @@ export function CoursesExploreClient({
                           {formatPriceRange(course.min_price, course.max_price) && (
                             <Badge
                               variant="secondary"
-                              className="bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900/30"
+                              className="bg-success/10 text-success border-success/20"
                             >
                               <Wallet className="h-3 w-3 mr-1" />
                               {formatPriceRange(course.min_price, course.max_price)}

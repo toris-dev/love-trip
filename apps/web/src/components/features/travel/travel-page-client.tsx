@@ -340,7 +340,7 @@ export function TravelPageClient({
                             <Plane className="h-12 w-12 text-primary dark:text-primary mx-auto" />
                           </div>
                         </div>
-                        <p className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        <p className="text-lg font-semibold text-foreground mb-2">
                           아직 만든 코스가 없습니다
                         </p>
                         <p className="text-sm text-primary/70 dark:text-primary/70 mb-4">
@@ -356,13 +356,13 @@ export function TravelPageClient({
                         {creatingCourses.map(course => (
                           <Card
                             key={course.id}
-                            className="cursor-pointer hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 border-2 border-primary/10 dark:border-primary/30/30 hover:border-primary/20 dark:hover:border-primary/40/50 bg-white/80 dark:bg-gray-900/50 rounded-2xl overflow-hidden"
+                            className="cursor-pointer hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 border-2 border-primary/10 hover:border-primary/20 bg-card/80 rounded-2xl overflow-hidden"
                             onClick={() => setSelectedCourseId(course.id)}
                           >
                             <CardHeader className="pb-3 bg-gradient-to-r from-primary/10 to-primary/10 dark:from-primary/20 dark:to-primary/20">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                  <CardTitle className="text-lg mb-2 flex items-center gap-2 text-gray-900 dark:text-white">
+                                  <CardTitle className="text-lg mb-2 flex items-center gap-2 text-foreground">
                                     <div className="p-1.5 rounded-lg bg-primary">
                                       <Plane className="h-4 w-4 text-white" />
                                     </div>

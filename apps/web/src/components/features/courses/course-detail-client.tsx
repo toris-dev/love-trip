@@ -266,17 +266,17 @@ export function CourseDetailClient({ course, userId }: CourseDetailClientProps) 
                           className="flex items-center gap-2 px-3 py-2 rounded-full bg-muted/50"
                           whileHover={{ scale: 1.05 }}
                         >
-                          <Clock className="h-4 w-4 text-blue-500" />
+                          <Clock className="h-4 w-4 text-accent" />
                           <span className="font-semibold">{course.duration}</span>
                         </motion.div>
                       )}
                       {course.estimated_budget && (
                         <motion.div
-                          className="flex items-center gap-2 px-3 py-2 rounded-full bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30"
+                          className="flex items-center gap-2 px-3 py-2 rounded-full bg-success/10 border border-success/20"
                           whileHover={{ scale: 1.05 }}
                         >
-                          <Wallet className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          <span className="font-semibold text-green-700 dark:text-green-300">
+                          <Wallet className="h-4 w-4 text-success" />
+                          <span className="font-semibold text-success">
                             예산: {course.estimated_budget.toLocaleString()}원
                           </span>
                         </motion.div>
@@ -447,7 +447,7 @@ export function CourseDetailClient({ course, userId }: CourseDetailClientProps) 
                                       {place.price_level && (
                                         <Badge
                                           variant="outline"
-                                          className="text-xs px-3 py-1.5 bg-green-50 dark:bg-green-950/30 border-green-300"
+                                          className="text-xs px-3 py-1.5 bg-success/10 border-success/30"
                                         >
                                           💰 {"💰".repeat(place.price_level)}
                                         </Badge>

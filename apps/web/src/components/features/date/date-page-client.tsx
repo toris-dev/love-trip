@@ -36,6 +36,7 @@ import Image from "next/image"
 import dynamic from "next/dynamic"
 import type { DateCourse, Place, TargetAudience } from "@lovetrip/shared/types/course"
 import { MoodFilter, type MoodType } from "@lovetrip/ui/components/mood-filter"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
 const NaverMapView = dynamic(() => import("@/components/shared/naver-map-view"), { ssr: false })
 
@@ -62,6 +63,7 @@ export function DatePageClient({
   const [selectedCourse, setSelectedCourse] = useState<DateCourse | null>(null)
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -478,23 +480,23 @@ export function DatePageClient({
     }
   }, [page, isLoadingMore, hasMore, loadCourses])
 
-  // 필터링 로직을 useMemo로 최적화
+  // 필터링 로직을 useMemo로 최적화 (debounced 검색어 사용)
   const filteredCourses = useMemo(() => {
-    if (!searchQuery.trim()) {
+    if (!debouncedSearchQuery.trim()) {
       return courses
     }
 
-    const query = searchQuery.toLowerCase()
+    const query = debouncedSearchQuery.toLowerCase()
     return courses.filter(
       course =>
         course.title.toLowerCase().includes(query) ||
         course.region.toLowerCase().includes(query) ||
         course.description?.toLowerCase().includes(query)
     )
-  }, [courses, searchQuery])
+  }, [courses, debouncedSearchQuery])
 
   const filterCourses = useCallback(() => {
-    if (searchQuery.trim()) {
+    if (debouncedSearchQuery.trim()) {
       // 검색어가 있을 때는 필터링된 결과만 표시
       setFilteredCourses(filteredCourses)
       setDisplayedCourses(filteredCourses.slice(0, ITEMS_PER_PAGE))
@@ -525,7 +527,7 @@ export function DatePageClient({
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !searchQuery.trim()) {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore && !debouncedSearchQuery.trim()) {
           loadMore()
         }
       },
@@ -542,7 +544,7 @@ export function DatePageClient({
         observer.unobserve(currentTarget)
       }
     }
-  }, [hasMore, isLoadingMore, searchQuery, loadMore])
+  }, [hasMore, isLoadingMore, debouncedSearchQuery, loadMore])
 
   const handleCourseSelect = (course: DateCourse) => {
     setSelectedCourse(course)
@@ -809,7 +811,7 @@ export function DatePageClient({
                   ) : (
                     <div className="space-y-3">
                       <AnimatePresence>
-                        {(searchQuery.trim() ? filteredCourses : displayedCourses).map(course => (
+                        {(debouncedSearchQuery.trim() ? filteredCourses : displayedCourses).map(course => (
                           <motion.div
                             key={course.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -892,7 +894,7 @@ export function DatePageClient({
                           </motion.div>
                         ))}
                       </AnimatePresence>
-                      {!searchQuery.trim() && hasMore && (
+                      {!debouncedSearchQuery.trim() && hasMore && (
                         <div ref={observerTarget} className="h-4" />
                       )}
                       {isLoadingMore && (
@@ -1353,11 +1355,11 @@ export function DatePageClient({
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="fixed bottom-0 left-0 right-0 md:fixed md:bottom-auto md:left-1/2 md:right-auto md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[600px] md:max-w-[90vw] z-50"
           >
-            <Card className="m-4 lg:m-0 shadow-2xl shadow-primary/30 border-2 border-primary/40 dark:border-primary/50 bg-gradient-to-br from-white via-primary/10 to-primary/5 dark:from-gray-900 dark:via-primary/20 dark:to-primary/10 backdrop-blur-xl rounded-2xl overflow-hidden max-h-[85vh] overflow-y-auto">
+            <Card className="m-4 lg:m-0 shadow-2xl shadow-primary/30 border-2 border-primary/40 bg-gradient-to-br from-background via-primary/10 to-primary/5 dark:via-primary/20 dark:to-primary/10 backdrop-blur-xl rounded-2xl overflow-hidden max-h-[85vh] overflow-y-auto">
               <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 border-b border-primary/20 dark:border-primary/30">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-xl flex items-center gap-3 mb-2 text-gray-900 dark:text-white">
+                    <CardTitle className="text-xl flex items-center gap-3 mb-2 text-foreground">
                       {(() => {
                         const Icon = getTypeIcon(selectedPlace.type)
                         return (
@@ -1409,14 +1411,14 @@ export function DatePageClient({
                         {(selectedPlace.rating ?? 0).toFixed(1)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/30">
-                      <span className="text-sm font-semibold text-green-700 dark:text-green-300">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 border border-success/20">
+                      <span className="text-sm font-semibold text-success">
                         {"💰".repeat(selectedPlace.price_level ?? 0) || "💰"}
                       </span>
                     </div>
                   </div>
                   {selectedPlace.description && (
-                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed line-clamp-4">
                       {selectedPlace.description}
                     </p>
                   )}
@@ -1425,7 +1427,7 @@ export function DatePageClient({
                       <span className="text-sm font-semibold text-primary dark:text-primary">
                         전화:
                       </span>
-                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                      <span className="text-sm text-muted-foreground">
                         {selectedPlace.phone}
                       </span>
                     </div>
