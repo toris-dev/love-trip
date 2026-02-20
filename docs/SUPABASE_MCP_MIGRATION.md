@@ -96,7 +96,7 @@ Supabase MCP를 통해 마이그레이션 목록을 확인할 수 있습니다:
 
 ```typescript
 // MCP 도구 사용
-mcp_supabase_list_migrations({ project_id: "dyomownljgsbwaxnljau" })
+mcp_supabase_list_migrations({ project_id: "YOUR_SUPABASE_PROJECT_ID" })
 ```
 
 ### 새 마이그레이션 적용
@@ -104,7 +104,7 @@ mcp_supabase_list_migrations({ project_id: "dyomownljgsbwaxnljau" })
 ```typescript
 // MCP 도구 사용
 mcp_supabase_apply_migration({
-  project_id: "dyomownljgsbwaxnljau",
+  project_id: "YOUR_SUPABASE_PROJECT_ID",
   name: "migration_name_snake_case",
   query: `
     -- SQL 쿼리

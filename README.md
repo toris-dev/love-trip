@@ -384,7 +384,7 @@ graph TB
 
 이 프로젝트는 Supabase MCP (Model Context Protocol)를 통해 데이터베이스 마이그레이션을 관리합니다.
 
-**프로젝트 ID**: `dyomownljgsbwaxnljau`
+로컬에서는 `supabase link`로 연결된 프로젝트를 사용합니다. 프로젝트 ID는 저장소에 포함하지 마세요.
 
 ### 주요 테이블 구조
 

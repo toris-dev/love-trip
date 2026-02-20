@@ -84,7 +84,7 @@ pnpm gen-types
 또는:
 
 ```bash
-npx supabase gen types typescript --project-id dyomownljgsbwaxnljau > packages/shared/types/database.ts
+npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > packages/shared/types/database.ts
 ```
 
 ## Supabase MCP를 통한 마이그레이션 관리
@@ -93,7 +93,7 @@ npx supabase gen types typescript --project-id dyomownljgsbwaxnljau > packages/s
 
 ```typescript
 // Supabase MCP를 통해 마이그레이션 목록 확인
-mcp_supabase_list_migrations({ project_id: "dyomownljgsbwaxnljau" })
+mcp_supabase_list_migrations({ project_id: "YOUR_SUPABASE_PROJECT_ID" })
 ```
 
 ### 새 마이그레이션 적용
@@ -101,7 +101,7 @@ mcp_supabase_list_migrations({ project_id: "dyomownljgsbwaxnljau" })
 ```typescript
 // Supabase MCP를 통해 마이그레이션 적용
 mcp_supabase_apply_migration({
-  project_id: "dyomownljgsbwaxnljau",
+  project_id: "YOUR_SUPABASE_PROJECT_ID",
   name: "migration_name",
   query: "SQL 쿼리...",
 })

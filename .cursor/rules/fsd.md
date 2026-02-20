@@ -55,7 +55,7 @@ features/<feature-name>/
 └── index.ts                    # (선택) public API
 ```
 
-- 다른 feature를 쓸 땐 가능하면 **페이지/라우트**에서 조합하고, feature 간 직접 import는 최소화.
+- 다른 feature를 쓸 땐 **페이지/라우트**에서 조합 (예: `app/my-trips/[id]/page.tsx`에서 `TravelPlanDetailClient`에 `DaysSection={TravelPlanDaysSection}`, `ExpenseSection={TripExpenseSection}` 주입). feature 간 직접 import는 하지 않기.
 
 ## Shared
 

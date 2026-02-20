@@ -18,8 +18,7 @@ love-trip/
 │   ├── subscription/       # 구독/프리미엄 도메인 서비스
 │   ├── recommendation/     # 추천 도메인 서비스
 │   ├── user/                # 사용자/인증/프로필 도메인
-│   ├── gamification/        # 레벨/경험치/업적 도메인
-│   └── utils/               # 범용 유틸리티
+│   └── gamification/        # 레벨/경험치/업적 도메인
 ├── supabase/                # 마이그레이션, Edge Functions
 ├── docs/
 └── pnpm-workspace.yaml

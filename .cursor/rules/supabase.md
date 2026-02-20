@@ -18,7 +18,7 @@
 
 - 스키마 변경 후 타입 동기화: `pnpm gen-types`
 - 출력: `packages/shared/types/database.ts`
-- 프로젝트 ID는 스크립트에 지정됨 (`dyomownljgsbwaxnljau`). 변경 시 `package.json`의 `gen-types` 스크립트 수정.
+- 로컬: `supabase link`로 연결된 프로젝트 사용. CI 등에서는 `SUPABASE_PROJECT_ID` 환경 변수로 지정 가능.
 
 ## 마이그레이션
 
