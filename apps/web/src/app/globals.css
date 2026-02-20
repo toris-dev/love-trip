@@ -25,6 +25,8 @@
     --input: 330 20% 90%;
     --ring: 330 70% 60%;
     --radius: 1.5rem;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
   }
 
   @keyframes gradient {
@@ -61,6 +63,8 @@
     --border: 330 15% 25%;
     --input: 330 15% 25%;
     --ring: 330 65% 55%;
+    --success: 142 56% 42%;
+    --success-foreground: 0 0% 98%;
   }
 }
 
