@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import {
   Card,
   CardContent,
@@ -9,9 +10,24 @@ import {
 } from "@lovetrip/ui/components/card"
 import { Progress } from "@lovetrip/ui/components/progress"
 import { Alert, AlertDescription } from "@lovetrip/ui/components/alert"
+import { Skeleton } from "@lovetrip/ui/components/skeleton"
 import { AlertCircle, TrendingUp, TrendingDown, Wallet } from "lucide-react"
 import type { BudgetSummary } from "@lovetrip/expense/services"
-import { BudgetCharts } from "./budget-charts"
+
+const BudgetCharts = dynamic(() => import("./budget-charts").then((m) => ({ default: m.BudgetCharts })), {
+  ssr: false,
+  loading: () => (
+    <Card>
+      <CardHeader>
+        <CardTitle>예산 차트</CardTitle>
+        <CardDescription>로딩 중...</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-[280px] w-full rounded-lg" />
+      </CardContent>
+    </Card>
+  ),
+})
 
 interface BudgetVisualizationProps {
   summary: BudgetSummary
@@ -129,7 +145,7 @@ export function BudgetVisualization({ summary }: BudgetVisualizationProps) {
                         {actual.toLocaleString()}원 / {planned.toLocaleString()}원
                       </span>
                       {remaining >= 0 ? (
-                        <span className="text-green-600">{remaining.toLocaleString()}원 남음</span>
+                        <span className="text-success">{remaining.toLocaleString()}원 남음</span>
                       ) : (
                         <span className="text-destructive">
                           {Math.abs(remaining).toLocaleString()}원 초과

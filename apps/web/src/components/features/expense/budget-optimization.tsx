@@ -10,12 +10,13 @@ import {
   CardTitle,
 } from "@lovetrip/ui/components/card"
 import { Alert, AlertDescription } from "@lovetrip/ui/components/alert"
-import { AlertCircle, TrendingDown, Lightbulb, CheckCircle2 } from "lucide-react"
+import { AlertCircle, TrendingDown, Lightbulb, CheckCircle2, MapPin, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import type {
   BudgetOptimizationResult,
   BudgetOptimizationSuggestion,
 } from "@lovetrip/expense/services"
+import type { Place } from "@lovetrip/shared/types"
 
 interface BudgetOptimizationProps {
   travelPlanId: string
@@ -24,10 +25,11 @@ interface BudgetOptimizationProps {
 
 export function BudgetOptimization({ travelPlanId, onOptimize }: BudgetOptimizationProps) {
   const [optimization, setOptimization] = useState<BudgetOptimizationResult | null>(null)
+  const [alternativePlaces, setAlternativePlaces] = useState<Place[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [appliedSuggestions, setAppliedSuggestions] = useState<Set<string>>(new Set())
 
-  // 예산 최적화 제안 조회
+  // 예산 최적화 제안 조회 (프리미엄 시 대안 장소 포함)
   const loadOptimization = async () => {
     try {
       setIsLoading(true)
@@ -37,8 +39,9 @@ export function BudgetOptimization({ travelPlanId, onOptimize }: BudgetOptimizat
         throw new Error("예산 최적화 제안을 불러오는데 실패했습니다")
       }
 
-      const { optimization: optimizationData } = await response.json()
-      setOptimization(optimizationData)
+      const data = await response.json()
+      setOptimization(data.optimization ?? null)
+      setAlternativePlaces(Array.isArray(data.alternativePlaces) ? data.alternativePlaces : [])
     } catch (error) {
       console.error("Error loading optimization:", error)
       toast.error(
@@ -203,6 +206,40 @@ export function BudgetOptimization({ travelPlanId, onOptimize }: BudgetOptimizat
                 <Button onClick={handleApplyAll} variant="default">
                   전체 적용
                 </Button>
+              </div>
+            )}
+
+            {/* 예산 맞춤 대안 장소 (프리미엄, API에서 반환된 경우만) */}
+            {optimization.isOverBudget && alternativePlaces.length > 0 && (
+              <div className="mt-4 p-4 border rounded-lg bg-primary/5 border-primary/20">
+                <h4 className="font-semibold mb-2 text-sm flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  예산 맞춤 대안 장소
+                </h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  예산에 맞는 대안 장소입니다. 방문지를 바꿔 예산을 줄여보세요.
+                </p>
+                <ul className="space-y-2">
+                  {alternativePlaces.slice(0, 8).map(place => (
+                    <li
+                      key={place.id}
+                      className="flex items-start gap-2 text-sm py-1.5 border-b border-border/50 last:border-0"
+                    >
+                      <MapPin className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
+                      <div>
+                        <span className="font-medium">{place.name}</span>
+                        {place.address && (
+                          <p className="text-xs text-muted-foreground truncate">{place.address}</p>
+                        )}
+                        {place.price_level != null && (
+                          <span className="text-xs text-muted-foreground">
+                            가격대: {place.price_level === 1 ? "저렴" : place.price_level === 2 ? "보통" : "비쌈"}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 
