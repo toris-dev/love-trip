@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { Calendar, MapPin, Wallet, Plus, Star, Trash2, Edit } from "lucide-react"
 import {
   Card,
@@ -32,16 +31,7 @@ interface MyTripsListProps {
 }
 
 export function MyTripsList({ trips }: MyTripsListProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [filterStatus, setFilterStatus] = useState<string>("all")
-
-  const filteredTrips = trips.filter(trip => {
-    const matchesSearch =
-      trip.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      trip.destination.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesFilter = filterStatus === "all" || trip.status === filterStatus
-    return matchesSearch && matchesFilter
-  })
+  const filteredTrips = trips
 
   const getStatusBadge = (status: Trip["status"]) => {
     const variants = {
@@ -62,11 +52,7 @@ export function MyTripsList({ trips }: MyTripsListProps) {
 
   return (
     <>
-      <MyTripsClient
-        onSearchChange={setSearchQuery}
-        onFilterChange={setFilterStatus}
-        filterStatus={filterStatus}
-      />
+      <MyTripsClient />
 
       {filteredTrips.length === 0 ? (
         <Card className="text-center py-16 md:py-20">
@@ -81,7 +67,7 @@ export function MyTripsList({ trips }: MyTripsListProps) {
               새로운 여행 계획을 만들어보세요!
             </p>
             <Button asChild size="lg">
-              <Link href="/">
+              <Link href="/my-trips/new">
                 <Plus className="mr-2 h-4 w-4" />
                 여행 계획 시작하기
               </Link>
@@ -170,9 +156,7 @@ export function MyTripsList({ trips }: MyTripsListProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 md:mt-12">
           <Card className="border-2">
             <CardContent className="pt-6 pb-6 text-center">
-              <div className="text-2xl md:text-3xl font-bold text-primary mb-2">
-                {trips.length}
-              </div>
+              <div className="text-2xl md:text-3xl font-bold text-primary mb-2">{trips.length}</div>
               <div className="text-xs md:text-sm text-muted-foreground">총 여행 계획</div>
             </CardContent>
           </Card>
