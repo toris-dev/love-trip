@@ -8,10 +8,8 @@ import { Toaster } from "@lovetrip/ui/components/sonner"
 import { ThemeProvider } from "@/components/shared/theme-provider-wrapper"
 import { LayoutWrapper } from "@/components/layout/layout-wrapper"
 import { ServiceWorkerScript } from "@/components/shared/service-worker-script"
-import { Header } from "@/components/layout/header"
 import { FooterWrapper } from "@/components/layout/footer-wrapper"
 import { MSWProvider } from "@/components/shared/msw-provider"
-import { Suspense } from "react"
 
 export const metadata: Metadata = {
   title: {
@@ -90,10 +88,13 @@ export const viewport: Viewport = {
 export default function RootLayout({
   children,
   modal,
+  header,
 }: Readonly<{
   children: React.ReactNode
   /** 병렬 라우트: 모달 슬롯 (예: 로그인 오버레이). @modal 폴더와 default.tsx 필요 */
   modal?: React.ReactNode
+  /** 병렬 라우트: 헤더 슬롯. 독립 로딩/에러로 메인 콘텐츠 블로킹 방지 */
+  header?: React.ReactNode
 }>) {
   return (
     <html lang="ko" suppressHydrationWarning>
@@ -126,20 +127,7 @@ export default function RootLayout({
         <MSWProvider>
           <ThemeProvider>
             <LayoutWrapper>
-              <Suspense
-                fallback={
-                  <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border shadow-sm">
-                    <div className="container mx-auto px-2 sm:px-3 md:px-4 py-3">
-                      <div className="flex items-center justify-between">
-                        <div className="h-8 w-32 bg-muted animate-pulse rounded" />
-                        <div className="h-8 w-24 bg-muted animate-pulse rounded" />
-                      </div>
-                    </div>
-                  </header>
-                }
-              >
-                <Header />
-              </Suspense>
+              {header}
               <main className="flex-1">{children}</main>
               {modal}
               <FooterWrapper />
