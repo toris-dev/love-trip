@@ -5,13 +5,15 @@ import { cn } from "@lovetrip/shared"
 import { cva, type VariantProps } from "class-variance-authority"
 
 const cardVariants = cva(
-  "flex flex-col gap-6 rounded-3xl border bg-card text-card-foreground shadow-sm transition-all duration-200",
+  "flex flex-col gap-6 rounded-3xl border bg-card text-card-foreground shadow-sm transition-all duration-200 p-6",
   {
     variants: {
       variant: {
         default: "hover:shadow-md hover:border-primary/20",
-        glass: "bg-white/40 dark:bg-black/40 backdrop-blur-md border-white/20 dark:border-white/10 shadow-lg hover:shadow-xl hover:-translate-y-1",
-        image: "overflow-hidden hover:shadow-lg hover:scale-[1.02] transition-transform duration-300",
+        glass:
+          "bg-white/40 dark:bg-black/40 backdrop-blur-md border-white/20 dark:border-white/10 shadow-lg hover:shadow-xl hover:-translate-y-1",
+        image:
+          "overflow-hidden hover:shadow-lg hover:scale-[1.02] transition-transform duration-300",
       },
     },
     defaultVariants: {
@@ -20,14 +22,12 @@ const cardVariants = cva(
   }
 )
 
-function Card({ className, variant, ...props }: React.ComponentProps<"div"> & VariantProps<typeof cardVariants>) {
-  return (
-    <div
-      data-slot="card"
-      className={cn(cardVariants({ variant }), className)}
-      {...props}
-    />
-  )
+function Card({
+  className,
+  variant,
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof cardVariants>) {
+  return <div data-slot="card" className={cn(cardVariants({ variant }), className)} {...props} />
 }
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -67,23 +67,14 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-action"
-      className={cn(
-        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
-        className
-      )}
+      className={cn("col-start-2 row-span-2 row-start-1 self-start justify-self-end", className)}
       {...props}
     />
   )
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="card-content"
-      className={cn("px-6", className)}
-      {...props}
-    />
-  )
+  return <div data-slot="card-content" className={cn("px-6", className)} {...props} />
 }
 
 function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
@@ -96,12 +87,4 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-export {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardAction,
-  CardDescription,
-  CardContent,
-}
+export { Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent }
