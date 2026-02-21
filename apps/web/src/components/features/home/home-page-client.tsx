@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -30,12 +30,23 @@ const OnboardingWizard = dynamic(
 interface HomePageClientProps {
   user: { id: string; email?: string } | null
   displayName?: string | null
+  initialOpenWizard?: boolean
 }
 
-export function HomePageClient({ user, displayName }: HomePageClientProps) {
+export function HomePageClient({
+  user,
+  displayName,
+  initialOpenWizard = false,
+}: HomePageClientProps) {
   const router = useRouter()
   const [wizardOpen, setWizardOpen] = useState(false)
   const [onboardingCompleted, setOnboardingCompleted] = useState(false)
+
+  useEffect(() => {
+    if (initialOpenWizard) {
+      setWizardOpen(true)
+    }
+  }, [initialOpenWizard])
 
   // 인사말 생성
   const getGreeting = () => {
