@@ -23,8 +23,16 @@ interface TravelPlanDetailPageProps {
   params: Promise<{ id: string }>
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
 export async function generateMetadata({ params }: TravelPlanDetailPageProps): Promise<Metadata> {
   const { id } = await params
+
+  if (!id || !UUID_REGEX.test(id)) {
+    return { title: "여행 계획" }
+  }
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -115,6 +123,11 @@ async function getCoupleInfo(userId: string) {
 
 export default async function TravelPlanDetailPage({ params }: TravelPlanDetailPageProps) {
   const { id } = await params
+
+  if (!id || !UUID_REGEX.test(id)) {
+    notFound()
+  }
+
   const supabase = await createClient()
   const {
     data: { user },
