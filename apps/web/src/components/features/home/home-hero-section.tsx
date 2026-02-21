@@ -8,34 +8,25 @@ import Link from "next/link"
 export function HomeHeroSection() {
   return (
     <div className="relative text-center min-h-screen flex flex-col items-center justify-center py-20" aria-labelledby="hero-heading">
-      {/* Animated Background Orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* 배경 오브: 부드럽게 움직이는 포커스 */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
         <motion.div
           animate={{
-            x: [0, 100, 0],
-            y: [0, 50, 0],
-            scale: [1, 1.2, 1],
+            x: [0, 60, 0],
+            y: [0, 40, 0],
+            scale: [1, 1.15, 1],
           }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl"
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/4 left-1/6 w-64 h-64 bg-primary/15 rounded-full blur-3xl"
         />
         <motion.div
           animate={{
-            x: [0, -80, 0],
-            y: [0, -60, 0],
-            scale: [1, 1.3, 1],
+            x: [0, -50, 0],
+            y: [0, -40, 0],
+            scale: [1, 1.2, 1],
           }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.5,
-          }}
-          className="absolute bottom-20 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl"
+          transition={{ duration: 26, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          className="absolute bottom-1/4 right-1/6 w-80 h-80 bg-accent/15 rounded-full blur-3xl"
         />
       </div>
 
@@ -64,7 +55,7 @@ export function HomeHeroSection() {
           transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold mb-6 sm:mb-8 tracking-tight leading-tight"
         >
-          <span className="block mb-2 bg-gradient-to-r from-primary via-accent via-primary to-accent bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
+          <span className="block mb-2 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">
             데이트, 이제 더
           </span>
           <span className="block bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">

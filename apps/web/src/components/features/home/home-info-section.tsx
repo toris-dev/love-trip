@@ -115,7 +115,7 @@ export function HomeInfoSection() {
                   </div>
                   <span className="font-bold text-lg">{item.title}</span>
                 </div>
-                <p className="text-sm text-muted-foreground ml-13 leading-relaxed">
+                <p className="text-sm text-muted-foreground pl-[3.25rem] leading-relaxed">
                   {item.description}
                 </p>
               </motion.div>
