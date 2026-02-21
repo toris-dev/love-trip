@@ -129,7 +129,7 @@ export default async function MyTripsPage() {
                 </p>
               </div>
               <Button asChild size="lg" className="group shrink-0">
-                <Link href="/">
+                <Link href="/my-trips/new">
                   <Plus className="mr-2 h-4 w-4 group-hover:rotate-90 transition-transform" />새
                   여행 만들기
                 </Link>

@@ -98,7 +98,7 @@ export default function AboutPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="group">
-                <Link href="/">
+                <Link href="/my-trips/new">
                   여행 계획 시작하기
                   <Zap className="ml-2 h-4 w-4 group-hover:rotate-12 transition-transform" />
                 </Link>
