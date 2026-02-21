@@ -23,17 +23,24 @@ export async function Header() {
         level: gamification.level ?? 1,
         points: gamification.points ?? 0,
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined
+      console.error("Failed to load gamification data:", message, code ? `(${code})` : "")
+      // 에러가 발생해도 기본값 사용
+    }
 
-      // 프로필 닉네임 가져오기
+    try {
       const { data: profileData } = await supabase
         .from("profiles")
         .select("nickname")
         .eq("id", user.id)
-        .single()
+        .maybeSingle()
 
-      nickname = profileData?.nickname || null
+      nickname = profileData?.nickname ?? null
     } catch (error) {
-      console.error("Failed to load gamification or profile data:", error)
+      const message = error instanceof Error ? error.message : String(error)
+      console.error("Failed to load profile data:", message)
       // 에러가 발생해도 기본값 사용
     }
   }
