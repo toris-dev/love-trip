@@ -58,7 +58,7 @@ async function getUserDateCourses(userId: string): Promise<{
       // place_id가 있는 장소들만 places 테이블에서 조회
       // places 테이블이 삭제되었으므로 빈 배열로 설정
       const placeIds = placesData.filter(p => p.place_id).map(p => p.place_id!)
-      let placesFromDb: Place[] = []
+      const placesFromDb: Place[] = []
       // TODO: places 테이블이 삭제되었으므로 조회하지 않음
       // 저장된 정보만 사용
 
@@ -190,7 +190,7 @@ async function getUserTravelCourses(userId: string): Promise<{
       // place_id가 있는 장소들만 places 테이블에서 조회
       // places 테이블이 삭제되었으므로 빈 배열로 설정
       const placeIds = placesData.filter(p => p.place_id).map(p => p.place_id!)
-      let placesFromDb: Place[] = []
+      const placesFromDb: Place[] = []
       // TODO: places 테이블이 삭제되었으므로 조회하지 않음
       // 저장된 정보만 사용
 
